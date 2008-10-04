@@ -1,4 +1,4 @@
-# -*- coding: utf-8  -*-
+# -*- coding: utf-8 -*-
 import cookielib, API
 
 class WikiError(Exception):
@@ -9,6 +9,9 @@ class BadTitle(WikiError):
 	
 class NoPage(WikiError):
 	"""Non-existent page"""
+
+class EditError(WikiError):
+	"""Problem with edit request"""
 
 class Wiki:
 	def __init__(self, url="http://en.wikipedia.org/w/api.php"):
@@ -45,11 +48,11 @@ class Wiki:
 		req = API.APIRequest(self, data)
 		info = req.query()
 		if info['query']['userinfo']['id'] == 0:
-			return false
+			return False
 		elif username and info['query']['userinfo']['name'] != username:
-			return false
+			return False
 		else:
-			return true
+			return True
 
 """ A page on the wiki
 wiki - A wiki object
@@ -111,17 +114,17 @@ class Page:
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
 		req = API.APIRequest(self.wiki, params)
-		response = req.query()
+		response = req.query(False)
 		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
 		return self.wikitext
 	
-	def templates(self, force=False):
-		if not self.exists:
-			raise NoPage
+	def getTemplates(self, force=False):
 		if self.templates and not force:
 			return self.templates
 		if self.pageid == 0:
 			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'templates',
@@ -143,5 +146,77 @@ class Page:
 		for template in json['query']['pages'][self.pageid]['templates']:
 			list.append(template['title'].encode('utf-8'))
 		return list
+	
+	def edit(self, newtext=False, prependtext=False, appendtext=False, summary=False, section=False, minor=False, bot=False, basetime=False, recreate=False, createonly=False, nocreate=False, watch=False, unwatch=False):
+		if not newtext and not prependtext and not appendtext:
+			raise EditError
+		if prependtext and section:
+			raise EditError
+		if createonly and nocreate:
+			raise EditError
+		token = self.getToken('edit')
+		from hashlib import md5
+		if newtext:
+			hashtext = newtext
+		elif prependtext and appendtext:
+			hashtext = prependtext+appendtext
+		elif prependtext:
+			hashtext = prependtext
+		else:
+			hashtext = appendtext
+		params = {
+			'action': 'edit',
+			'title':self.title,
+			'token':token,
+			'md5':md5(hashtext).hexdigest(),
+		}
+		if newtext:
+			params['text'] = newtext.encode('utf-8')
+		if prependtext:
+			params['prependtext'] = prependtext.encode('utf-8')
+		if appendtext:
+			params['appendtext'] = appendtext.encode('utf-8')
+		if summary:
+			params['summary'] = summary.encode('utf-8')
+		if section:
+			params['section'] = section.encode('utf-8')
+		if minor:
+			params['minor'] = '1'
+		else:
+			params['notminor'] = '1'
+		if bot:
+			params['bot'] = '1'
+		if basetime:
+			params['basetimestamp'] = basetime.encode('utf-8')
+		if recreate:
+			params['recreate'] = '1'
+		if createonly:
+			params['createonly'] = '1'
+		if nocreate:
+			params['nocreate'] = '1'
+		if watch:
+			params['watch'] = '1'
+		if unwatch:
+			params['unwatch'] = '1'
+		req = API.APIRequest(self.wiki, params)
+		result = req.query()
+		return result		
+		
+	def getToken(self, type):
+		if self.pageid == 0:
+			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
+		params = {
+			'action':'query',
+			'pageids':self.pageid,
+			'prop':'info',
+			'intoken':type,
+		}
+		req = API.APIRequest(self.wiki, params)
+		response = req.query()
+		token = response['query']['pages'][self.pageid][type+'token']
+		return token
+		
 		
 		

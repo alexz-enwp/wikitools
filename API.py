@@ -42,7 +42,10 @@ class APIRequest:
 		totaldata = [initialdata]
 		key1 = initialdata['query-continue'].keys()[0]
 		key2 = initialdata['query-continue'][key1].keys()[0]
-		querycont = initialdata['query-continue'][key1][key2].encode('utf-8')
+		if isinstance(initialdata['query-continue'][key1][key2], int):
+			querycont = initialdata['query-continue'][key1][key2]
+		else:
+			querycont = initialdata['query-continue'][key1][key2].encode('utf-8')
 		while querycont:
 			self.data[key2] = querycont
 			self.encodeddata = urlencode(self.data)
