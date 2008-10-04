@@ -1,4 +1,4 @@
-# -*- coding: utf-8  -*-
+# -*- coding: utf-8 -*-
 import urllib2, simplejson, re, time, cookielib
 from urllib import urlencode
 
@@ -42,7 +42,7 @@ class APIRequest:
 		totaldata = [initialdata]
 		key1 = initialdata['query-continue'].keys()[0]
 		key2 = initialdata['query-continue'][key1].keys()[0]
-		querycont = initialdata['query-continue'][key1][key2]
+		querycont = initialdata['query-continue'][key1][key2].encode('utf-8')
 		while querycont:
 			self.data[key2] = querycont
 			self.encodeddata = urlencode(self.data)
