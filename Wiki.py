@@ -14,13 +14,21 @@ class EditError(WikiError):
 	"""Problem with edit request"""
 
 class Wiki:
+	"""
+	A Wiki site
+	url - A URL to the site's API, defaults to en.wikipedia
+	"""	
 	def __init__(self, url="http://en.wikipedia.org/w/api.php"):
 		self.apibase = url
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
 	
-	# Login to the site, Remember currently does nothing, CAPTCHA handling would be nice
 	def login(self, username, password = False, remember = True):
+		"""
+		Login to the site
+		remember - currently unused
+		"""
+		
 		if not password:
 			from getpass import getpass
 			password = getpass()
@@ -41,6 +49,11 @@ class Wiki:
 				print info['error']['info']
 	
 	def isLoggedIn(self, username = False):
+		"""
+		Verify that we are a logged in user
+		username - specify a username to check against
+		"""
+		
 		data = {
 			"action" : "query",
 			"meta" : "userinfo",
@@ -53,14 +66,14 @@ class Wiki:
 			return False
 		else:
 			return True
-
-""" A page on the wiki
-wiki - A wiki object
-title - The page title, as a string
-check - Checks for existence, normalizes title
-followRedir - follow redirects (check must be true)
-"""			
+		
 class Page:
+	""" A page on the wiki
+	wiki - A wiki object
+	title - The page title, as a string
+	check - Checks for existence, normalizes title
+	followRedir - follow redirects (check must be true)
+	"""	
 	def __init__(self, wiki, title, check=True, followRedir = True):
 		self.limit = '5000' #  FIXME:There needs to be a way to set this based on userrights
 		self.wiki = wiki
@@ -71,8 +84,13 @@ class Page:
 		self.exists = True # If we're not going to check, assume it does
 		if check:
 			self.setPageInfo(followRedir)
-			
+
+
 	def setPageInfo(self, followRedir=True):
+		"""
+		Sets basic page info, required for almost everything
+		"""
+		
 		params = {
 			'action': 'query',
 			'titles': self.title,
@@ -96,8 +114,13 @@ class Page:
 		if response['query']['pages'][self.pageid].has_key('ns'):
 			self.namespace = response['query']['pages'][self.pageid]['ns']
 			
-			
 	def getWikiText(self, expandtemplates=False, force=False):
+		"""
+		Gets the Wikitext of the page
+		expandtemplates - expand the templates to wikitext instead of transclusions
+		force - load the text even if we already loaded it before
+		"""
+	
 		if self.wikitext and not force:
 			return self.wikitext
 		if self.pageid == 0:
@@ -117,8 +140,13 @@ class Page:
 		response = req.query(False)
 		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
 		return self.wikitext
-	
+
 	def getTemplates(self, force=False):
+		"""
+		Gets all list of all the templates on the page
+		force - load the list even if we already loaded it before
+		"""
+	
 		if self.templates and not force:
 			return self.templates
 		if self.pageid == 0:
@@ -148,6 +176,13 @@ class Page:
 		return list
 	
 	def edit(self, newtext=False, prependtext=False, appendtext=False, summary=False, section=False, minor=False, bot=False, basetime=False, recreate=False, createonly=False, nocreate=False, watch=False, unwatch=False):
+		"""
+		Edit the page
+		Most params are self-explanatory
+		basetime - set this to the time you loaded the pagetext to avoid
+		overwriting other people's edits in edit conflicts
+		"""
+	
 		if not newtext and not prependtext and not appendtext:
 			raise EditError
 		if prependtext and section:
@@ -201,8 +236,14 @@ class Page:
 		req = API.APIRequest(self.wiki, params)
 		result = req.query()
 		return result		
-		
+	
 	def getToken(self, type):
+		""" 
+		Get a token for everything except blocks and rollbacks
+		type (String) - edit, delete, protect, move, block, unblock, email
+		Currently all the tokens are interchangeable, but this may change in the future
+		"""
+			
 		if self.pageid == 0:
 			self.setPageInfo()
 		if not self.exists:

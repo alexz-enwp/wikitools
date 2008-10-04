@@ -6,6 +6,13 @@ class APIError(Exception):
 	"""Base class for errors"""
 
 class APIRequest:
+	"""
+	A request to the site's API
+	wiki - A Wiki object
+	data - API parameters in the form of a dict
+	maxlag is set by default to 5 but can be changed
+	format is always set to json
+	"""
 	def __init__(self, wiki, data):
 		self.sleep = 5
 		self.data = data
@@ -21,9 +28,12 @@ class APIRequest:
 		self.wiki = wiki
 		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
-	
-	# Actually do the query here and return usable stuff
+
 	def query(self, querycontinue=True):
+		"""
+		Actually do the query here and return usable stuff
+		"""
+		
 		data = False
 		while not data:
 			rawdata = self.__getRaw()
@@ -35,10 +45,13 @@ class APIRequest:
 			data = self.__longQuery(data)
 		return data
 	
-	# For queries that require multiple requests
-	#FIXME - queries can have multiple continue things....
-	# http://en.wikipedia.org/w/api.php?action=query&prop=langlinks|links&titles=Main%20Page&redirects&format=jsonfm
 	def __longQuery(self, initialdata):
+		"""
+		For queries that require multiple requests
+		FIXME - queries can have multiple continue things....
+		http://en.wikipedia.org/w/api.php?action=query&prop=langlinks|links&titles=Main%20Page&redirects&format=jsonfm
+		"""
+	
 		totaldata = [initialdata]
 		key1 = initialdata['query-continue'].keys()[0]
 		key2 = initialdata['query-continue'][key1].keys()[0]
@@ -59,8 +72,6 @@ class APIRequest:
 				querycont = False
 		return totaldata
 					
-					
-	#Gets the actual data from the server
 	def __getRaw(self):
 		data = False
 		while not data:
@@ -76,7 +87,7 @@ class APIRequest:
 					self.sleep+=5
 		self.response = data.info()
 		return data
-	# Convert the JSON to usable stuff
+
 	def __parseJSON(self, data):
 		maxlag = True
 		while  maxlag:
@@ -94,6 +105,8 @@ class APIRequest:
 				return False
 		return response
 
-	# Function to change the default useragent
 	def setUserAgent(self, useragent):
+		"""
+		Function to set a different user-agent
+		"""
 		self.headers['User-agent'] = useragent
