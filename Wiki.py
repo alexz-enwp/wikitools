@@ -90,6 +90,9 @@ class Page:
 			self.exists = False
 		if response['query']['pages'][self.pageid].has_key('invalid'):
 			raise BadTitle(self.title)
+		if response['query']['pages'][self.pageid].has_key('ns'):
+			self.namespace = response['query']['pages'][self.pageid]['ns']
+			
 			
 	def getWikiText(self, expandtemplates=False, force=False):
 		if self.wikitext and not force:
