@@ -77,14 +77,13 @@ class Page:
 	def __init__(self, wiki, title, check=True, followRedir = True):
 		self.limit = '5000' #  FIXME:There needs to be a way to set this based on userrights
 		self.wiki = wiki
-		self.title = title.encode('utf-8')
+		self.title = title
 		self.wikitext = ''
 		self.templates = ''
 		self.pageid = 0 # The API will set a negative pageid for bad titles
 		self.exists = True # If we're not going to check, assume it does
 		if check:
 			self.setPageInfo(followRedir)
-
 
 	def setPageInfo(self, followRedir=True):
 		"""
@@ -111,8 +110,7 @@ class Page:
 			self.exists = False
 		if response['query']['pages'][self.pageid].has_key('invalid'):
 			raise BadTitle(self.title)
-		if response['query']['pages'][self.pageid].has_key('ns'):
-			self.namespace = response['query']['pages'][self.pageid]['ns']
+		self.namespace = response['query']['pages'][self.pageid].get('ns')
 			
 	def getWikiText(self, expandtemplates=False, force=False):
 		"""
@@ -171,8 +169,9 @@ class Page:
 	
 	def __extractTemplates(self, json):
 		list = []
-		for template in json['query']['pages'][self.pageid]['templates']:
-			list.append(template['title'].encode('utf-8'))
+		if json['query']['pages'][self.pageid].has_key('templates'):
+			for template in json['query']['pages'][self.pageid]['templates']:
+				list.append(template['title'].encode('utf-8'))
 		return list
 	
 	def edit(self, newtext=False, prependtext=False, appendtext=False, summary=False, section=False, minor=False, bot=False, basetime=False, recreate=False, createonly=False, nocreate=False, watch=False, unwatch=False):

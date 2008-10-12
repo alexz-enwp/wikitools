@@ -2,7 +2,16 @@
 import urllib2, simplejson, re, time, cookielib
 from urllib import urlencode
 
+try:
+	import gzip
+	import StringIO
+except:
+	gzip = False
+
 class APIError(Exception):
+	"""Base class for errors"""
+	
+class ServerError(APIError):
 	"""Base class for errors"""
 
 class APIRequest:
@@ -25,6 +34,8 @@ class APIRequest:
 			"User-agent": "MediaWiki-API-python/0.1",
 			"Content-length": len(self.encodeddata)
 		}
+		if gzip:
+			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
 		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
@@ -37,7 +48,10 @@ class APIRequest:
 		data = False
 		while not data:
 			rawdata = self.__getRaw()
-			data = self.__parseJSON(rawdata)
+			if rawdata:
+				data = self.__parseJSON(rawdata)
+			else:
+				raise ServerError
 		#Certain errors should probably be handled here...
 		if data.has_key('error'):
 			raise APIError(data['error']['code'], data['error']['info'])
@@ -77,33 +91,37 @@ class APIRequest:
 		while not data:
 			try:
 				data = self.opener.open(self.request)
+				self.response = data.info()
+				if gzip:
+					encoding = self.response.get('Content-encoding')
+					if encoding in ('gzip', 'x-gzip'):
+						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
 			except:
 				if self.sleep == 60:
 					print("Aborting")
-					return
+					return false
 				else:
 					print("Server error, trying request again in "+str(self.sleep)+" seconds")
 					time.sleep(self.sleep+0.5)
 					self.sleep+=5
-		self.response = data.info()
 		return data
 
 	def __parseJSON(self, data):
 		maxlag = True
-		while  maxlag:
+		while maxlag:
 			try:
 				maxlag = False
-				response = simplejson.loads(data.read())
-				if response.has_key('error'):
-					error = response['error']['code']
+				content = simplejson.loads(data.read())
+				if content.has_key('error'):
+					error = content['error']['code']
 					if error == "maxlag":
-						lagtime = re.search("(\d+) seconds", response['error']['info']).group(1)
+						lagtime = re.search("(\d+) seconds", content['error']['info']).group(1)
 						print("Server lag, sleeping for "+lagtime+" seconds")
 						maxlag = True
 						time.sleep(int(lagtime)+0.5)
 			except: # Something's wrong with the data....
 				return False
-		return response
+		return content
 
 	def setUserAgent(self, useragent):
 		"""
