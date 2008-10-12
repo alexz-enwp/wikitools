@@ -128,7 +128,7 @@ class Page:
 		params = {
 			'action': 'query',
 			'prop': 'revisions',
-			'rvprop': 'content',
+			'rvprop': 'content|timestamp',
 			'pageids': self.pageid,
 			'rvlimit': '1'
 		}
@@ -136,7 +136,8 @@ class Page:
 			params['rvexpandtemplates'] = '1'
 		req = API.APIRequest(self.wiki, params)
 		response = req.query(False)
-		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
+		self.wikitext = unicode(response['query']['pages'][self.pageid]['revisions'][0]['*'])
+		self.lastedittime = response['query']['pages'][self.pageid]['revisions'][0]['timestamp']
 		return self.wikitext
 
 	def getTemplates(self, force=False):
@@ -202,7 +203,7 @@ class Page:
 			'action': 'edit',
 			'title':self.title,
 			'token':token,
-			'md5':md5(hashtext).hexdigest(),
+			'md5':md5(hashtext.encode('utf-8')).hexdigest(),
 		}
 		if newtext:
 			params['text'] = newtext.encode('utf-8')
