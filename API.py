@@ -31,7 +31,7 @@ class APIRequest:
 		self.encodeddata = urlencode(self.data)
 		self.headers = {
 			"Content-type": "application/x-www-form-urlencoded",
-			"User-agent": "MediaWiki-API-python/0.1",
+			"User-agent": wiki.useragent,
 			"Content-length": len(self.encodeddata)
 		}
 		if gzip:
@@ -122,9 +122,3 @@ class APIRequest:
 			except: # Something's wrong with the data....
 				return False
 		return content
-
-	def setUserAgent(self, useragent):
-		"""
-		Function to set a different user-agent
-		"""
-		self.headers['User-agent'] = useragent

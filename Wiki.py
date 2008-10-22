@@ -23,6 +23,7 @@ class Wiki:
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
 		self.maxlag = '5'
+		self.useragent = "MediaWiki-API-python/0.1"
 	
 	def login(self, username, password = False, remember = True):
 		"""
@@ -77,6 +78,12 @@ class Wiki:
 		except:
 			raise WikiError("maxlag must be an integer")
 		self.maxlag = str(maxlag)
+		
+	def setUserAgent(self, useragent):
+		"""
+		Function to set a different user-agent
+		"""
+		self.useragent['User-agent'] = str(useragent)
 		
 class Page:
 	""" A page on the wiki
