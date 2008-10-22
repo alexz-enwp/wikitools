@@ -22,6 +22,7 @@ class Wiki:
 		self.apibase = url
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
+		self.maxlag = '5'
 	
 	def login(self, username, password = False, remember = True):
 		"""
@@ -66,6 +67,16 @@ class Wiki:
 			return False
 		else:
 			return True
+	
+	def setMaxlag(self, maxlag)
+		"""
+		Set the maxlag for all requests to something other than 5
+		"""
+		try:
+			int(maxlag)
+		except:
+			raise WikiError("maxlag must be an integer")
+		self.maxlag = str(maxlag)
 		
 class Page:
 	""" A page on the wiki

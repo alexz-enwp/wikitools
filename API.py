@@ -27,7 +27,7 @@ class APIRequest:
 		self.data = data
 		self.data['format'] = "json"
 		if not data.has_key('maxlag'):
-			self.data['maxlag'] = "5"
+			self.data['maxlag'] = wiki.maxlag
 		self.encodeddata = urlencode(self.data)
 		self.headers = {
 			"Content-type": "application/x-www-form-urlencoded",
