@@ -69,7 +69,7 @@ class Wiki:
 		else:
 			return True
 	
-	def setMaxlag(self, maxlag)
+	def setMaxlag(self, maxlag):
 		"""
 		Set the maxlag for all requests to something other than 5
 		"""
