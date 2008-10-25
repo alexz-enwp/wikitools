@@ -202,11 +202,11 @@ class Page:
 		"""
 	
 		if not newtext and not prependtext and not appendtext:
-			raise EditError
+			raise EditError("No text specified")
 		if prependtext and section:
-			raise EditError
+			raise EditError("Bad param combination")
 		if createonly and nocreate:
-			raise EditError
+			raise EditError("Bad param combination")
 		token = self.getToken('edit')
 		from hashlib import md5
 		if newtext:
@@ -253,7 +253,56 @@ class Page:
 			params['unwatch'] = '1'
 		req = API.APIRequest(self.wiki, params)
 		result = req.query()
-		return result		
+		return result
+		
+	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):
+		"""
+		Move the page
+		Most params are self-explanatory
+		mvto (move to) is the only required param
+		must have "suppressredirect" right to use noredirect
+		"""
+		token = self.getToken('move')
+		params = {
+			'action': 'move',
+			'fromid':self.pageid,
+			'mvto':mvto,
+			'token':token,
+		}
+		if reason:
+			params['reason'] = reason.encode('utf-8')
+		if movetalk:
+			params['movetalk'] = '1'
+		if noredirect:
+			params['noredirect'] = '1'
+		if watch:
+			params['watch'] = '1'
+		if unwatch:
+			params['unwatch'] = '1'
+		req = API.APIRequest(self.wiki, params)
+		result = req.query()
+		return result
+
+	def delete(self, reason=False, watch=False, unwatch=False):
+		"""
+		Delete the page
+		Most params are self-explanatory
+		"""
+		token = self.getToken('delete')
+		params = {
+			'action': 'delete',
+			'pageid':self.pageid,
+			'token':token,
+		}
+		if reason:
+			params['reason'] = reason.encode('utf-8')
+		if watch:
+			params['watch'] = '1'
+		if unwatch:
+			params['unwatch'] = '1'
+		req = API.APIRequest(self.wiki, params)
+		result = req.query()
+		return result
 	
 	def getToken(self, type):
 		""" 
