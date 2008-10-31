@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cookielib, API
+import cookielib, API, urllib
 
 class WikiError(Exception):
 	"""Base class for errors"""
@@ -25,6 +25,27 @@ class Wiki:
 		self.maxlag = '5'
 		self.useragent = "MediaWiki-API-python/0.1"
 		self.limit = '5000' #  FIXME:There needs to be a way to set this based on userrights
+		self.setSiteinfo()
+	
+	def setSiteinfo(self):
+		params = {'action':'query',
+			'meta':'siteinfo',
+			'siprop':'general|namespaces'
+		}
+		self.setMaxlag('60')
+		req = API.APIRequest(self, params)
+		info = req.query()
+		self.setMaxlag()
+		sidata = info['query']['general']
+		self.siteinfo = {}
+		for item in sidata:
+			self.siteinfo[item] = sidata[item]
+		nsdata = info['query']['namespaces']
+		self.namespaces = {}
+		for ns in nsdata:
+			nsinfo = nsdata[ns]
+			self.namespaces[nsinfo['id']] = nsinfo
+			
 	
 	def login(self, username, password = False, remember = True):
 		"""
@@ -40,8 +61,10 @@ class Wiki:
 			"lgname" : username,
 			"lgpassword" : password
 		}
+		self.setMaxlag('120')
 		req = API.APIRequest(self, data)
 		info = req.query()
+		self.setMaxlag()
 		if info['login']['result'] == "Success":
 			self.username = username
 		else:
@@ -70,7 +93,7 @@ class Wiki:
 		else:
 			return True
 	
-	def setMaxlag(self, maxlag):
+	def setMaxlag(self, maxlag = 5):
 		"""
 		Set the maxlag for all requests to something other than 5
 		"""
@@ -93,7 +116,7 @@ class Page:
 	check - Checks for existence, normalizes title
 	followRedir - follow redirects (check must be true)
 	"""	
-	def __init__(self, wiki, title, check=True, followRedir = True):
+	def __init__(self, wiki, title, check=True, followRedir=True):
 		self.wiki = wiki
 		self.title = title
 		self.wikitext = ''
@@ -102,6 +125,15 @@ class Page:
 		self.exists = True # If we're not going to check, assume it does
 		if check:
 			self.setPageInfo(followRedir)
+		else: # Guess at some stuff
+			self.namespace = False
+			for ns in wiki.namespaces:
+				if title.startswith(wiki.namespaces[ns]['*']+':'):
+					self.namespace = int(ns)
+					break
+			if not self.namespace:
+				self.namespace = 0
+		self.urltitle = urllib.urlencode({self.title.encode('utf-8'):''}).split('=')[0].replace('+', '_').replace('%2F', '/')		
 
 	def setPageInfo(self, followRedir=True):
 		"""
@@ -128,7 +160,48 @@ class Page:
 			self.exists = False
 		if response['query']['pages'][self.pageid].has_key('invalid'):
 			raise BadTitle(self.title)
-		self.namespace = response['query']['pages'][self.pageid].get('ns')
+		self.namespace = int(response['query']['pages'][self.pageid].get('ns'))
+	
+	def canHaveSubpages(self):
+		try:
+			self.namespace
+		except:
+			self.setPageInfo(False)
+		return self.wiki.namespaces[self.namespace].has_key('subpages')
+		
+	def isTalk(self):
+		try:
+			self.namespace
+		except:
+			self.setPageInfo(False)
+		return (self.namespace%2==1 and self.namespace != -1)
+		
+	def toggleTalk(self, check=True, followRedir=True):
+		"""
+		Returns a new page object that's either the talk or non-talk
+		version of the current page
+		"""
+		try:
+			self.namespace
+		except:
+			self.setPageInfo(False)
+		ns = self.namespace
+		if ns < 0:
+			return False
+		nsname = self.wiki.namespaces[ns]['*']
+		if self.isTalk():
+			newns = self.wiki.namespaces[ns-1]['*']
+		else:
+			newns = self.wiki.namespaces[ns+1]['*']
+		try:
+			pagename = self.title.split(nsname+':',1)[1]
+		except:
+			pagename = self.title
+		if newns != '':
+			newname = newns+':'+pagename
+		else:
+			newname = pagename
+		return Page(self.wiki, newname, check, followRedir)						
 			
 	def getWikiText(self, expandtemplates=False, force=False):
 		"""
@@ -382,7 +455,7 @@ class Category(Page):
 		}
 		while True:
 			req = API.APIRequest(self.wiki, params)
-			data = req.query()
+			data = req.query(False)
 			for page in data['query']['categorymembers']:
 				if titleonly:
 					yield page['title']
