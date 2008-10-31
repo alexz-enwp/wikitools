@@ -386,14 +386,17 @@ class Page:
 			
 		if self.pageid == 0:
 			self.setPageInfo()
-		if not self.exists:
+		if not self.exists and type != 'edit':
 			raise NoPage
 		params = {
 			'action':'query',
-			'pageids':self.pageid,
 			'prop':'info',
 			'intoken':type,
 		}
+		if self.exists:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title
 		req = API.APIRequest(self.wiki, params)
 		response = req.query()
 		token = response['query']['pages'][self.pageid][type+'token']
