@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cookielib, API, urllib
+import cookielib, API, urllib, re
 
 class WikiError(Exception):
 	"""Base class for errors"""
@@ -45,7 +45,11 @@ class Wiki:
 		for ns in nsdata:
 			nsinfo = nsdata[ns]
 			self.namespaces[nsinfo['id']] = nsinfo
-			
+		if not sidata.has_key('writeapi'):
+			print "WARNING: Write-API not enabled, you will not be able to edit"
+		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
+		if not int(version.group(1)) >= 13: # Will this even work on 13?
+			print "WARNING: Some features may not work on older versions of MediaWiki"
 	
 	def login(self, username, password = False, remember = True):
 		"""
