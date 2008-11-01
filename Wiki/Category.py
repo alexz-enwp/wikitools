@@ -1,6 +1,6 @@
 import Wiki, Page, API, urllib, re
 
-class Category(Wiki.Page):
+class Category(Page.Page):
 	"""
 	A category on the wiki
 	title should be the full title, including "Category:"
