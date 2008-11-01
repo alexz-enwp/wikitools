@@ -61,7 +61,7 @@ class Category(Page.Page):
 				if titleonly:
 					yield page['title']
 				else:
-					yield Page(self.wiki, page['title'], check=False, followRedir=False)
+					yield Page.Page(self.wiki, page['title'], check=False, followRedir=False)
 			try:
 				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
 			except:
