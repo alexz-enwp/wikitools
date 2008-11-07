@@ -1,13 +1,24 @@
 import Wiki, API, urllib, re
 
+class BadTitle(Wiki.WikiError):
+	"""Invalid title"""
+	
+class NoPage(Wiki.WikiError):
+	"""Non-existent page"""
+
+class EditError(Wiki.WikiError):
+	"""Problem with edit request"""
+
 class Page:
 	""" A page on the wiki
 	wiki - A wiki object
 	title - The page title, as a string
-	check - Checks for existence, normalizes title
+	check - Checks for existence, normalizes title, required for most things
 	followRedir - follow redirects (check must be true)
+	section - the section name
+	sectionnumber - the section number
 	"""	
-	def __init__(self, wiki, title, check=True, followRedir=True):
+	def __init__(self, wiki, title, check=True, followRedir=True, section=False, sectionnumber=False):
 		self.wiki = wiki
 		self.title = title
 		self.wikitext = ''
@@ -24,6 +35,8 @@ class Page:
 					break
 			if not self.namespace:
 				self.namespace = 0
+		if section or sectionnumber:
+			self.setSection(section, sectionnumber)
 		self.urltitle = urllib.urlencode({self.title.encode('utf-8'):''}).split('=')[0].replace('+', '_').replace('%2F', '/')		
 
 	def setPageInfo(self, followRedir=True):
@@ -52,7 +65,40 @@ class Page:
 		if response['query']['pages'][self.pageid].has_key('invalid'):
 			raise BadTitle(self.title)
 		self.namespace = int(response['query']['pages'][self.pageid].get('ns'))
+		
+	def setSection(self, section=False, number=False):
+		"""
+		Set a section for the page
+		section - the section name
+		"""
+		if not section and not number:
+			self.section = False
+		elif number:
+			try:
+				self.section = str(int(number))
+			except ValueError:
+				raise WikiError("Section number must be an int")
+		else:
+			self.section = self.__getSection(section)
 	
+	def __getSection(self, section):
+		params = {
+			'action': 'parse',
+			'text': '{{:'+self.title+'}}__TOC__',
+			'title':self.title,
+			'prop':'sections'
+		}
+		number = False
+		req = API.APIRequest(self.wiki, params)
+		response = req.query()
+		counter = 0
+		for item in response['parse']['sections']:
+			counter+=1
+			if section == item['line']:
+				number = counter
+				break
+		return number
+		
 	def canHaveSubpages(self):
 		try:
 			self.namespace
@@ -116,6 +162,8 @@ class Page:
 		}
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
+		if self.section:
+			params['rvsection'] = self.section
 		req = API.APIRequest(self.wiki, params)
 		response = req.query(False)
 		self.wikitext = unicode(response['query']['pages'][self.pageid]['revisions'][0]['*'])
@@ -196,7 +244,9 @@ class Page:
 		if summary:
 			params['summary'] = summary.encode('utf-8')
 		if section:
-			params['section'] = section.encode('utf-8')
+			params['section'] = section
+		if self.section:
+			params['section'] = self.section
 		if minor:
 			params['minor'] = '1'
 		else:

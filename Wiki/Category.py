@@ -1,20 +1,13 @@
-import Wiki, Page, API, urllib, re
+import Wiki, Page, API
 
 class Category(Page.Page):
 	"""
 	A category on the wiki
 	title should be the full title, including "Category:"
 	"""
-	def __init__(self, wiki, title, check=True, followRedir = False):
-		self.wiki = wiki
-		self.title = title
-		self.wikitext = ''
-		self.templates = ''
+	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False):
 		self.members = []
-		self.pageid = 0 # The API will set a negative pageid for bad titles
-		self.exists = True # If we're not going to check, assume it does
-		if check:
-			self.setPageInfo(followRedir)
+		Page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber)
 			
 	def getAllMembers(self, titleonly=False, reload=False):
 		"""
