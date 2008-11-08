@@ -37,6 +37,8 @@ class Page:
 				self.namespace = 0
 		if section or sectionnumber:
 			self.setSection(section, sectionnumber)
+		else:
+			self.section = False
 		self.urltitle = urllib.urlencode({self.title.encode('utf-8'):''}).split('=')[0].replace('+', '_').replace('%2F', '/')		
 
 	def setPageInfo(self, followRedir=True):
@@ -233,16 +235,16 @@ class Page:
 			'action': 'edit',
 			'title':self.title,
 			'token':token,
-			'md5':md5(hashtext.encode('utf-8')).hexdigest(),
+			'md5':md5(hashtext).hexdigest(),
 		}
 		if newtext:
-			params['text'] = newtext.encode('utf-8')
+			params['text'] = newtext
 		if prependtext:
-			params['prependtext'] = prependtext.encode('utf-8')
+			params['prependtext'] = prependtext
 		if appendtext:
-			params['appendtext'] = appendtext.encode('utf-8')
+			params['appendtext'] = appendtext
 		if summary:
-			params['summary'] = summary.encode('utf-8')
+			params['summary'] = summary
 		if section:
 			params['section'] = section
 		if self.section:
@@ -254,7 +256,7 @@ class Page:
 		if bot:
 			params['bot'] = '1'
 		if basetime:
-			params['basetimestamp'] = basetime.encode('utf-8')
+			params['basetimestamp'] = basetime
 		if recreate:
 			params['recreate'] = '1'
 		if createonly:
