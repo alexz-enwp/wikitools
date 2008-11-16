@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import Wiki, API, urllib, re
+from hashlib import md5
 
 class BadTitle(Wiki.WikiError):
 	"""Invalid title"""
@@ -23,6 +25,7 @@ class Page:
 		self.title = title
 		self.wikitext = ''
 		self.templates = ''
+		self.links = ''
 		self.pageid = 0 # The API will set a negative pageid for bad titles
 		self.exists = True # If we're not going to check, assume it does
 		if check:
@@ -39,7 +42,7 @@ class Page:
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = False
-		self.urltitle = urllib.urlencode({self.title.encode('utf-8'):''}).split('=')[0].replace('+', '_').replace('%2F', '/')		
+		self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')		
 
 	def setPageInfo(self, followRedir=True):
 		"""
@@ -168,10 +171,37 @@ class Page:
 			params['rvsection'] = self.section
 		req = API.APIRequest(self.wiki, params)
 		response = req.query(False)
-		self.wikitext = unicode(response['query']['pages'][self.pageid]['revisions'][0]['*'])
+		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
 		self.lastedittime = response['query']['pages'][self.pageid]['revisions'][0]['timestamp']
 		return self.wikitext
-
+	
+	def getLinks(self, force=False):
+		"""
+		Gets a list of all the internal links on the page
+		force - load the list even if we already loaded it before
+		"""
+		if self.links and not force:
+			return self.links
+		if self.pageid == 0:
+			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
+		params = {
+			'action': 'query',
+			'prop': 'links',
+			'pageids': self.pageid,
+			'pllimit': self.wiki.limit,
+		}
+		req = API.APIRequest(self.wiki, params)
+		response = req.query()
+		self.links = []
+		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
+			for page in response:
+				self.links.extend(self.__extractToList(page, 'links'))
+		else:
+			self.links = self.__extractToList(response, 'links')
+		return self.links
+			
 	def getTemplates(self, force=False):
 		"""
 		Gets all list of all the templates on the page
@@ -195,16 +225,16 @@ class Page:
 		self.templates = []
 		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
 			for page in response:
-				self.templates.extend(self.__extractTemplates(page))
+				self.templates.extend(self.__extractToList(page, 'templates'))
 		else:
-			self.templates = self.__extractTemplates(response)
+			self.templates = self.__extractToList(response, 'templates')
 		return self.templates
 	
-	def __extractTemplates(self, json):
+	def __extractToList(self, json, stuff):
 		list = []
-		if json['query']['pages'][self.pageid].has_key('templates'):
-			for template in json['query']['pages'][self.pageid]['templates']:
-				list.append(template['title'].encode('utf-8'))
+		if json['query']['pages'][self.pageid].has_key(stuff):
+			for template in json['query']['pages'][self.pageid][stuff]:
+				list.append(template['title'])
 		return list
 	
 	def edit(self, newtext=False, prependtext=False, appendtext=False, summary=False, section=False, minor=False, bot=False, basetime=False, recreate=False, createonly=False, nocreate=False, watch=False, unwatch=False):
@@ -222,7 +252,6 @@ class Page:
 		if createonly and nocreate:
 			raise EditError("Bad param combination")
 		token = self.getToken('edit')
-		from hashlib import md5
 		if newtext:
 			hashtext = newtext
 		elif prependtext and appendtext:

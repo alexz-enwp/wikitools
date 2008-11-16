@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import Wiki, Page, API
 
 class Category(Page.Page):
