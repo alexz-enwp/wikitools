@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
-import Wiki, Page, API, urllib, re
-from hashlib import md5
-
-class BadTitle(Wiki.WikiError):
-	"""Invalid title"""
-	
-class NoPage(Wiki.WikiError):
-	"""Non-existent page"""
-
-class EditError(Wiki.WikiError):
-	"""Problem with edit request"""
+import Wiki, Page, API
 
 class User:
 	""" A user on the wiki
