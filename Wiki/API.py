@@ -119,6 +119,7 @@ class APIRequest:
 						print("Server lag, sleeping for "+lagtime+" seconds")
 						maxlag = True
 						time.sleep(int(lagtime)+0.5)
+						return False
 			except: # Something's wrong with the data....
 				return False
 		return content
