@@ -16,7 +16,7 @@ class User:
 		self.groups = []
 		if check:
 			self.setUserInfo()
-		self.page = Page(self.wiki, self.name, check=check, followRedir=False)
+		self.page = Page.Page(self.wiki, self.name, check=check, followRedir=False)
 	
 	def setUserInfo(self):
 		"""
@@ -36,7 +36,7 @@ class User:
 		if 'missing' in user or 'invalid' in user:
 			self.exists = False
 			return
-		self.editcount = user['editcount']
+		self.editcount = int(user['editcount'])
 		if 'groups' in user:
 			self.groups = user['groups']
 		if 'blockedby' in user:
