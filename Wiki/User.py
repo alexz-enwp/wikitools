@@ -42,20 +42,7 @@ class User:
 			self.groups = user['groups']
 		if 'blockedby' in user:
 			self.blocked = True
-	
-	def __eq__(self, other):
-		if not isinstance(other, User):
-			return False
-		if self.name == other.name and self.wiki == other.wiki:
-			return True
-		return False
-	def __ne__(self, other):
-		if not isinstance(other, User):
-			return True
-		if self.name == other.name and self.wiki == other.wiki:
-			return False
-		return True
-	
+			
 	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False):
 		params = {'action':'block',
 			'user':self.name,
@@ -87,5 +74,18 @@ class User:
 		req = API.APIRequest(self.wiki, params)
 		res = req.query()
 		return res
+	
+	def __eq__(self, other):
+		if not isinstance(other, User):
+			return False
+		if self.name == other.name and self.wiki == other.wiki:
+			return True
+		return False
+	def __ne__(self, other):
+		if not isinstance(other, User):
+			return True
+		if self.name == other.name and self.wiki == other.wiki:
+			return False
+		return True
 			
 		
