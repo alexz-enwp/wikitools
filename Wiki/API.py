@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import urllib2, simplejson, re, time, cookielib
-from urllib import urlencode
+from urllib import quote_plus, _is_unicode
 
 try:
 	import gzip
@@ -28,7 +28,7 @@ class APIRequest:
 		self.data['format'] = "json"
 		if not data.has_key('maxlag'):
 			self.data['maxlag'] = wiki.maxlag
-		self.encodeddata = urlencode(self.data)
+		self.encodeddata = urlencode(self.data, 1)
 		self.headers = {
 			"Content-type": "application/x-www-form-urlencoded",
 			"User-agent": wiki.useragent,
@@ -75,7 +75,7 @@ class APIRequest:
 			querycont = initialdata['query-continue'][key1][key2].encode('utf-8')
 		while querycont:
 			self.data[key2] = querycont
-			self.encodeddata = urlencode(self.data)
+			self.encodeddata = urlencode(self.data, 1)
 			self.headers['Content-length'] = len(self.encodeddata)
 			self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 			newdata = self.query(False)
@@ -123,3 +123,62 @@ class APIRequest:
 			except: # Something's wrong with the data....
 				return False
 		return content
+		
+def urlencode(query,doseq=0):
+    """
+	Hack of urllib's urlencode function, which can handle
+	Unicode, but for unknown reasons, chooses not to.
+    """
+
+    if hasattr(query,"items"):
+        # mapping objects
+        query = query.items()
+    else:
+        # it's a bother at times that strings and string-like objects are
+        # sequences...
+        try:
+            # non-sequence items should not work with len()
+            # non-empty strings will fail this
+            if len(query) and not isinstance(query[0], tuple):
+                raise TypeError
+            # zero-length sequences of all types will get here and succeed,
+            # but that's a minor nit - since the original implementation
+            # allowed empty dicts that type of behavior probably should be
+            # preserved for consistency
+        except TypeError:
+            ty,va,tb = sys.exc_info()
+            raise TypeError, "not a valid non-string sequence or mapping object", tb
+
+    l = []
+    if not doseq:
+        # preserve old behavior
+        for k, v in query:
+            k = quote_plus(str(k))
+            v = quote_plus(str(v))
+            l.append(k + '=' + v)
+    else:
+        for k, v in query:
+            k = quote_plus(str(k))
+            if isinstance(v, str):
+                v = quote_plus(v)
+                l.append(k + '=' + v)
+            elif _is_unicode(v):
+                # is there a reasonable way to convert to ASCII?
+                # encode generates a string, but "replace" or "ignore"
+                # lose information and "strict" can raise UnicodeError
+                v = quote_plus(v.encode("utf8","replace"))
+                l.append(k + '=' + v)
+            else:
+                try:
+                    # is this a sufficient test for sequence-ness?
+                    x = len(v)
+                except TypeError:
+                    # not a sequence
+                    v = quote_plus(str(v))
+                    l.append(k + '=' + v)
+                else:
+                    # loop over the sequence
+                    for elt in v:
+                        l.append(k + '=' + quote_plus(str(elt)))
+    return '&'.join(l)
+	

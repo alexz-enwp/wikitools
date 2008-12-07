@@ -42,7 +42,11 @@ class Page:
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = False
-		self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')		
+		if not isinstance(self.title, unicode):
+			self.title = unicode(self.title, 'utf-8')
+			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
+		else:
+			self.urltitle = urllib.quote(self.title).replace('%20', '_').replace('%2F', '/')
 
 	def setPageInfo(self, followRedir=True):
 		"""
@@ -372,4 +376,18 @@ class Page:
 		req = API.APIRequest(self.wiki, params)
 		response = req.query()
 		token = response['query']['pages'][self.pageid][type+'token']
-		return token			
+		return token
+	
+	def __eq__(self, other):
+		if not isinstance(other, Page):
+			return False
+		if self.title == other.title and self.wiki == other.wiki:
+			return True
+		return False
+	def __ne__(self, other):
+		if not isinstance(other, Page):
+			return True
+		if self.title == other.title and self.wiki == other.wiki:
+			return False
+		return True
+		

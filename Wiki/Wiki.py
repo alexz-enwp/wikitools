@@ -113,7 +113,16 @@ class Wiki:
 		"""
 		self.useragent['User-agent'] = str(useragent)
 
-			
-			
-
+	def __eq__(self, other):
+		if not isinstance(other, Wiki):
+			return False
+		if self.apibase == other.apibase:
+			return True
+		return False
+	def __ne__(self, other):
+		if not isinstance(other, Wiki):
+			return True
+		if self.apibase == other.apibase:
+			return False
+		return True
 		
