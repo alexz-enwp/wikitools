@@ -46,7 +46,7 @@ class Page:
 			self.title = unicode(self.title, 'utf-8')
 			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
 		else:
-			self.urltitle = urllib.quote(self.title).replace('%20', '_').replace('%2F', '/')
+			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
 
 	def setPageInfo(self, followRedir=True):
 		"""
