@@ -55,4 +55,37 @@ class User:
 		if self.name == other.name and self.wiki == other.wiki:
 			return False
 		return True
+	
+	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False):
+		params = {'action':'block',
+			'user':self.name,
+			'gettoken':''
+		}
+		req = API.APIRequest(self.wiki, params)
+		res = req.query()
+		token = res['block']['blocktoken']
+		params = {'action':'block',
+			'user':self.name,
+			'token':token
+		}
+		if reason:
+			params['reason'] = reason
+		if expiry:
+			params['expiry'] = expiry
+		if anononly:
+			params['anononly'] = ''
+		if nocreate:
+			params['nocreate'] = ''
+		if autoblock:
+			params['autoblock'] = ''
+		if noemail:
+			params['noemail'] = ''
+		if hidename:
+			params['hidename'] = ''
+		if allowusertalk:
+			params['allowusertalk'] = ''
+		req = API.APIRequest(self.wiki, params)
+		res = req.query()
+		return res
+			
 		
