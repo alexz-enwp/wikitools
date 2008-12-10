@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-import Wiki, Page, API
+import wiki, page, api
 
-class Category(Page.Page):
+class Category(page.Page):
 	"""
 	A category on the wiki
 	title should be the full title, including "Category:"
 	"""
 	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False):
 		self.members = []
-		Page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber)
+		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber)
 			
 	def getAllMembers(self, titleonly=False, reload=False):
 		"""
@@ -49,13 +49,13 @@ class Category(Page.Page):
 			'cmprop':'title'
 		}
 		while True:
-			req = API.APIRequest(self.wiki, params)
+			req = api.APIRequest(self.wiki, params)
 			data = req.query(False)
-			for page in data['query']['categorymembers']:
+			for item in data['query']['categorymembers']:
 				if titleonly:
-					yield page['title']
+					yield item['title']
 				else:
-					yield Page.Page(self.wiki, page['title'], check=False, followRedir=False)
+					yield page.Page(self.wiki, item['title'], check=False, followRedir=False)
 			try:
 				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
 			except:

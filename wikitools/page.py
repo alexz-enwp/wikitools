@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-import Wiki, API, urllib, re
+import wiki, api, urllib, re
 from hashlib import md5
 
-class BadTitle(Wiki.WikiError):
+class BadTitle(wiki.WikiError):
 	"""Invalid title"""
 	
-class NoPage(Wiki.WikiError):
+class NoPage(wiki.WikiError):
 	"""Non-existent page"""
 
-class EditError(Wiki.WikiError):
+class EditError(wiki.WikiError):
 	"""Problem with edit request"""
 
 class Page:
@@ -60,7 +60,7 @@ class Page:
 		}
 		if followRedir:
 			params['redirects'] = '1'
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		if response['query'].has_key('normalized'):
 			self.title = response['query']['normalized'][0]['to'].encode('utf-8')
@@ -98,7 +98,7 @@ class Page:
 			'prop':'sections'
 		}
 		number = False
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		counter = 0
 		for item in response['parse']['sections']:
@@ -173,7 +173,7 @@ class Page:
 			params['rvexpandtemplates'] = '1'
 		if self.section:
 			params['rvsection'] = self.section
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query(False)
 		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
 		self.lastedittime = response['query']['pages'][self.pageid]['revisions'][0]['timestamp']
@@ -196,7 +196,7 @@ class Page:
 			'pageids': self.pageid,
 			'pllimit': self.wiki.limit,
 		}
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		self.links = []
 		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
@@ -224,7 +224,7 @@ class Page:
 			'pageids': self.pageid,
 			'tllimit': self.wiki.limit,
 		}
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		self.templates = []
 		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
@@ -300,7 +300,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		result = req.query()
 		return result
 		
@@ -328,7 +328,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		result = req.query()
 		return result
 
@@ -349,7 +349,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		result = req.query()
 		return result
 	
@@ -373,7 +373,7 @@ class Page:
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		token = response['query']['pages'][self.pageid][type+'token']
 		return token

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cookielib, API, urllib, re
+import cookielib, api, urllib, re
 
 class WikiError(Exception):
 	"""Base class for errors"""
@@ -33,7 +33,7 @@ class Wiki:
 			'siprop':'general|namespaces'
 		}
 		self.setMaxlag('60')
-		req = API.APIRequest(self, params)
+		req = api.APIRequest(self, params)
 		info = req.query()
 		self.setMaxlag()
 		sidata = info['query']['general']
@@ -66,7 +66,7 @@ class Wiki:
 			"lgpassword" : password
 		}
 		self.setMaxlag('120')
-		req = API.APIRequest(self, data)
+		req = api.APIRequest(self, data)
 		info = req.query()
 		self.setMaxlag()
 		if info['login']['result'] == "Success":
@@ -88,7 +88,7 @@ class Wiki:
 			"action" : "query",
 			"meta" : "userinfo",
 		}
-		req = API.APIRequest(self, data)
+		req = api.APIRequest(self, data)
 		info = req.query()
 		if info['query']['userinfo']['id'] == 0:
 			return False

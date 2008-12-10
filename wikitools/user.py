@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import Wiki, Page, API
+import wiki, page, api
 
 class User:
 	""" A user on the wiki
@@ -18,7 +18,7 @@ class User:
 		self.groups = []
 		if check:
 			self.setUserInfo()
-		self.page = Page.Page(self.wiki, self.name, check=check, followRedir=False)
+		self.page = page.Page(self.wiki, self.name, check=check, followRedir=False)
 	
 	def setUserInfo(self):
 		"""
@@ -30,7 +30,7 @@ class User:
 			'ususers':self.name,
 			'usprop':'blockinfo|groups|editcount'
 		}
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		user = response['query']['users'][0]
 		self.name = user['name']
@@ -48,7 +48,7 @@ class User:
 			'user':self.name,
 			'gettoken':''
 		}
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		res = req.query()
 		token = res['block']['blocktoken']
 		params = {'action':'block',
@@ -71,7 +71,7 @@ class User:
 			params['hidename'] = ''
 		if allowusertalk:
 			params['allowusertalk'] = ''
-		req = API.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params)
 		res = req.query()
 		return res
 	

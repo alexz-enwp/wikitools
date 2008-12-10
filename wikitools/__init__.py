@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-__all__ = ["Wiki", "API", "Page", "Category", "User"]
+__all__ = ["wiki", "api", "page", "category", "user"]
