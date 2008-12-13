@@ -19,13 +19,15 @@ class APIRequest:
 	A request to the site's API
 	wiki - A Wiki object
 	data - API parameters in the form of a dict
+	write - set to True if doing a write query, so it won't try again on error
 	maxlag is set by default to 5 but can be changed
 	format is always set to json
 	"""
-	def __init__(self, wiki, data):
+	def __init__(self, wiki, data, write=False):
 		self.sleep = 5
 		self.data = data
 		self.data['format'] = "json"
+		self.iswrite = write
 		if not data.has_key('maxlag'):
 			self.data['maxlag'] = wiki.maxlag
 		self.encodeddata = urlencode(self.data, 1)
@@ -37,6 +39,7 @@ class APIRequest:
 		if gzip:
 			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
+		self.response = False
 		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
 
@@ -48,10 +51,7 @@ class APIRequest:
 		data = False
 		while not data:
 			rawdata = self.__getRaw()
-			if rawdata:
-				data = self.__parseJSON(rawdata)
-			else:
-				raise ServerError
+			data = self.__parseJSON(rawdata)				
 		#Certain errors should probably be handled here...
 		if data.has_key('error'):
 			raise APIError(data['error']['code'], data['error']['info'])
@@ -99,7 +99,9 @@ class APIRequest:
 			except:
 				if self.sleep == 60:
 					print("Aborting")
-					return false
+					raise ServerError("Request failed")
+				elif self.iswrite:
+					raise ServerError("Server error on write query")
 				else:
 					print("Server error, trying request again in "+str(self.sleep)+" seconds")
 					time.sleep(self.sleep+0.5)

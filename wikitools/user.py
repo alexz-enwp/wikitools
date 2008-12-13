@@ -71,7 +71,7 @@ class User:
 			params['hidename'] = ''
 		if allowusertalk:
 			params['allowusertalk'] = ''
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params, write=False)
 		res = req.query()
 		return res
 	

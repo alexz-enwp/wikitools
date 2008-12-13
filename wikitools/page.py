@@ -327,7 +327,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params, write=True)
 		result = req.query()
 		return result
 		
@@ -355,7 +355,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params, write=False)
 		result = req.query()
 		return result
 
@@ -376,7 +376,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.wiki, params, write=False)
 		result = req.query()
 		return result
 	
