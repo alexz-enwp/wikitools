@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import wiki, api, urllib, re
+import datetime, wiki, api, urllib, re
 from hashlib import md5
 
 class BadTitle(wiki.WikiError):
@@ -19,7 +19,7 @@ class Page:
 	followRedir - follow redirects (check must be true)
 	section - the section name
 	sectionnumber - the section number
-	"""	
+	""" 
 	def __init__(self, wiki, title, check=True, followRedir=True, section=False, sectionnumber=False):
 		self.wiki = wiki
 		self.title = title
@@ -28,6 +28,8 @@ class Page:
 		self.links = ''
 		self.pageid = 0 # The API will set a negative pageid for bad titles
 		self.exists = True # If we're not going to check, assume it does
+		self.protection = {}
+		
 		if check:
 			self.setPageInfo(followRedir)
 		else: # Guess at some stuff
@@ -205,7 +207,32 @@ class Page:
 		else:
 			self.links = self.__extractToList(response, 'links')
 		return self.links
-			
+		
+	def getProtection(self, force=False):
+		if self.protection and not force:
+			return self.protection
+		if not self.exists:
+			raise NoPage
+		params = {
+			'action': 'query',
+			'prop': 'info',
+			'pageids': self.pageid,
+			'inprop': 'protection',
+		}
+		req = api.APIRequest(self.wiki, params)
+		response = req.query()
+		for pr in response['query'].values()[0].values()[0]['protection']:
+			if pr['level']: 
+				if pr['expiry'] == 'infinity':
+					expiry = 'infinity'
+				else:
+					expiry = datetime.datetime.strptime(pr['expiry'],'%Y-%m-%dT%H:%M:%SZ')
+				self.protection[pr['type']] = {
+					'expiry': expiry, 
+					'level': pr['level']
+					}
+		return self.protection
+	
 	def getTemplates(self, force=False):
 		"""
 		Gets all list of all the templates on the page
@@ -390,4 +417,3 @@ class Page:
 		if self.title == other.title and self.wiki == other.wiki:
 			return False
 		return True
-		
