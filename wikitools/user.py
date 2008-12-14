@@ -74,6 +74,26 @@ class User:
 		req = api.APIRequest(self.wiki, params, write=False)
 		res = req.query()
 		return res
+		
+	def unblock(self, reason=False):
+		params = {
+		    'action': 'unblock',
+			'user': self.name,
+			'gettoken': ''
+		}
+		req = api.APIRequest(self.wiki, params)
+		res = req.query()
+		token = res['unblock']['unblocktoken']
+		params = {
+		    'action': 'unblock',
+			'user': self.name,
+			'token': token
+		}
+		if reason:
+			params['reason'] = reason
+		req = api.APIRequest(self.wiki, params, write=False)
+		res = req.query()
+		return res
 	
 	def __eq__(self, other):
 		if not isinstance(other, User):
