@@ -201,7 +201,7 @@ class Page:
 		req = api.APIRequest(self.wiki, params)
 		response = req.query()
 		self.links = []
-		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
+		if isinstance(response, list): #There shouldn't be more than 5000 links on a page...
 			for page in response:
 				self.links.extend(self.__extractToList(page, 'links'))
 		else:
