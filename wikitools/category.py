@@ -18,11 +18,21 @@ class Category(page.Page):
 		reload - reload the list even if it was generated before
 		"""
 		if self.members and not reload:
+			if titleonly:
+				ret = []
+				for member in self.members:
+					ret.append(member.title)
+				return ret
 			return self.members
 		else:
 			self.members = []
-			for page in self.__getMembersInternal(titleonly):
-				self.members.append(page)
+			for member in self.__getMembersInternal():
+				self.members.append(member)
+				if titleonly:
+					ret = []
+					ret.append(member.title)
+			if titleonly:
+				return ret
 			return self.members
 	
 	def getAllMembersGen(self, titleonly=False, reload=False):
@@ -33,29 +43,34 @@ class Category(page.Page):
 		reload - reload the list even if it was generated before
 		"""
 		if self.members and not reload:
-			for page in self.members:
-				yield page
+			for member in self.members:
+				if titleonly:
+					yield member.title
+				else:
+					yield member
 		else:
 			self.members = []
-			for page in self.__getMembersInternal(titleonly):
-				self.members.append(page)
-				yield page
-	
-	def __getMembersInternal(self, titleonly):
+			for member in self.__getMembersInternal():
+				self.members.append(member)
+				if titleonly:
+					yield member.title
+				else:
+					yield member
+				
+	def __getMembersInternal(self, namespace=False):
 		params = {'action':'query',
 			'list':'categorymembers',
 			'cmtitle':self.title,
 			'cmlimit':self.wiki.limit,
 			'cmprop':'title'
 		}
+		if namespace != False:
+			params['cmnamespace'] = namespace
 		while True:
 			req = api.APIRequest(self.wiki, params)
 			data = req.query(False)
 			for item in data['query']['categorymembers']:
-				if titleonly:
-					yield item['title']
-				else:
-					yield page.Page(self.wiki, item['title'], check=False, followRedir=False)
+				yield page.Page(self.wiki, item['title'], check=False, followRedir=False)
 			try:
 				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
 			except:
