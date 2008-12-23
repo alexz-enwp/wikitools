@@ -19,14 +19,23 @@ class Page:
 	followRedir - follow redirects (check must be true)
 	section - the section name
 	sectionnumber - the section number
+	pageid - pageid, can be in place of title
 	""" 
-	def __init__(self, wiki, title, check=True, followRedir=True, section=False, sectionnumber=False):
+	def __init__(self, wiki, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False):
+		if not title and not pageid:
+			raise wiki.WikiError("No title or pageid given")
+		if title and pageid and check:
+			print "Warning, title and pageid given, ignoring title"
 		self.wiki = wiki
-		self.title = title
+		if self.pageid:
+			self.pageid = int(pageid)
+			self.title = ''
+		else:
+			self.pageid = 0
+			self.title = title
 		self.wikitext = ''
 		self.templates = ''
 		self.links = ''
-		self.pageid = 0 # The API will set a negative pageid for bad titles
 		self.exists = True # If we're not going to check, assume it does
 		self.protection = {}
 		
@@ -57,9 +66,12 @@ class Page:
 		
 		params = {
 			'action': 'query',
-			'titles': self.title,
 			'indexpageids':'1'
 		}
+		if self.pageid:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title
 		if followRedir:
 			params['redirects'] = '1'
 		req = api.APIRequest(self.wiki, params)
@@ -93,6 +105,8 @@ class Page:
 			self.section = self.__getSection(section)
 	
 	def __getSection(self, section):
+		if not self.title:
+			self.setPageInfo(False)
 		params = {
 			'action': 'parse',
 			'text': '{{:'+self.title+'}}__TOC__',
@@ -129,9 +143,7 @@ class Page:
 		Returns a new page object that's either the talk or non-talk
 		version of the current page
 		"""
-		try:
-			self.namespace
-		except:
+		if self.namespace == False or not self.title:
 			self.setPageInfo(False)
 		ns = self.namespace
 		if ns < 0:
@@ -387,7 +399,7 @@ class Page:
 		Currently all the tokens are interchangeable, but this may change in the future
 		"""
 			
-		if self.pageid == 0:
+		if self.pageid == 0 or not self.title:
 			self.setPageInfo()
 		if not self.exists and type != 'edit':
 			raise NoPage
@@ -408,12 +420,20 @@ class Page:
 	def __eq__(self, other):
 		if not isinstance(other, Page):
 			return False
-		if self.title == other.title and self.wiki == other.wiki:
-			return True
+		if self.title:			
+			if self.title == other.title and self.wiki == other.wiki:
+				return True
+		else:
+			if self.pageid == other.pageid and self.wiki == other.wiki:
+				return True
 		return False
 	def __ne__(self, other):
 		if not isinstance(other, Page):
 			return True
-		if self.title == other.title and self.wiki == other.wiki:
-			return False
+		if self.title:
+			if self.title == other.title and self.wiki == other.wiki:
+				return False
+		else:
+			if self.pageid == other.pageid and self.wiki == other.wiki:
+				return False
 		return True
