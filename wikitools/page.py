@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import datetime, wiki, api, urllib, re
 from hashlib import md5
 

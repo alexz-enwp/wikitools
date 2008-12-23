@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import urllib2, simplejson, re, time, cookielib
 from urllib import quote_plus, _is_unicode
 

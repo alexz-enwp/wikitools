@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import cookielib, api, urllib, re
 
 class WikiError(Exception):
