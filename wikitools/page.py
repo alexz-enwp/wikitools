@@ -276,14 +276,14 @@ class Page:
 		overwriting other people's edits in edit conflicts
 		"""
 	
-		if not newtext and not prependtext and not appendtext:
+		if newtext == False and not prependtext and not appendtext:
 			raise EditError("No text specified")
 		if prependtext and section:
 			raise EditError("Bad param combination")
 		if createonly and nocreate:
 			raise EditError("Bad param combination")
 		token = self.getToken('edit')
-		if newtext:
+		if newtext != False:
 			hashtext = newtext
 		elif prependtext and appendtext:
 			hashtext = prependtext+appendtext
@@ -297,7 +297,7 @@ class Page:
 			'token':token,
 			'md5':md5(hashtext).hexdigest(),
 		}
-		if newtext:
+		if newtext != False:
 			params['text'] = newtext
 		if prependtext:
 			params['prependtext'] = prependtext
