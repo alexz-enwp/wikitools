@@ -24,7 +24,7 @@ class Wiki:
 		self.username = ''
 		self.maxlag = '5'
 		self.useragent = "MediaWiki-API-python/0.1"
-		self.limit = '5000' #  FIXME:There needs to be a way to set this based on userrights
+		self.limit = '500'
 		self.setSiteinfo()
 	
 	def setSiteinfo(self):
@@ -77,6 +77,17 @@ class Wiki:
 			except:
 				print info['error']['code']
 				print info['error']['info']
+		
+		params = {
+			'action': 'query',
+			'meta': 'userinfo',
+			'uiprop': 'rights'
+		}
+		req = api.APIRequest(self, params)
+		info = req.query()
+		user_rights = info['query']['userinfo']['rights']
+		if 'apihighlimits' in user_rights:
+			self.limit = '5000'
 	
 	def isLoggedIn(self, username = False):
 		"""
