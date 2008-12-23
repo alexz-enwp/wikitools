@@ -7,8 +7,8 @@ class User:
 	name - The username, as a string
 	check - Checks for existence, normalizes name
 	"""	
-	def __init__(self, wiki, name, check=True):
-		self.wiki = wiki
+	def __init__(self, site, name, check=True):
+		self.wiki = site
 		self.name = name
 		if not isinstance(self.name, unicode):
 			self.name = unicode(self.name, 'utf8')

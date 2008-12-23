@@ -21,18 +21,15 @@ class Page:
 	sectionnumber - the section number
 	pageid - pageid, can be in place of title
 	""" 
-	def __init__(self, wiki, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False):
+	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False):
 		if not title and not pageid:
 			raise wiki.WikiError("No title or pageid given")
-		if title and pageid and check:
-			print "Warning, title and pageid given, ignoring title"
-		self.wiki = wiki
-		if self.pageid:
+		self.wiki = site
+		if pageid:
 			self.pageid = int(pageid)
-			self.title = ''
 		else:
 			self.pageid = 0
-			self.title = title
+		self.title = title
 		self.wikitext = ''
 		self.templates = ''
 		self.links = ''
@@ -43,7 +40,7 @@ class Page:
 			self.setPageInfo(followRedir)
 		else: # Guess at some stuff
 			self.namespace = False
-			for ns in wiki.namespaces:
+			for ns in site.namespaces:
 				if title.startswith(wiki.namespaces[ns]['*']+':'):
 					self.namespace = int(ns)
 					break
