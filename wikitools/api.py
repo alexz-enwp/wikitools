@@ -1,7 +1,10 @@
 ﻿# -*- coding: utf-8 -*-
-import urllib2, simplejson, re, time, cookielib
+import urllib2, re, time
 from urllib import quote_plus, _is_unicode
-
+try:
+	import json
+except:
+	import simplejson as json
 try:
 	import gzip
 	import StringIO
@@ -62,30 +65,31 @@ class APIRequest:
 	def __longQuery(self, initialdata):
 		"""
 		For queries that require multiple requests
-		FIXME - queries can have multiple continue things....
-		http://en.wikipedia.org/w/api.php?action=query&prop=langlinks|links&titles=Main%20Page&redirects&format=jsonfm
 		"""
-	
-		totaldata = [initialdata]
-		key1 = initialdata['query-continue'].keys()[0]
-		key2 = initialdata['query-continue'][key1].keys()[0]
-		if isinstance(initialdata['query-continue'][key1][key2], int):
-			querycont = initialdata['query-continue'][key1][key2]
-		else:
-			querycont = initialdata['query-continue'][key1][key2].encode('utf-8')
-		while querycont:
-			self.data[key2] = querycont
-			self.encodeddata = urlencode(self.data, 1)
-			self.headers['Content-length'] = len(self.encodeddata)
-			self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
-			newdata = self.query(False)
-			totaldata.append(newdata)
-			if newdata.has_key('query-continue') and newdata['query-continue'].has_key(key1):
-				querycont = newdata['query-continue'][key1][key2]
+		total = initialdata
+		res = initialdata
+		params = self.data
+		numkeys = len(res['query-continue'].keys())
+		while numkeys > 0:
+			keylist = res['query-continue'].keys()
+			keylist.reverse()
+			key1 = keylist[0]
+			key2 = res['query-continue'][key1].keys()[0]
+			if isinstance(res['query-continue'][key1][key2], int):
+				cont = res['query-continue'][key1][key2]
 			else:
-				querycont = False
-		return totaldata
-					
+				cont = res['query-continue'][key1][key2].encode('utf-8')
+			params[key2] = cont
+			req = APIRequest(self.wiki, params)
+			res = req.query(False)
+			for type in keylist:
+				total = resultCombine(type, total, res)
+			if 'query-continue' in res:
+				numkeys = len(res['query-continue'].keys())
+			else:
+				numkeys = 0
+		return total
+
 	def __getRaw(self):
 		data = False
 		while not data:
@@ -113,7 +117,7 @@ class APIRequest:
 		while maxlag:
 			try:
 				maxlag = False
-				content = simplejson.loads(data.read())
+				content = json.loads(data.read())
 				if content.has_key('error'):
 					error = content['error']['code']
 					if error == "maxlag":
@@ -126,10 +130,30 @@ class APIRequest:
 				return False
 		return content
 		
+def resultCombine(type, old, new):
+	"""
+	Experimental result-combiner thing
+	If the result isn't something from action=query,
+	this will just explode, but that shouldn't happen hopefully?
+	"""
+	ret = old
+	if type in new['query']: # Basic list, easy
+		ret['query'][type].extend(new['query'][type])
+	else: # Else its some sort of prop=thing and/or a generator query
+		for key in new['query']['pages'].keys(): # Go through each page
+			if not key in old['query']['pages']: # if it only exists in the new one
+				ret['query']['pages'][key] = new['query']['pages'][key] # add it to the list
+			else:
+				for item in new['query']['pages'][key][type]:
+					if item not in ret['query']['pages'][key][type]: # prevent duplicates
+						ret['query']['pages'][key][type].append(item) # else update the existing one
+	return ret
+		
 def urlencode(query,doseq=0):
     """
 	Hack of urllib's urlencode function, which can handle
-	Unicode, but for unknown reasons, chooses not to.
+	utf-8, but for unknown reasons, chooses not to by 
+	trying to encode everything as ascii
     """
 
     if hasattr(query,"items"):
