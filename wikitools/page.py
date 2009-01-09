@@ -338,6 +338,10 @@ class Page:
 			params['unwatch'] = '1'
 		req = api.APIRequest(self.wiki, params, write=True)
 		result = req.query()
+		if 'edit' in result and result['edit']['result'] == 'Success':
+			self.wikitext = ''
+			self.links = []
+			self.templates = ''
 		return result
 		
 	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):
@@ -347,6 +351,8 @@ class Page:
 		mvto (move to) is the only required param
 		must have "suppressredirect" right to use noredirect
 		"""
+		if not self.exists:
+			raise NoPage
 		token = self.getToken('move')
 		params = {
 			'action': 'move',
@@ -366,6 +372,13 @@ class Page:
 			params['unwatch'] = '1'
 		req = api.APIRequest(self.wiki, params, write=False)
 		result = req.query()
+		if 'move' in result:
+			self.title = result['move']['to']
+			if not isinstance(self.title, unicode):
+				self.title = unicode(self.title, 'utf-8')
+				self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
+			else:
+				self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
 		return result
 
 	def delete(self, reason=False, watch=False, unwatch=False):
