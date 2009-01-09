@@ -373,6 +373,8 @@ class Page:
 		Delete the page
 		Most params are self-explanatory
 		"""
+		if not self.exists:
+			raise NoPage
 		token = self.getToken('delete')
 		params = {
 			'action': 'delete',
@@ -387,6 +389,14 @@ class Page:
 			params['unwatch'] = '1'
 		req = api.APIRequest(self.wiki, params, write=False)
 		result = req.query()
+		if 'delete' in result:
+			self.pageid = 0
+			self.exists = False
+			self.wikitext = ''
+			self.templates = ''
+			self.links = ''
+			self.protection = {}
+			self.section = False			
 		return result
 	
 	def getToken(self, type):
