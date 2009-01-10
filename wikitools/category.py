@@ -8,7 +8,7 @@ class Category(page.Page):
 	"""
 	def __init__(self, site, title=False, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
 		self.members = []
-		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedit, section=section, sectionnumber=sectionnumber, pageid=pageid)
+		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 			
 	def getAllMembers(self, titleonly=False, reload=False):
 		"""
