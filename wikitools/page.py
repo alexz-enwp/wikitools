@@ -73,16 +73,16 @@ class Page:
 			params['redirects'] = '1'
 		req = api.APIRequest(self.site, params)
 		response = req.query()
-		if response['query'].has_key('normalized'):
+		if 'normalized' in response['query']:
 			self.title = response['query']['normalized'][0]['to'].encode('utf-8')
-		if followRedir and response['query'].has_key('redirects'):
+		if followRedir and 'redirects' in response['query']:
 			self.title = response['query']['redirects'][0]['to'].encode('utf-8')
 		self.pageid = response['query']['pageids'][0]
 		if not self.title:
 			self.title = response['query']['pages'][self.pageid]['title'].encode('utf-8')
-		if response['query']['pages'][self.pageid].has_key('missing'):
+		if 'missing' in response['query']['pages'][self.pageid]:
 			self.exists = False
-		if response['query']['pages'][self.pageid].has_key('invalid'):
+		if 'invalid' in response['query']['pages'][self.pageid]:
 			raise BadTitle(self.title)
 		self.namespace = int(response['query']['pages'][self.pageid].get('ns'))
 		
