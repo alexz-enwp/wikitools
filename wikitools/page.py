@@ -61,30 +61,23 @@ class Page:
 		Sets basic page info, required for almost everything
 		"""
 		
-		params = {
-			'action': 'query',
-			'indexpageids':'1'
-		}
+		params = {'action':'query'}
 		if self.pageid:
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title
 		if followRedir:
-			params['redirects'] = '1'
+			params['redirects'] = ''
 		req = api.APIRequest(self.site, params)
 		response = req.query()
-		if 'normalized' in response['query']:
-			self.title = response['query']['normalized'][0]['to'].encode('utf-8')
-		if followRedir and 'redirects' in response['query']:
-			self.title = response['query']['redirects'][0]['to'].encode('utf-8')
-		self.pageid = response['query']['pageids'][0]
-		if not self.title:
-			self.title = response['query']['pages'][self.pageid]['title'].encode('utf-8')
+		self.pageid = response['query']['pages'].keys()[0]
+		self.title = response['query']['pages'][self.pageid]['title'].encode('utf-8')
 		if 'missing' in response['query']['pages'][self.pageid]:
 			self.exists = False
 		if 'invalid' in response['query']['pages'][self.pageid]:
 			raise BadTitle(self.title)
-		self.namespace = int(response['query']['pages'][self.pageid].get('ns'))
+		self.namespace = int(response['query']['pages'][self.pageid]['ns'])
+		self.pageid = int(self.pageid)
 		
 	def setSection(self, section=False, number=False):
 		"""
