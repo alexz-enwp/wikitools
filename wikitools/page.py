@@ -26,7 +26,7 @@ class Page:
 			raise wiki.WikiError("No title or pageid given")
 		self.site = site
 		if pageid:
-			self.pageid = int(pageid)
+			self.pageid = str(pageid)
 		else:
 			self.pageid = 0
 		self.title = title
@@ -77,7 +77,7 @@ class Page:
 		if 'invalid' in response['query']['pages'][self.pageid]:
 			raise BadTitle(self.title)
 		self.namespace = int(response['query']['pages'][self.pageid]['ns'])
-		self.pageid = int(self.pageid)
+		self.pageid = str(self.pageid)
 		
 	def setSection(self, section=False, number=False):
 		"""
