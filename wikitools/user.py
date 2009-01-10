@@ -8,7 +8,7 @@ class User:
 	check - Checks for existence, normalizes name
 	"""	
 	def __init__(self, site, name, check=True):
-		self.wiki = site
+		self.site = site
 		self.name = name
 		if not isinstance(self.name, unicode):
 			self.name = unicode(self.name, 'utf8')
@@ -18,7 +18,7 @@ class User:
 		self.groups = []
 		if check:
 			self.setUserInfo()
-		self.page = page.Page(self.wiki, self.name, check=check, followRedir=False)
+		self.page = page.Page(self.site, self.name, check=check, followRedir=False)
 	
 	def setUserInfo(self):
 		"""
@@ -30,7 +30,7 @@ class User:
 			'ususers':self.name,
 			'usprop':'blockinfo|groups|editcount'
 		}
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		user = response['query']['users'][0]
 		self.name = user['name']
@@ -48,7 +48,7 @@ class User:
 			'user':self.name,
 			'gettoken':''
 		}
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		res = req.query()
 		token = res['block']['blocktoken']
 		params = {'action':'block',
@@ -71,7 +71,7 @@ class User:
 			params['hidename'] = ''
 		if allowusertalk:
 			params['allowusertalk'] = ''
-		req = api.APIRequest(self.wiki, params, write=False)
+		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		return res
 		
@@ -81,7 +81,7 @@ class User:
 			'user': self.name,
 			'gettoken': ''
 		}
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		res = req.query()
 		token = res['unblock']['unblocktoken']
 		params = {
@@ -91,20 +91,20 @@ class User:
 		}
 		if reason:
 			params['reason'] = reason
-		req = api.APIRequest(self.wiki, params, write=False)
+		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		return res
 	
 	def __eq__(self, other):
 		if not isinstance(other, User):
 			return False
-		if self.name == other.name and self.wiki == other.wiki:
+		if self.name == other.name and self.site == other.wiki:
 			return True
 		return False
 	def __ne__(self, other):
 		if not isinstance(other, User):
 			return True
-		if self.name == other.name and self.wiki == other.wiki:
+		if self.name == other.name and self.site == other.wiki:
 			return False
 		return True
 			

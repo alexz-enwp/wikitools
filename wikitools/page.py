@@ -24,7 +24,7 @@ class Page:
 	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False):
 		if not title and not pageid:
 			raise wiki.WikiError("No title or pageid given")
-		self.wiki = site
+		self.site = site
 		if pageid:
 			self.pageid = int(pageid)
 		else:
@@ -41,7 +41,7 @@ class Page:
 		else: # Guess at some stuff
 			self.namespace = False
 			for ns in site.namespaces:
-				if title.startswith(wiki.namespaces[ns]['*']+':'):
+				if title.startswith(self.site.namespaces[ns]['*']+':'):
 					self.namespace = int(ns)
 					break
 			if not self.namespace:
@@ -71,7 +71,7 @@ class Page:
 			params['titles'] = self.title
 		if followRedir:
 			params['redirects'] = '1'
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		if response['query'].has_key('normalized'):
 			self.title = response['query']['normalized'][0]['to'].encode('utf-8')
@@ -111,7 +111,7 @@ class Page:
 			'prop':'sections'
 		}
 		number = False
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		counter = 0
 		for item in response['parse']['sections']:
@@ -126,7 +126,7 @@ class Page:
 			self.namespace
 		except:
 			self.setPageInfo(False)
-		return self.wiki.namespaces[self.namespace].has_key('subpages')
+		return self.site.namespaces[self.namespace].has_key('subpages')
 		
 	def isTalk(self):
 		try:
@@ -145,11 +145,11 @@ class Page:
 		ns = self.namespace
 		if ns < 0:
 			return False
-		nsname = self.wiki.namespaces[ns]['*']
+		nsname = self.site.namespaces[ns]['*']
 		if self.isTalk():
-			newns = self.wiki.namespaces[ns-1]['*']
+			newns = self.site.namespaces[ns-1]['*']
 		else:
-			newns = self.wiki.namespaces[ns+1]['*']
+			newns = self.site.namespaces[ns+1]['*']
 		try:
 			pagename = self.title.split(nsname+':',1)[1]
 		except:
@@ -158,7 +158,7 @@ class Page:
 			newname = newns+':'+pagename
 		else:
 			newname = pagename
-		return Page(self.wiki, newname, check, followRedir)						
+		return Page(self.site, newname, check, followRedir)						
 			
 	def getWikiText(self, expandtemplates=False, force=False):
 		"""
@@ -184,7 +184,7 @@ class Page:
 			params['rvexpandtemplates'] = '1'
 		if self.section:
 			params['rvsection'] = self.section
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query(False)
 		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
 		self.lastedittime = response['query']['pages'][self.pageid]['revisions'][0]['timestamp']
@@ -205,9 +205,9 @@ class Page:
 			'action': 'query',
 			'prop': 'links',
 			'pageids': self.pageid,
-			'pllimit': self.wiki.limit,
+			'pllimit': self.site.limit,
 		}
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		self.links = []
 		if isinstance(response, list): #There shouldn't be more than 5000 links on a page...
@@ -228,7 +228,7 @@ class Page:
 			'pageids': self.pageid,
 			'inprop': 'protection',
 		}
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		for pr in response['query'].values()[0].values()[0]['protection']:
 			if pr['level']: 
@@ -258,9 +258,9 @@ class Page:
 			'action': 'query',
 			'prop': 'templates',
 			'pageids': self.pageid,
-			'tllimit': self.wiki.limit,
+			'tllimit': self.site.limit,
 		}
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		self.templates = []
 		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
@@ -336,7 +336,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.wiki, params, write=True)
+		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'edit' in result and result['edit']['result'] == 'Success':
 			self.wikitext = ''
@@ -370,7 +370,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.wiki, params, write=False)
+		req = api.APIRequest(self.site, params, write=False)
 		result = req.query()
 		if 'move' in result:
 			self.title = result['move']['to']
@@ -400,7 +400,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.wiki, params, write=False)
+		req = api.APIRequest(self.site, params, write=False)
 		result = req.query()
 		if 'delete' in result:
 			self.pageid = 0
@@ -432,7 +432,7 @@ class Page:
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title
-		req = api.APIRequest(self.wiki, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query()
 		token = response['query']['pages'][self.pageid][type+'token']
 		return token
@@ -441,19 +441,19 @@ class Page:
 		if not isinstance(other, Page):
 			return False
 		if self.title:			
-			if self.title == other.title and self.wiki == other.wiki:
+			if self.title == other.title and self.site == other.wiki:
 				return True
 		else:
-			if self.pageid == other.pageid and self.wiki == other.wiki:
+			if self.pageid == other.pageid and self.site == other.wiki:
 				return True
 		return False
 	def __ne__(self, other):
 		if not isinstance(other, Page):
 			return True
 		if self.title:
-			if self.title == other.title and self.wiki == other.wiki:
+			if self.title == other.title and self.site == other.wiki:
 				return False
 		else:
-			if self.pageid == other.pageid and self.wiki == other.wiki:
+			if self.pageid == other.pageid and self.site == other.wiki:
 				return False
 		return True

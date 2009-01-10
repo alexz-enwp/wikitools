@@ -132,7 +132,7 @@ class APIRequest:
 		
 def resultCombine(type, old, new):
 	"""
-	Experimental result-combiner thing
+	Experimental-ish result-combiner thing
 	If the result isn't something from action=query,
 	this will just explode, but that shouldn't happen hopefully?
 	"""

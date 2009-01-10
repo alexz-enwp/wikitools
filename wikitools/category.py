@@ -6,9 +6,9 @@ class Category(page.Page):
 	A category on the wiki
 	title should be the full title, including "Category:"
 	"""
-	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
+	def __init__(self, site, title=False, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
 		self.members = []
-		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber, pageid)
+		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedit, section=section, sectionnumber=sectionnumber, pageid=pageid)
 			
 	def getAllMembers(self, titleonly=False, reload=False):
 		"""
@@ -61,16 +61,16 @@ class Category(page.Page):
 		params = {'action':'query',
 			'list':'categorymembers',
 			'cmtitle':self.title,
-			'cmlimit':self.wiki.limit,
+			'cmlimit':self.site.limit,
 			'cmprop':'title'
 		}
 		if namespace != False:
 			params['cmnamespace'] = namespace
 		while True:
-			req = api.APIRequest(self.wiki, params)
+			req = api.APIRequest(self.site, params)
 			data = req.query(False)
 			for item in data['query']['categorymembers']:
-				yield page.Page(self.wiki, item['title'], check=False, followRedir=False)
+				yield page.Page(self.site, item['title'], check=False, followRedir=False)
 			try:
 				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
 			except:
