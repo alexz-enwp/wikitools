@@ -40,21 +40,24 @@ class Page:
 			self.setPageInfo(followRedir)
 		else: # Guess at some stuff
 			self.namespace = False
-			for ns in site.namespaces:
-				if title.startswith(self.site.namespaces[ns]['*']+':'):
-					self.namespace = int(ns)
-					break
-			if not self.namespace:
-				self.namespace = 0
+			if title:
+				for ns in site.namespaces:
+					if title.startswith(self.site.namespaces[ns]['*']+':'):
+						self.namespace = int(ns)
+						break
+				if not self.namespace:
+					self.namespace = 0
 		if section or sectionnumber:
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = False
-		if not isinstance(self.title, unicode):
+		if title and not isinstance(self.title, unicode):
 			self.title = unicode(self.title, 'utf-8')
 			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
-		else:
+		elif title:
 			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
+		else:
+			self.urltitle = False
 
 	def setPageInfo(self, followRedir=True):
 		"""
