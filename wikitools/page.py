@@ -353,7 +353,7 @@ class Page:
 		params = {
 			'action': 'move',
 			'fromid':self.pageid,
-			'mvto':mvto,
+			'to':mvto,
 			'token':token,
 		}
 		if reason:
