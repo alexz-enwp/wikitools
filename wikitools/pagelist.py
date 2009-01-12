@@ -1,4 +1,4 @@
-import api, page, category
+import api, page, category, math
 
 def listFromQuery(site, queryresult):
 	"""
@@ -45,12 +45,7 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 		querylist = []
 		limit = int(site.limit)
 		if len(titles) > limit/10:
-			iters = 0
-			div = float(len(titles)) / (limit/10)
-			if round(div) < div: # there has to be a less hacky way to force it to round up
-				iters = int(round(div) + 1)
-			else:
-				iters = int(round(div))
+			iters = int(math.ceil(float(len(titles)) / (limit/10)))
 			for x in range(0,iters):
 				l = []
 				for y in range(0, limit/10):
@@ -100,12 +95,7 @@ def listFromPageids(site, pageids, check=True, followRedir=False):
 		querylist = []
 		limit = int(site.limit)
 		if len(pageids) > limit/10:
-			iters = 0
-			div = float(len(pageids)) / (limit/10)
-			if round(div) < div: # there has to be a less hacky way to force it to round up
-				iters = int(round(div) + 1)
-			else:
-				iters = int(round(div))
+			iters = int(math.ceil(float(len(pageids)) / (limit/10)))
 			for x in range(0,iters):
 				l = []
 				for y in range(0, limit/10):
