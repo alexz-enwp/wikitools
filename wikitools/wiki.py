@@ -89,6 +89,18 @@ class Wiki:
 		if 'apihighlimits' in user_rights:
 			self.limit = '5000'
 	
+	def logout(self):
+		params = { 'action': 'logout' }
+		req = api.APIRequest(self, params, write=True)
+		# action=logout returns absolutely nothing, which json.loads() treats as False
+		# causing APIRequest.query() to get stuck in a loop
+		req.opener.open(req.request)
+		self.cookies = cookielib.CookieJar()
+		self.username = ''
+		self.maxlag = '5'
+		self.useragent = "MediaWiki-API-python/0.1"
+		self.limit = '500'
+		
 	def isLoggedIn(self, username = False):
 		"""
 		Verify that we are a logged in user
