@@ -25,11 +25,11 @@ class Category(page.Page):
 				return ret
 			return self.members
 		else:
+			ret = []
 			self.members = []
 			for member in self.__getMembersInternal():
 				self.members.append(member)
 				if titleonly:
-					ret = []
 					ret.append(member.title)
 			if titleonly:
 				return ret
