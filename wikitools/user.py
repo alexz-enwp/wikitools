@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-import wiki, page, api
+import wiki, page, api, socket
 
 class User:
 	""" A user on the wiki
@@ -18,6 +18,13 @@ class User:
 		self.groups = []
 		if check:
 			self.setUserInfo()
+		self.isIP = False
+		try:
+			socket.inet_aton(self.name)
+			self.isIP = True
+			self.exists = False
+		except:
+			self.isIP = False
 		self.page = page.Page(self.site, self.name, check=check, followRedir=False)
 	
 	def setUserInfo(self):
@@ -73,6 +80,8 @@ class User:
 			params['allowusertalk'] = ''
 		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
+		if 'block' in res:
+			self.blocked = True
 		return res
 		
 	def unblock(self, reason=False):
@@ -93,6 +102,8 @@ class User:
 			params['reason'] = reason
 		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
+		if 'unblock' in res:
+			self.blocked = False
 		return res
 	
 	def __eq__(self, other):
