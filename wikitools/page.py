@@ -11,6 +11,9 @@ class NoPage(wiki.WikiError):
 class EditError(wiki.WikiError):
 	"""Problem with edit request"""
 
+class ProtectError(wiki.WikiError):
+	"""Problem with protection request"""
+
 class Page:
 	""" A page on the wiki
 	wiki - A wiki object
@@ -366,7 +369,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.site, params, write=False)
+		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'move' in result:
 			self.title = result['move']['to']
@@ -377,6 +380,52 @@ class Page:
 				self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
 		return result
 
+	def protect(self, restrictions={}, expirations={}, reason=False, cascade=False):
+		"""
+		Protect a page
+		restrictions and expirations are dictionaries of
+		protection level/expiry settings, eg, {'edit':'sysop'} and
+		{'move':'3 days'}. expirations can also be a string to set 
+		all levels to the same expiration
+		"""
+		if not restrictions:
+			raise ProtectError("No protection levels given")
+		if len(expirations) > len(restrictions):
+			raise ProtectError("More expirations than restrictions given")
+		token = self.getToken('protect')
+		protections = ''
+		expiry = ''
+		if isinstance(expirations, str):
+			expiry = expirations
+		for type in restrictions:
+			if protections:
+				protections+="|"
+			protections+= type+"="+restrictions[type]
+			if isinstance(expirations, dict) and type in expirations:
+				if expiry:
+					expiry+="|"
+				expiry+=expirations[type]
+			elif isinstance(expirations, dict):
+				if expiry:
+					expiry+="|"
+				expiry+='indefinite'
+		params = {'action':'protect',
+			'title':self.title,
+			'token':token,
+			'protections':protections
+		}
+		if expiry:
+			params['expiry'] = expiry
+		if reason:
+			params['reason'] = reason
+		if cascade:
+			params['cascade'] = ''
+		req = api.APIRequest(self.site, params, write=True)
+		result = req.query()
+		if 'protect' in result:
+			self.protection = {}
+		return result
+	
 	def delete(self, reason=False, watch=False, unwatch=False):
 		"""
 		Delete the page
@@ -396,7 +445,7 @@ class Page:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.site, params, write=False)
+		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'delete' in result:
 			self.pageid = 0
