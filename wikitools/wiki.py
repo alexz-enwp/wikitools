@@ -22,9 +22,9 @@ class Wiki:
 		self.apibase = url
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
-		self.maxlag = '5'
+		self.maxlag = 5
 		self.useragent = "MediaWiki-API-python/0.1"
-		self.limit = '500'
+		self.limit = 500
 		self.setSiteinfo()
 	
 	def setSiteinfo(self):
@@ -65,7 +65,7 @@ class Wiki:
 			"lgname" : username,
 			"lgpassword" : password
 		}
-		self.setMaxlag('120')
+		self.setMaxlag(120)
 		req = api.APIRequest(self, data)
 		info = req.query()
 		self.setMaxlag()
@@ -87,7 +87,7 @@ class Wiki:
 		info = req.query()
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
-			self.limit = '5000'
+			self.limit = 5000
 	
 	def logout(self):
 		params = { 'action': 'logout' }
@@ -97,9 +97,9 @@ class Wiki:
 		req.opener.open(req.request)
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
-		self.maxlag = '5'
+		self.maxlag = 5
 		self.useragent = "MediaWiki-API-python/0.1"
-		self.limit = '500'
+		self.limit = 500
 		
 	def isLoggedIn(self, username = False):
 		"""
@@ -128,7 +128,7 @@ class Wiki:
 			int(maxlag)
 		except:
 			raise WikiError("maxlag must be an integer")
-		self.maxlag = str(maxlag)
+		self.maxlag = int(maxlag)
 		
 	def setUserAgent(self, useragent):
 		"""
