@@ -31,7 +31,7 @@ class APIRequest:
 		self.data = data
 		self.data['format'] = "json"
 		self.iswrite = write
-		if not data.has_key('maxlag'):
+		if not 'maxlag' in self.data:
 			self.data['maxlag'] = wiki.maxlag
 		self.encodeddata = urlencode(self.data, 1)
 		self.headers = {
@@ -45,7 +45,19 @@ class APIRequest:
 		self.response = False
 		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
-
+		
+	def changeParam(self, param, value):
+		"""
+		Change or add a parameter after making the request object
+		simply changing self.data won't work ask it needs to update other things
+		"""
+		if param == 'format':
+			raise APIError('You can not change the result format')
+		self.data[param] = value
+		self.encodeddata = urlencode(self.data, 1)
+		self.headers['Content-length'] = len(self.encodeddata)
+		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
+	
 	def query(self, querycontinue=True):
 		"""
 		Actually do the query here and return usable stuff
@@ -56,9 +68,9 @@ class APIRequest:
 			rawdata = self.__getRaw()
 			data = self.__parseJSON(rawdata)				
 		#Certain errors should probably be handled here...
-		if data.has_key('error'):
+		if 'error' in data:
 			raise APIError(data['error']['code'], data['error']['info'])
-		if data.has_key('query-continue') and querycontinue:
+		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
 		return data
 	
@@ -118,7 +130,7 @@ class APIRequest:
 			try:
 				maxlag = False
 				content = json.loads(data.read())
-				if content.has_key('error'):
+				if 'error' in content:
 					error = content['error']['code']
 					if error == "maxlag":
 						lagtime = re.search("(\d+) seconds", content['error']['info']).group(1)

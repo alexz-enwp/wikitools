@@ -125,7 +125,7 @@ class Page:
 			self.namespace
 		except:
 			self.setPageInfo(False)
-		return self.site.namespaces[self.namespace].has_key('subpages')
+		return 'subpages' in self.site.namespaces[self.namespace]
 		
 	def isTalk(self):
 		try:
@@ -271,7 +271,7 @@ class Page:
 	
 	def __extractToList(self, json, stuff):
 		list = []
-		if json['query']['pages'][self.pageid].has_key(stuff):
+		if stuff in json['query']['pages'][self.pageid]:
 			for template in json['query']['pages'][self.pageid][stuff]:
 				list.append(template['title'])
 		return list

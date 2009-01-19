@@ -45,7 +45,7 @@ class Wiki:
 		for ns in nsdata:
 			nsinfo = nsdata[ns]
 			self.namespaces[nsinfo['id']] = nsinfo
-		if not sidata.has_key('writeapi'):
+		if not 'writeapi' in sidata:
 			print "WARNING: Write-API not enabled, you will not be able to edit"
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
 		if not int(version.group(1)) >= 13: # Will this even work on 13?
