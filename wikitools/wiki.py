@@ -32,10 +32,12 @@ class Wiki:
 			'meta':'siteinfo',
 			'siprop':'general|namespaces'
 		}
-		self.setMaxlag('60')
+		if self.maxlag == 5:
+			self.setMaxlag(120)
 		req = api.APIRequest(self, params)
 		info = req.query()
-		self.setMaxlag()
+		if self.maxlag == 5:
+			self.setMaxlag()
 		sidata = info['query']['general']
 		self.siteinfo = {}
 		for item in sidata:
@@ -65,10 +67,10 @@ class Wiki:
 			"lgname" : username,
 			"lgpassword" : password
 		}
-		self.setMaxlag(120)
+		if self.maxlag == 5:
+			self.setMaxlag(120)
 		req = api.APIRequest(self, data)
 		info = req.query()
-		self.setMaxlag()
 		if info['login']['result'] == "Success":
 			self.username = username
 		else:
@@ -85,6 +87,8 @@ class Wiki:
 		}
 		req = api.APIRequest(self, params)
 		info = req.query()
+		if self.maxlag == 5:
+			self.setMaxlag()
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
 			self.limit = 5000
@@ -98,7 +102,7 @@ class Wiki:
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
 		self.maxlag = 5
-		self.useragent = "MediaWiki-API-python/0.1"
+		self.useragent = "Python-wikitools/0.1"
 		self.limit = 500
 		
 	def isLoggedIn(self, username = False):
