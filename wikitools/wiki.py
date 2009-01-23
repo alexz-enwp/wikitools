@@ -95,6 +95,8 @@ class Wiki:
 	
 	def logout(self):
 		params = { 'action': 'logout' }
+		if self.maxlag == 5:
+			self.setMaxlag(120)
 		req = api.APIRequest(self, params, write=True)
 		# action=logout returns absolutely nothing, which json.loads() treats as False
 		# causing APIRequest.query() to get stuck in a loop
@@ -102,7 +104,7 @@ class Wiki:
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
 		self.maxlag = 5
-		self.useragent = "Python-wikitools/0.1"
+		self.useragent = "MediaWiki-API-python/0.1"
 		self.limit = 500
 		
 	def isLoggedIn(self, username = False):
