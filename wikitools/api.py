@@ -113,7 +113,7 @@ class APIRequest:
 					if encoding in ('gzip', 'x-gzip'):
 						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
 			except:
-				if self.sleep == 60:
+				if self.sleep >= self.wiki.maxwaittime:
 					print("Aborting")
 					raise ServerError("Request failed")
 				elif self.iswrite:
@@ -133,8 +133,10 @@ class APIRequest:
 				if 'error' in content:
 					error = content['error']['code']
 					if error == "maxlag":
-						lagtime = re.search("(\d+) seconds", content['error']['info']).group(1)
-						print("Server lag, sleeping for "+lagtime+" seconds")
+						lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
+						if lagtime > self.wiki.maxwaittime:
+							lagtime = self.wiki.maxwaittime
+						print("Server lag, sleeping for "+str(lagtime)+" seconds")
 						maxlag = True
 						time.sleep(int(lagtime)+0.5)
 						return False
