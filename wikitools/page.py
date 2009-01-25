@@ -127,6 +127,26 @@ class Page:
 			self.setPageInfo(False)
 		return 'subpages' in self.site.namespaces[self.namespace]
 		
+	def isRedir(self):
+		params = {'action':'query',
+			'redirects':''
+		}
+		if self.pageid > 0:
+			params['pageids'] = self.pageid
+		elif self.title:
+			params['titles'] = self.title
+		else:
+			self.setPageInfo()
+			if self.pageid > 0:
+				params['pageids'] = self.pageid
+			else:
+				raise NoPage
+		res = req.query()
+		if 'redirects' in res:
+			return True
+		else:
+			return False
+	
 	def isTalk(self):
 		try:
 			self.namespace
