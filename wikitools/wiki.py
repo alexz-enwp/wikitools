@@ -24,7 +24,7 @@ class Wiki:
 		self.username = ''
 		self.maxlag = 5
 		self.maxwaittime = 120
-		self.useragent = "MediaWiki-API-python/0.1"
+		self.useragent = "python-wikitools/0.1"
 		self.limit = 500
 		self.setSiteinfo()
 	
@@ -105,7 +105,7 @@ class Wiki:
 		self.cookies = cookielib.CookieJar()
 		self.username = ''
 		self.maxlag = 5
-		self.useragent = "MediaWiki-API-python/0.1"
+		self.useragent = "python-wikitools/0.1"
 		self.limit = 500
 		
 	def isLoggedIn(self, username = False):
