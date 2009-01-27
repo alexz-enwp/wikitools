@@ -141,6 +141,7 @@ class Page:
 				params['pageids'] = self.pageid
 			else:
 				raise NoPage
+		req = api.APIRequest(self.site, params)
 		res = req.query()
 		if 'redirects' in res:
 			return True
