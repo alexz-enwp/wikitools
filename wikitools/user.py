@@ -36,7 +36,7 @@ class User:
 			self.setUserInfo()
 		self.isIP = False
 		try:
-			socket.inet_aton(self.name)
+			socket.inet_aton(self.name.replace(' ', '_'))
 			self.isIP = True
 			self.exists = False
 		except:
