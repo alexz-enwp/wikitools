@@ -60,12 +60,26 @@ class Page:
 		else: # Guess at some stuff
 			self.namespace = False
 			if title:
-				for ns in site.namespaces:
-					if title.startswith(self.site.namespaces[ns]['*']+':'):
-						self.namespace = int(ns)
-						break
-				if not self.namespace:
+				bits = title.split(':', 1)
+				if len(bits) == 1 or bits[0] == '':
 					self.namespace = 0
+				else:
+					nsprefix = bits[0].lower() # wp:Foo and caTEGory:Foo are normalized by MediaWiki
+					for ns in self.site.namespaces:
+						if nsprefix == self.site.namespaces[ns]['*'].lower():
+							self.namespace = int(ns)
+							self.title = self.site.namespaces[ns]['*']+':'+bits[1]
+							break
+					if not self.namespace and self.site.NSaliases:
+						for ns in self.site.NSaliases:
+							if nsprefix == ns.lower():
+								self.namespace = int(self.site.NSaliases[ns])
+								self.title = self.site.namespaces[self.namespace]['*']+':'+bits[1]
+								break
+					elif not self.namespace:
+						self.namespace = 0
+			else:
+				self.namespace = 0
 		if section or sectionnumber:
 			self.setSection(section, sectionnumber)
 		else:
@@ -169,7 +183,7 @@ class Page:
 			self.namespace
 		except:
 			self.setPageInfo(False)
-		return (self.namespace%2==1 and self.namespace != -1)
+		return (self.namespace%2==1 and self.namespace >= 0)
 		
 	def toggleTalk(self, check=True, followRedir=True):
 		"""

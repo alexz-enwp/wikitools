@@ -48,7 +48,7 @@ class Wiki:
 	def setSiteinfo(self):
 		params = {'action':'query',
 			'meta':'siteinfo',
-			'siprop':'general|namespaces'
+			'siprop':'general|namespaces|namespacealiases'
 		}
 		if self.maxlag == 5:
 			self.setMaxlag(120)
@@ -65,6 +65,11 @@ class Wiki:
 		for ns in nsdata:
 			nsinfo = nsdata[ns]
 			self.namespaces[nsinfo['id']] = nsinfo
+		nsaliasdata = info['query']['namespacealiases']
+		self.NSaliases = {}
+		if nsaliasdata:
+			for ns in nsaliasdata:
+				self.NSaliases[ns['*']] = ns['id']
 		if not 'writeapi' in sidata:
 			print "WARNING: Write-API not enabled, you will not be able to edit"
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])

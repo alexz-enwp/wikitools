@@ -20,11 +20,12 @@ import wiki, page, api
 class Category(page.Page):
 	"""
 	A category on the wiki
-	title should be the full title, including "Category:"
 	"""
 	def __init__(self, site, title=False, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
 		self.members = []
 		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
+		if self.namespace != 14:
+			self.title = self.site.namespaces[14]['*']+':'+self.title
 			
 	def getAllMembers(self, titleonly=False, reload=False):
 		"""
