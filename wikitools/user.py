@@ -66,7 +66,7 @@ class User:
 		if 'blockedby' in user:
 			self.blocked = True
 			
-	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False):
+	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
 		params = {'action':'block',
 			'user':self.name,
 			'gettoken':''
@@ -94,6 +94,8 @@ class User:
 			params['hidename'] = ''
 		if allowusertalk:
 			params['allowusertalk'] = ''
+		if reblock:
+			params['reblock'] = ''
 		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'block' in res:
