@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 
-setup(name='Wikitools',
+setup(name='wikitools',
       version='0.1',
       description='Python module for interacting with a MediaWiki wiki',
 	  long_description = """A Python module for interacting with a MediaWiki wiki using the MediaWiki API.
