@@ -36,11 +36,12 @@ class User:
 			self.setUserInfo()
 		self.isIP = False
 		try:
-			socket.inet_aton(self.name.replace(' ', '_'))
-			self.isIP = True
-			self.exists = False
+			s = socket.inet_aton(self.name.replace(' ', '_'))
+			if socket.inet_ntoa(s) == self.name:
+				self.isIP = True
+				self.exists = False
 		except:
-			self.isIP = False
+			pass
 		self.page = page.Page(self.site, self.name, check=check, followRedir=False)
 	
 	def setUserInfo(self):
