@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2, re, time
+import urllib2, re, time, sys
 from urllib import quote_plus, _is_unicode
 try:
 	import json
