@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib, api, urllib, re, time, os
+import cookielib, api, urllib, re, time, os, cPickle
 
 class WikiError(Exception):
 	"""Base class for errors"""
@@ -76,7 +76,7 @@ class Wiki:
 		if not int(version.group(1)) >= 13: # Will this even work on 13?
 			print "WARNING: Some features may not work on older versions of MediaWiki"
 	
-	def login(self, username, password=False, remember=False, force=False):
+	def login(self, username, password=False, remember=False, force=False, verify=True):
 		"""
 		Login to the site
 		remember - saves cookies to a file - the filename will be:
@@ -85,13 +85,15 @@ class Wiki:
 		to use a different location
 		force - forces login over the API even if a cookie file exists 
 		and overwrites an existing cookie file if remember is True
+		verify - Checks cookie validity with isLoggedIn
 		"""
 		if not force:
 			try:	
 				cookiefile = self.cookiepath + str(hash(username+' - '+self.apibase))+'.cookies'
 				self.cookies.load(self, cookiefile, True, True)
 				self.username = username
-				return
+				if not verify or self.isLoggedIn(self.username):
+					return
 			except:
 				pass
 		if not password:
@@ -213,16 +215,16 @@ class WikiCookieJar(cookielib.FileCookieJar):
 				continue
 			if not ignore_expires and c.is_expired:
 				continue
-			attribs = (c.version, c.name, c.value, c.port, c.path, c.path_specified, c.secure, c.port_specified, c.domain_specified, c.domain, c.domain_initial_dot, c.expires, c.discard, c._rest)
-			content += "version:%d|name:%s|value:%s|port:%s|path:%s|path_specified:%s|secure:%s|port_specified:%s|domain_specified:%s|domain:%s|domain_initial_dot:%s|expires:%s|discard:%s|rest:%s\n" % attribs
-		content+=str(int(time.time()))+'\n' # record the current time so we can test for expiration later
-		content+='site.limit = %d;\n' % (site.limit) # This eventially might have more stuff in it
+			cook = cPickle.dumps(c, 2)
+			f.write(cook+'|~|')
+		content+=str(int(time.time()))+'|~|' # record the current time so we can test for expiration later
+		content+='site.limit = %d;' % (site.limit) # This eventially might have more stuff in it
 		f.write(content)
 		f.close()
 	
 	def load(self, site, filename, ignore_discard, ignore_expires):
 		f = open(filename, 'r')
-		cookies = f.read().splitlines()
+		cookies = f.read().split('|~|')
 		saved = cookies[len(cookies)-2]
 		if int(time.time()) - int(saved) > 1296000: # 15 days, not sure when the cookies actually expire...
 			f.close()
@@ -232,39 +234,7 @@ class WikiCookieJar(cookielib.FileCookieJar):
 		del cookies[len(cookies)-2]
 		del cookies[len(cookies)-1]
 		for c in cookies:
-			att = c.split('|')
-			attrs = {}
-			for a in att:
-				bits = a.split(':', 1)
-				if bits[0] == "rest":
-					exec "attrs['rest'] = %s" % (bits[1])
-					continue
-				val = bits[1]
-				if val == 'None':
-					val = None
-				elif val == 'False':
-					val = False
-				elif val == 'True':
-					val = True
-				else:
-					try:
-						if int(val) < 2:
-							val = int(val)
-					except:
-						pass
-				attrs[bits[0]] = val
-			cook = cookielib.Cookie( attrs['version'], attrs['name'], attrs['value'],
-				attrs['port'], attrs['port_specified'],
-				attrs['domain'], attrs['domain_specified'], attrs['domain_initial_dot'],
-				attrs['path'], attrs['path_specified'],
-				attrs['secure'],
-				attrs['expires'],
-				attrs['discard'],
-				None,
-				None,
-				attrs['rest'],
-				False
-			)
+			cook = cPickle.loads(c)
 			if not ignore_discard and cook.discard:
 				continue
 			if not ignore_expires and cook.is_expired:
