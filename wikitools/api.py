@@ -99,10 +99,34 @@ class APIRequest:
 		params = self.data
 		numkeys = len(res['query-continue'].keys())
 		while numkeys > 0:
-			keylist = res['query-continue'].keys()
-			keylist.reverse()
-			key1 = keylist[0]
-			key2 = res['query-continue'][key1].keys()[0]
+			key1 = ''
+			key2 = ''
+			possiblecontinues = res['query-continue'].keys()
+			if len(possiblecontinues) == 1:
+				key1 = possiblecontinues[0]
+				keylist = res['query-continue'][key1].keys()
+				if len(keylist) == 1:
+					key2 = keylist[0]
+				else:
+					for key in keylist:
+						if len(key) < 11:
+							key2 = key
+							break
+					else:
+						key2 = keylist[0]
+			else:
+				for posskey in possiblecontinues:
+					keylist = res['query-continue'][posskey].keys()
+					for key in keylist:
+						if len(key) < 11:
+							key1 = posskey
+							key2 = key
+							break
+					if key1:
+						break
+				else:
+					key1 = possiblecontinues[0]
+					key2 = res['query-continue'][key1].keys()[0]
 			if isinstance(res['query-continue'][key1][key2], int):
 				cont = res['query-continue'][key1][key2]
 			else:
@@ -110,7 +134,7 @@ class APIRequest:
 			params[key2] = cont
 			req = APIRequest(self.wiki, params)
 			res = req.query(False)
-			for type in keylist:
+			for type in possiblecontinues:
 				total = resultCombine(type, total, res)
 			if 'query-continue' in res:
 				numkeys = len(res['query-continue'].keys())
@@ -174,9 +198,16 @@ def resultCombine(type, old, new):
 			if not key in old['query']['pages']: # if it only exists in the new one
 				ret['query']['pages'][key] = new['query']['pages'][key] # add it to the list
 			else:
-				for item in new['query']['pages'][key][type]:
-					if item not in ret['query']['pages'][key][type]: # prevent duplicates
-						ret['query']['pages'][key][type].append(item) # else update the existing one
+				if not type in new['query']['pages'][key]:
+					continue
+				elif type in new['query']['pages'][key] and not type in ret['query']['pages'][key]: # if only the new one does, just add it to the return
+					ret['query']['pages'][key][type] = new['query']['pages'][key][type]
+					continue					
+				else: # Need to check for possible duplicates for some, this is faster than just iterating over new and checking for dups in ret
+					retset = set([tuple(entry.items()) for entry in ret['query']['pages'][key][type]])
+					newset = set([tuple(entry.items()) for entry in new['query']['pages'][key][type]])
+					retset.update(newset)
+					ret['query']['pages'][key][type] = [dict(entry) for entry in retset]
 	return ret
 		
 def urlencode(query,doseq=0):
