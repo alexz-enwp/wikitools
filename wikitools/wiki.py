@@ -54,7 +54,7 @@ class Wiki:
 			self.setMaxlag(120)
 		req = api.APIRequest(self, params)
 		info = req.query()
-		if self.maxlag == 5:
+		if self.maxlag == 120:
 			self.setMaxlag()
 		sidata = info['query']['general']
 		self.siteinfo = {}
@@ -124,7 +124,7 @@ class Wiki:
 		}
 		req = api.APIRequest(self, params)
 		info = req.query()
-		if self.maxlag == 5:
+		if self.maxlag == 120:
 			self.setMaxlag()
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
