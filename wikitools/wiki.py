@@ -48,14 +48,12 @@ class Wiki:
 	def setSiteinfo(self):
 		params = {'action':'query',
 			'meta':'siteinfo',
-			'siprop':'general|namespaces|namespacealiases'
+			'siprop':'general|namespaces|namespacealiases',
 		}
-		if self.maxlag == 5:
-			self.setMaxlag(120)
+		if self.maxlag < 120:
+			params['maxlag'] = 120
 		req = api.APIRequest(self, params)
 		info = req.query()
-		if self.maxlag == 120:
-			self.setMaxlag()
 		sidata = info['query']['general']
 		self.siteinfo = {}
 		for item in sidata:
@@ -102,10 +100,10 @@ class Wiki:
 		data = {
 			"action" : "login",
 			"lgname" : username,
-			"lgpassword" : password
+			"lgpassword" : password,
 		}
-		if self.maxlag == 5:
-			self.setMaxlag(120)
+		if self.maxlag < 120:
+			data['maxlag'] = 120
 		req = api.APIRequest(self, data)
 		info = req.query()
 		if info['login']['result'] == "Success":
@@ -120,12 +118,12 @@ class Wiki:
 		params = {
 			'action': 'query',
 			'meta': 'userinfo',
-			'uiprop': 'rights'
+			'uiprop': 'rights',
 		}
+		if self.maxlag < 120:
+			params['maxlag'] = 120
 		req = api.APIRequest(self, params)
 		info = req.query()
-		if self.maxlag == 120:
-			self.setMaxlag()
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
 			self.limit = 5000
@@ -135,13 +133,13 @@ class Wiki:
 	
 	def logout(self):
 		params = { 'action': 'logout' }
+		if self.maxlag < 120:
+			params['maxlag'] = 120
 		cookiefile = self.cookiepath + str(hash(self.username+' - '+self.apibase))+'.cookies'
 		try:
 			os.remove(cookiefile)
 		except:
 			pass
-		if self.maxlag == 5:
-			self.setMaxlag(120)
 		req = api.APIRequest(self, params, write=True)
 		# action=logout returns absolutely nothing, which json.loads() treats as False
 		# causing APIRequest.query() to get stuck in a loop
@@ -162,6 +160,8 @@ class Wiki:
 			"action" : "query",
 			"meta" : "userinfo",
 		}
+		if self.maxlag < 120:
+			data['maxlag'] = 120
 		req = api.APIRequest(self, data)
 		info = req.query()
 		if info['query']['userinfo']['id'] == 0:
