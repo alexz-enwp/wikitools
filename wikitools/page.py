@@ -160,6 +160,8 @@ class Page:
 		params = {'action':'query',
 			'redirects':''
 		}
+		if not self.exists:
+			raise NoPage
 		if self.pageid > 0:
 			params['pageids'] = self.pageid
 		elif self.title:
@@ -219,7 +221,7 @@ class Page:
 		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists:
-			return self.wikitext
+			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'revisions',
@@ -256,7 +258,7 @@ class Page:
 			'prop': 'links',
 			'pllimit': self.site.limit,
 		}
-		if self.pageid:
+		if self.pageid > 0:
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title	
@@ -273,14 +275,17 @@ class Page:
 	def getProtection(self, force=False):
 		if self.protection and not force:
 			return self.protection
-		if not self.exists:
-			raise NoPage
+		if self.pageid == 0 and not self.title:
+			self.setPageInfo()
 		params = {
 			'action': 'query',
 			'prop': 'info',
-			'pageids': self.pageid,
 			'inprop': 'protection',
 		}
+		if not self.exists or self.pageid <= 0:
+			params['titles'] = self.title
+		else:
+			params['titles'] = self.title
 		req = api.APIRequest(self.site, params)
 		response = req.query()
 		for pr in response['query'].values()[0].values()[0]['protection']:
@@ -333,65 +338,52 @@ class Page:
 				list.append(template['title'])
 		return list
 	
-	def edit(self, newtext=False, prependtext=False, appendtext=False, summary=False, section=False, minor=False, bot=False, basetime=False, recreate=False, createonly=False, nocreate=False, watch=False, unwatch=False):
+	def edit(self, *args, **kwargs):
 		"""
 		Edit the page
-		Most params are self-explanatory
-		basetime - set this to the time you loaded the pagetext to avoid
-		overwriting other people's edits in edit conflicts
+		Arguments are a subset of the API's action=edit arguments, valid arguments
+		are defined in the validargs set
+		http://www.mediawiki.org/wiki/API:Edit_-_Create%26Edit_pages#Parameters
 		"""
-	
-		if newtext == False and not prependtext and not appendtext:
+		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
+			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'prependtext', 'appendtext'])			
+		# For backwards compatibility
+		if 'newtext' in kwargs:
+			kwargs['text'] = kwargs['newtext']
+			del kwargs['newtext']
+		if 'basetime' in kwargs:
+			kwargs['basetimestamp'] = kwargs['basetime']
+			del kwargs['basetime']		
+		if len(args) and 'text' not in kwargs:
+			kwargs['text'] = args[0]
+		invalid = set(kwargs.keys()).difference(validargs)		
+		if invalid:
+			for arg in invalid:
+				del kwargs[arg]
+		if not self.title:
+			self.setPageInfo()			
+		if not 'text' in kwargs and not 'prependtext' in kwargs and not 'appendtext' in kwargs:
 			raise EditError("No text specified")
-		if prependtext and section:
+		if 'prependtext' in kwargs and 'section' in kwargs:
 			raise EditError("Bad param combination")
-		if createonly and nocreate:
+		if 'createonly' in kwargs and 'nocreate' in kwargs:
 			raise EditError("Bad param combination")
 		token = self.getToken('edit')
-		if newtext != False:
-			hashtext = newtext
-		elif prependtext and appendtext:
-			hashtext = prependtext+appendtext
-		elif prependtext:
-			hashtext = prependtext
+		if 'text' in kwargs:
+			hashtext = kwargs['text']
+		elif 'prependtext' in kwargs and 'appendtext' in kwargs:
+			hashtext = kwargs['prependtext']+kwargs['appendtext']
+		elif 'prependtext' in kwargs:
+			hashtext = kwargs['prependtext']
 		else:
-			hashtext = appendtext
+			hashtext = kwargs['appendtext']
 		params = {
 			'action': 'edit',
 			'title':self.title,
 			'token':token,
 			'md5':md5(hashtext).hexdigest(),
 		}
-		if newtext != False:
-			params['text'] = newtext
-		if prependtext:
-			params['prependtext'] = prependtext
-		if appendtext:
-			params['appendtext'] = appendtext
-		if summary:
-			params['summary'] = summary
-		if section:
-			params['section'] = section
-		if self.section:
-			params['section'] = self.section
-		if minor:
-			params['minor'] = '1'
-		else:
-			params['notminor'] = '1'
-		if bot:
-			params['bot'] = '1'
-		if basetime:
-			params['basetimestamp'] = basetime
-		if recreate:
-			params['recreate'] = '1'
-		if createonly:
-			params['createonly'] = '1'
-		if nocreate:
-			params['nocreate'] = '1'
-		if watch:
-			params['watch'] = '1'
-		if unwatch:
-			params['unwatch'] = '1'
+		params.update(kwargs)
 		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'edit' in result and result['edit']['result'] == 'Success':
@@ -407,15 +399,20 @@ class Page:
 		mvto (move to) is the only required param
 		must have "suppressredirect" right to use noredirect
 		"""
+		if not self.title and self.pageid == 0:
+			self.setPageInfo()
 		if not self.exists:
 			raise NoPage
 		token = self.getToken('move')
 		params = {
 			'action': 'move',
-			'fromid':self.pageid,
 			'to':mvto,
 			'token':token,
 		}
+		if self.pageid:
+			params['fromid'] = self.pageid
+		else:
+			params['from'] = self.title
 		if reason:
 			params['reason'] = reason.encode('utf-8')
 		if movetalk:
@@ -445,6 +442,8 @@ class Page:
 		{'move':'3 days'}. expirations can also be a string to set 
 		all levels to the same expiration
 		"""
+		if not self.title:
+			self.setPageInfo()
 		if not restrictions:
 			raise ProtectError("No protection levels given")
 		if len(expirations) > len(restrictions):
@@ -488,14 +487,19 @@ class Page:
 		Delete the page
 		Most params are self-explanatory
 		"""
+		if not self.title and self.pageid == 0:
+			self.setPageInfo()
 		if not self.exists:
 			raise NoPage
 		token = self.getToken('delete')
 		params = {
 			'action': 'delete',
-			'pageid':self.pageid,
 			'token':token,
 		}
+		if self.pageid:
+			params['pageid'] = self.pageid
+		else:
+			params['title'] = self.title
 		if reason:
 			params['reason'] = reason.encode('utf-8')
 		if watch:
@@ -549,6 +553,7 @@ class Page:
 			if self.pageid == other.pageid and self.site == other.wiki:
 				return True
 		return False
+		
 	def __ne__(self, other):
 		if not isinstance(other, Page):
 			return True

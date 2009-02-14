@@ -44,7 +44,7 @@ class APIRequest:
 	"""
 	def __init__(self, wiki, data, write=False):
 		self.sleep = 5
-		self.data = data
+		self.data = data.copy()
 		self.data['format'] = "json"
 		self.iswrite = write
 		if not 'maxlag' in self.data:

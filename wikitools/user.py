@@ -42,7 +42,7 @@ class User:
 				self.exists = False
 		except:
 			pass
-		self.page = page.Page(self.site, self.name, check=check, followRedir=False)
+		self.page = page.Page(self.site, ':'.join([self.site.namespaces[2]['*'], self.name]), check=check, followRedir=False)
 	
 	def setUserInfo(self):
 		"""
