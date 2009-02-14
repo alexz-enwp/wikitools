@@ -162,13 +162,13 @@ class Page:
 		}
 		if not self.exists:
 			raise NoPage
-		if self.pageid > 0:
+		if self.pageid != 0 and self.exists:
 			params['pageids'] = self.pageid
 		elif self.title:
 			params['titles'] = self.title
 		else:
 			self.setPageInfo()
-			if self.pageid > 0:
+			if self.pageid != 0 and self.exists:
 				params['pageids'] = self.pageid
 			else:
 				raise NoPage
@@ -238,6 +238,8 @@ class Page:
 			params['rvsection'] = self.section
 		req = api.APIRequest(self.site, params)
 		response = req.query(False)
+		if self.pageid == 0:
+			self.pageid = response['query']['pages'].keys()[0]
 		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
 		self.lastedittime = response['query']['pages'][self.pageid]['revisions'][0]['timestamp']
 		return self.wikitext
@@ -333,6 +335,8 @@ class Page:
 	
 	def __extractToList(self, json, stuff):
 		list = []
+		if self.pageid == 0:
+			self.pageid = json['query']['pages'].keys()[0]
 		if stuff in json['query']['pages'][self.pageid]:
 			for template in json['query']['pages'][self.pageid][stuff]:
 				list.append(template['title'])
@@ -540,6 +544,8 @@ class Page:
 			params['titles'] = self.title
 		req = api.APIRequest(self.site, params)
 		response = req.query()
+		if self.pageid == 0:
+			self.pageid = response['query']['pages'].keys()[0]
 		token = response['query']['pages'][self.pageid][type+'token']
 		return token
 	
