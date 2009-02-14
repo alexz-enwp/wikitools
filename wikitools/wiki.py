@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib, api, urllib, re, time, os, cPickle
+import cookielib, api, urllib, re, time, os
+try:
+	import cPickle as pickle
+except:
+	import pickle
 
 class WikiError(Exception):
 	"""Base class for errors"""
@@ -215,7 +219,7 @@ class WikiCookieJar(cookielib.FileCookieJar):
 				continue
 			if not ignore_expires and c.is_expired:
 				continue
-			cook = cPickle.dumps(c, 2)
+			cook = pickle.dumps(c, 2)
 			f.write(cook+'|~|')
 		content+=str(int(time.time()))+'|~|' # record the current time so we can test for expiration later
 		content+='site.limit = %d;' % (site.limit) # This eventially might have more stuff in it
@@ -234,7 +238,7 @@ class WikiCookieJar(cookielib.FileCookieJar):
 		del cookies[len(cookies)-2]
 		del cookies[len(cookies)-1]
 		for c in cookies:
-			cook = cPickle.loads(c)
+			cook = pickle.loads(c)
 			if not ignore_discard and cook.discard:
 				continue
 			if not ignore_expires and cook.is_expired:
