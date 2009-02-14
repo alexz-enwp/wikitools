@@ -1,0 +1,27 @@
+List of changes since 0.1 release:
+
+* Make page existence and setPageInfo() checks more consistent.
+* Use **kwargs in Page.edit() rather than dozen keyword arguments all False by default,
+  this is a breaking change for anything didn't explicitly use the keyword arguments 
+  for some reason. If the first param isn't a keyword, its treated as "text" for partial BC,
+  arguments are now all the same as the API action=edit params, "newtext" and "basetime" 
+  still work for BC 
+* Fix broken User.page 
+* APIRequest now makes a copy() of params rather than using it directly 		
+* reduce calls to setPageInfo() by using the title if pageid isn't available
+* Make redirect following less random on calls to setPageInfo in Page - 
+  note that this removes the followRedir param from setPageInfo, replacing it with
+  a followRedir member variable	
+* set maxlag directly in the query params for temporary raises for login/siteinfo queries
+  rather than using setmaxlag(), which could reset it back to 5 if the user set it to 120
+  before logging in
+* fix maxlag bug that changed it to 120 but didn't reset it back to 5		
+* rewrite most of __longQuery and improve resultCombine		
+* add missing module import in api.py	
+* use pickle for cookie files, add an option to login() to verify the cookies are correct
+  with isLoggedIn(), set to True by default	
+* fix User.isIP check - several non IPs were treated as IP addresses	
+* support reblock option for user blocks		
+* improve namespace guessing/title normalization, include namespace aliases,
+  add the namespace prefix to category objects if its not already there		
+		
