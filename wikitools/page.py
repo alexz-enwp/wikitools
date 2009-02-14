@@ -48,6 +48,7 @@ class Page:
 			self.pageid = str(pageid)
 		else:
 			self.pageid = 0
+		self.followRedir = followRedir
 		self.title = title
 		self.wikitext = ''
 		self.templates = ''
@@ -92,11 +93,11 @@ class Page:
 		else:
 			self.urltitle = False
 
-	def setPageInfo(self, followRedir=True):
+	def setPageInfo(self):
 		"""
 		Sets basic page info, required for almost everything
 		"""
-		
+		followRedir = self.followRedir
 		params = {'action':'query'}
 		if self.pageid:
 			params['pageids'] = self.pageid
@@ -132,7 +133,7 @@ class Page:
 	
 	def __getSection(self, section):
 		if not self.title:
-			self.setPageInfo(False)
+			self.setPageInfo()
 		params = {
 			'action': 'parse',
 			'text': '{{:'+self.title+'}}__TOC__',
@@ -151,10 +152,8 @@ class Page:
 		return number
 		
 	def canHaveSubpages(self):
-		try:
-			self.namespace
-		except:
-			self.setPageInfo(False)
+		if not self.title:
+			self.setPageInfo()
 		return 'subpages' in self.site.namespaces[self.namespace]
 		
 	def isRedir(self):
@@ -179,10 +178,8 @@ class Page:
 			return False
 	
 	def isTalk(self):
-		try:
-			self.namespace
-		except:
-			self.setPageInfo(False)
+		if not self.title:
+			self.setPageInfo()
 		return (self.namespace%2==1 and self.namespace >= 0)
 		
 	def toggleTalk(self, check=True, followRedir=True):
@@ -190,8 +187,8 @@ class Page:
 		Returns a new page object that's either the talk or non-talk
 		version of the current page
 		"""
-		if self.namespace == False or not self.title:
-			self.setPageInfo(False)
+		if not self.title:
+			self.setPageInfo()
 		ns = self.namespace
 		if ns < 0:
 			return False
@@ -219,17 +216,20 @@ class Page:
 	
 		if self.wikitext and not force:
 			return self.wikitext
-		if self.pageid == 0:
-			self.setPageInfo(followRedir=False)
+		if self.pageid == 0 and not self.title:
+			self.setPageInfo()
 		if not self.exists:
 			return self.wikitext
 		params = {
 			'action': 'query',
 			'prop': 'revisions',
 			'rvprop': 'content|timestamp',
-			'pageids': self.pageid,
 			'rvlimit': '1'
 		}
+		if self.pageid:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title		
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
 		if self.section:
@@ -247,16 +247,19 @@ class Page:
 		"""
 		if self.links and not force:
 			return self.links
-		if self.pageid == 0:
+		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists:
 			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'links',
-			'pageids': self.pageid,
 			'pllimit': self.site.limit,
 		}
+		if self.pageid:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title	
 		req = api.APIRequest(self.site, params)
 		response = req.query()
 		self.links = []
@@ -300,16 +303,19 @@ class Page:
 	
 		if self.templates and not force:
 			return self.templates
-		if self.pageid == 0:
+		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists:
 			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'templates',
-			'pageids': self.pageid,
 			'tllimit': self.site.limit,
 		}
+		if self.pageid:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title	
 		req = api.APIRequest(self.site, params)
 		response = req.query()
 		self.templates = []
@@ -515,7 +521,7 @@ class Page:
 		Currently all the tokens are interchangeable, but this may change in the future
 		"""
 			
-		if self.pageid == 0 or not self.title:
+		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists and type != 'edit':
 			raise NoPage
@@ -524,7 +530,7 @@ class Page:
 			'prop':'info',
 			'intoken':type,
 		}
-		if self.exists:
+		if self.exists and self.pageid:
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title
