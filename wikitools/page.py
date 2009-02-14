@@ -57,7 +57,7 @@ class Page:
 		self.protection = {}
 		
 		if check:
-			self.setPageInfo(followRedir)
+			self.setPageInfo()
 		else: # Guess at some stuff
 			self.namespace = False
 			if title:
