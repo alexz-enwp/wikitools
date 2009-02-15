@@ -72,11 +72,12 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 						break
 				querylist.append(l)
 		else:
-			querylist.append(pageids)
+			querylist.append(titles)
+		response = False
 		for item in querylist:
 			tlist = unicode('', 'utf8')
 			first = True
-			for title in titles:
+			for title in item:
 				if not first:
 					tlist+='|'
 				first = False
