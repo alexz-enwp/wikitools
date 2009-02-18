@@ -64,24 +64,14 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 		if len(titles) > limit/10:
 			iters = int(math.ceil(float(len(titles)) / (limit/10)))
 			for x in range(0,iters):
-				l = []
-				for y in range(0, limit/10):
-					if titles:
-						l.append(titles.pop())
-					else:
-						break
-				querylist.append(l)
+				lower = x*limit/10
+				upper = (x+1)*limit/10
+				querylist.append(titles[lower:upper])
 		else:
 			querylist.append(titles)
 		response = False
 		for item in querylist:
-			tlist = unicode('', 'utf8')
-			first = True
-			for title in item:
-				if not first:
-					tlist+='|'
-				first = False
-				tlist+=title
+			tlist = unicode('|'.join(item), 'utf8')
 			params = {'action':'query',
 				'titles':tlist,
 			}
@@ -92,6 +82,9 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 			if not response:
 				response = res
 			else:
+				# This breaks on non-existent titles, the api gives them negative numbers
+				# resultCombine doesn't account for this and ignores or overwrites the 
+				# duplicate pageids
 				response = api.resultCombine('', response, res)
 		for key in response['query']['pages'].keys():
 			res = response['query']['pages'][key]
@@ -115,24 +108,15 @@ def listFromPageids(site, pageids, check=True, followRedir=False):
 		if len(pageids) > limit/10:
 			iters = int(math.ceil(float(len(pageids)) / (limit/10)))
 			for x in range(0,iters):
-				l = []
-				for y in range(0, limit/10):
-					if pageids:
-						l.append(pageids.pop())
-					else:
-						break
-				querylist.append(l)
+				lower = x*limit/10
+				upper = (x+1)*limit/10
+				querylist.append(pageids[lower:upper])
 		else:
 			querylist.append(pageids)
 		response = False
 		for item in querylist:
-			idlist = ''
-			first = True
-			for id in item:
-				if not first:
-					idlist+='|'
-				first = False
-				idlist+=str(id)
+			ids = [str(id) for id in item]
+			idlist = '|'.join(ids)
 			params = {'action':'query',
 				'pageids':idlist,
 			}
