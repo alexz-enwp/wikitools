@@ -94,6 +94,8 @@ class APIRequest:
 		"""
 		For queries that require multiple requests
 		"""
+		self._continues = set()
+		self._generator = ''
 		total = initialdata
 		res = initialdata
 		params = self.data
@@ -131,6 +133,12 @@ class APIRequest:
 				cont = res['query-continue'][key1][key2]
 			else:
 				cont = res['query-continue'][key1][key2].encode('utf-8')
+			if len(key2) >= 11 and key2.startswith('g'):
+				self._generator = key2
+				for ckey in self._continues:
+					params.pop(ckey, None)		
+			else:
+				self._continues.add(key2)
 			params[key2] = cont
 			req = APIRequest(self.wiki, params)
 			res = req.query(False)
