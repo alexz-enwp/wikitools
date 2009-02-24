@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2, re, time, sys
+import urllib2, re, time, sys, traceback
 from urllib import quote_plus, _is_unicode
 try:
 	import json
@@ -161,6 +161,7 @@ class APIRequest:
 					if encoding in ('gzip', 'x-gzip'):
 						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
 			except:
+				traceback.print_exc()
 				if self.sleep >= self.wiki.maxwaittime:
 					print("Aborting")
 					raise ServerError("Request failed")
@@ -177,10 +178,12 @@ class APIRequest:
 		while maxlag:
 			try:
 				maxlag = False
-				content = json.loads(data.read())
+				content = APIResult(json.loads(data.read()))
+				content.response = self.response.items()
 				if 'error' in content:
 					error = content['error']['code']
 					if error == "maxlag":
+						print content, self.encodeddata, str(self.response.items())
 						lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
 						if lagtime > self.wiki.maxwaittime:
 							lagtime = self.wiki.maxwaittime
@@ -191,6 +194,9 @@ class APIRequest:
 			except: # Something's wrong with the data....
 				return False
 		return content
+		
+class APIResult(dict):
+	response = []
 		
 def resultCombine(type, old, new):
 	"""
