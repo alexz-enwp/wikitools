@@ -22,8 +22,8 @@ class Category(page.Page):
 	A category on the wiki
 	"""
 	def __init__(self, site, title=False, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
-		self.members = []
 		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
+		self.members = []
 		if self.namespace != 14:
 			self.title = self.site.namespaces[14]['*']+':'+self.title
 			
