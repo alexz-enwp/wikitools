@@ -23,6 +23,9 @@ class BadTitle(wiki.WikiError):
 	
 class NoPage(wiki.WikiError):
 	"""Non-existent page"""
+	
+class BadNamespace(wiki.WikiError):
+	"""Invalid namespace number"""
 
 class EditError(wiki.WikiError):
 	"""Problem with edit request"""
@@ -71,13 +74,14 @@ class Page:
 							self.namespace = int(ns)
 							self.title = self.site.namespaces[ns]['*']+':'+bits[1]
 							break
-					if not self.namespace and self.site.NSaliases:
-						for ns in self.site.NSaliases:
-							if nsprefix == ns.lower():
-								self.namespace = int(self.site.NSaliases[ns])
-								self.title = self.site.namespaces[self.namespace]['*']+':'+bits[1]
-								break
-					elif not self.namespace:
+					else:
+						if self.site.NSaliases:
+							for ns in self.site.NSaliases:
+								if nsprefix == ns.lower():
+									self.namespace = int(self.site.NSaliases[ns])
+									self.title = self.site.namespaces[self.namespace]['*']+':'+bits[1]
+									break
+					if not self.namespace:
 						self.namespace = 0
 			else:
 				self.namespace = 0
@@ -115,6 +119,36 @@ class Page:
 			raise BadTitle(self.title)
 		self.namespace = int(response['query']['pages'][self.pageid]['ns'])
 		self.pageid = str(self.pageid)
+		
+	def setNamespace(self, newns):
+		"""
+		Change the namespace number of a page object
+		and update the title with the new prefix
+		"""
+		if not newns in self.site.namespaces.keys():
+			raise BadNamespace
+		if self.namespace == newns:
+			return
+		if self.title:
+			if self.namespace != 0:
+				bits = self.title.split(':', 1)
+				nsprefix = bits[0].lower()
+				for ns in self.site.namespaces:
+					if nsprefix == self.site.namespaces[ns]['*'].lower():
+						self.title = bits[1]
+						break
+				else:
+					if self.site.NSaliases:
+						for ns in self.site.NSaliases:
+							if nsprefix == ns.lower():
+								self.title = bits[1]
+								break
+			self.namespace = newns
+			if self.namespace:
+				self.title = self.site.namespaces[self.namespace]['*']+':'+self.title
+			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
+		else:
+			self.namespace = newns
 		
 	def setSection(self, section=False, number=False):
 		"""
