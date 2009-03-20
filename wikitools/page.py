@@ -63,8 +63,9 @@ class Page:
 			self.setPageInfo()
 		else: # Guess at some stuff
 			self.namespace = False
-			if title:
-				bits = title.split(':', 1)
+			if self.title:
+				self.title = self.title.replace('_', ' ')
+				bits = self.title.split(':', 1)
 				if len(bits) == 1 or bits[0] == '':
 					self.namespace = 0
 				else:
