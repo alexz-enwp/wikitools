@@ -30,9 +30,6 @@ except:
 class APIError(Exception):
 	"""Base class for errors"""
 	
-class ServerError(APIError):
-	"""Base class for errors"""
-
 class APIRequest:
 	"""
 	A request to the site's API
@@ -154,22 +151,22 @@ class APIRequest:
 		data = False
 		while not data:
 			try:
+				if self.sleep >= self.wiki.maxwaittime or self.iswrite:
+					catcherror = None
+				else:
+					catcherror = Exception
 				data = self.opener.open(self.request)
 				self.response = data.info()
 				if gzip:
 					encoding = self.response.get('Content-encoding')
 					if encoding in ('gzip', 'x-gzip'):
 						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
-			except:
-				if self.sleep >= self.wiki.maxwaittime:
-					print("Aborting")
-					raise ServerError("Request failed")
-				elif self.iswrite:
-					raise ServerError("Server error on write query")
-				else:
-					print("Server error, trying request again in "+str(self.sleep)+" seconds")
-					time.sleep(self.sleep+0.5)
-					self.sleep+=5
+			except catcherror, exc:
+				errname = sys.exc_info()[0].__name__
+				errinfo = exc
+				print("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep))
+				time.sleep(self.sleep+0.5)
+				self.sleep+=5
 		return data
 
 	def __parseJSON(self, data):
