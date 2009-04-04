@@ -377,11 +377,12 @@ class Page:
 				list.append(template['title'])
 		return list
 	
-	def edit(self, skipmd5=False, *args, **kwargs):
+	def edit(self, *args, **kwargs):
 		"""
 		Edit the page
 		Arguments are a subset of the API's action=edit arguments, valid arguments
 		are defined in the validargs set
+		To skip MD5 check, set "skipmd5" keyword argument to True
 		http://www.mediawiki.org/wiki/API:Edit_-_Create%26Edit_pages#Parameters
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
@@ -395,6 +396,9 @@ class Page:
 			del kwargs['basetime']		
 		if len(args) and 'text' not in kwargs:
 			kwargs['text'] = args[0]
+		skipmd5 = False
+		if 'skipmd5' in kwargs and kwargs['skipmd5']:
+			skipmd5 = True
 		invalid = set(kwargs.keys()).difference(validargs)		
 		if invalid:
 			for arg in invalid:
