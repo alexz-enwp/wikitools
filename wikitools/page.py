@@ -377,7 +377,7 @@ class Page:
 				list.append(template['title'])
 		return list
 	
-	def edit(self, *args, **kwargs):
+	def edit(self, skipmd5=False, *args, **kwargs):
 		"""
 		Edit the page
 		Arguments are a subset of the API's action=edit arguments, valid arguments
@@ -420,8 +420,9 @@ class Page:
 			'action': 'edit',
 			'title':self.title,
 			'token':token,
-			'md5':md5(hashtext).hexdigest(),
 		}
+		if not skipmd5:
+			params['md5'] = md5(hashtext).hexdigest()
 		params.update(kwargs)
 		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
