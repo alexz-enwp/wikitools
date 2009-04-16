@@ -86,7 +86,7 @@ class Page:
 						self.namespace = 0
 			else:
 				self.namespace = 0
-		if section or sectionnumber:
+		if section or sectionnumber is not False:
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = False
@@ -156,9 +156,9 @@ class Page:
 		Set a section for the page
 		section - the section name
 		"""
-		if not section and not number:
+		if not section and number is False:
 			self.section = False
-		elif number:
+		elif number is not False:
 			try:
 				self.section = str(int(number))
 			except ValueError:
@@ -269,7 +269,7 @@ class Page:
 			params['titles'] = self.title		
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
-		if self.section:
+		if self.section is not False:
 			params['rvsection'] = self.section
 		req = api.APIRequest(self.site, params)
 		response = req.query(False)
@@ -386,7 +386,7 @@ class Page:
 		http://www.mediawiki.org/wiki/API:Edit_-_Create%26Edit_pages#Parameters
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
-			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'prependtext', 'appendtext'])			
+			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'prependtext', 'appendtext', 'section'])			
 		# For backwards compatibility
 		if 'newtext' in kwargs:
 			kwargs['text'] = kwargs['newtext']
@@ -404,7 +404,9 @@ class Page:
 			for arg in invalid:
 				del kwargs[arg]
 		if not self.title:
-			self.setPageInfo()			
+			self.setPageInfo()	
+		if not 'section' in kwargs and self.section is not False:
+			kwargs['section'] = self.section
 		if not 'text' in kwargs and not 'prependtext' in kwargs and not 'appendtext' in kwargs:
 			raise EditError("No text specified")
 		if 'prependtext' in kwargs and 'section' in kwargs:
@@ -433,7 +435,7 @@ class Page:
 		if 'edit' in result and result['edit']['result'] == 'Success':
 			self.wikitext = ''
 			self.links = []
-			self.templates = ''
+			self.templates = []
 		return result
 		
 	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):
@@ -593,10 +595,10 @@ class Page:
 		if not isinstance(other, Page):
 			return False
 		if self.title:			
-			if self.title == other.title and self.site == other.wiki:
+			if self.title == other.title and self.site == other.site:
 				return True
 		else:
-			if self.pageid == other.pageid and self.site == other.wiki:
+			if self.pageid == other.pageid and self.site == other.site:
 				return True
 		return False
 		
@@ -604,9 +606,9 @@ class Page:
 		if not isinstance(other, Page):
 			return True
 		if self.title:
-			if self.title == other.title and self.site == other.wiki:
+			if self.title == other.title and self.site == other.site:
 				return False
 		else:
-			if self.pageid == other.pageid and self.site == other.wiki:
+			if self.pageid == other.pageid and self.site == other.site:
 				return False
 		return True
