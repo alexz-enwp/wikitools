@@ -47,7 +47,13 @@ class Wiki:
 		self.useragent = "python-wikitools/1.0"
 		self.cookiepath = ''
 		self.limit = 500
-		self.setSiteinfo()
+		self.siteinfo = {}
+		self.namespaces = {}
+		self.NSaliases = {}
+		try:
+			self.setSiteinfo()
+		except api.APIError: # probably read-restricted
+			pass
 	
 	def setSiteinfo(self):
 		params = {'action':'query',
@@ -59,16 +65,13 @@ class Wiki:
 		req = api.APIRequest(self, params)
 		info = req.query()
 		sidata = info['query']['general']
-		self.siteinfo = {}
 		for item in sidata:
 			self.siteinfo[item] = sidata[item]
 		nsdata = info['query']['namespaces']
-		self.namespaces = {}
 		for ns in nsdata:
 			nsinfo = nsdata[ns]
 			self.namespaces[nsinfo['id']] = nsinfo
 		nsaliasdata = info['query']['namespacealiases']
-		self.NSaliases = {}
 		if nsaliasdata:
 			for ns in nsaliasdata:
 				self.NSaliases[ns['*']] = ns['id']
@@ -118,7 +121,8 @@ class Wiki:
 			except:
 				print info['error']['code']
 				print info['error']['info']
-		
+		if not self.siteinfo:
+			self.setSiteinfo()
 		params = {
 			'action': 'query',
 			'meta': 'userinfo',
