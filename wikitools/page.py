@@ -117,9 +117,9 @@ class Page:
 		self.pageid = response['query']['pages'].keys()[0]
 		if 'title' in response['query']['pages'][self.pageid]:
 			self.title = response['query']['pages'][self.pageid]['title'].encode('utf-8')
+			self.namespace = int(response['query']['pages'][self.pageid]['ns'])
 		if 'invalid' in response['query']['pages'][self.pageid]:
 			raise BadTitle(self.title)
-		self.namespace = int(response['query']['pages'][self.pageid]['ns'])
 		self.pageid = str(self.pageid)
 		
 	def setNamespace(self, newns):
