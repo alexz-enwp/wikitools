@@ -112,9 +112,9 @@ class Page:
 			params['redirects'] = ''
 		req = api.APIRequest(self.site, params)
 		response = req.query()
+		self.pageid = response['query']['pages'].keys()[0]
 		if 'missing' in response['query']['pages'][self.pageid]:
 			self.exists = False
-		self.pageid = response['query']['pages'].keys()[0]
 		if 'title' in response['query']['pages'][self.pageid]:
 			self.title = response['query']['pages'][self.pageid]['title'].encode('utf-8')
 			self.namespace = int(response['query']['pages'][self.pageid]['ns'])
