@@ -277,4 +277,4 @@ def urlencode(query,doseq=0):
                     for elt in v:
                         l.append(k + '=' + quote_plus(str(elt)))
     return '&'.join(l)
-	
+

@@ -48,7 +48,7 @@ class Page:
 			raise wiki.WikiError("No title or pageid given")
 		self.site = site
 		if pageid:
-			self.pageid = str(pageid)
+			self.pageid = int(pageid)
 		else:
 			self.pageid = 0
 		self.followRedir = followRedir
@@ -113,19 +113,24 @@ class Page:
 		req = api.APIRequest(self.site, params)
 		response = req.query()
 		self.pageid = response['query']['pages'].keys()[0]
-		if 'missing' in response['query']['pages'][self.pageid]:
+		if self.pageid > 0:
+			self.exists = True
+		if 'missing' in response['query']['pages'][str(self.pageid)]:
 			self.exists = False
-		if 'title' in response['query']['pages'][self.pageid]:
-			self.title = response['query']['pages'][self.pageid]['title'].encode('utf-8')
-			self.namespace = int(response['query']['pages'][self.pageid]['ns'])
-		if 'invalid' in response['query']['pages'][self.pageid]:
+		if 'title' in response['query']['pages'][str(self.pageid)]:
+			self.title = response['query']['pages'][str(self.pageid)]['title'].encode('utf-8')
+			self.namespace = int(response['query']['pages'][str(self.pageid)]['ns'])
+		if 'invalid' in response['query']['pages'][str(self.pageid)]:
 			raise BadTitle(self.title)
-		self.pageid = str(self.pageid)
+		self.pageid = int(self.pageid)
+		if self.pageid < 0:
+			self.pageid = 0
 		
-	def setNamespace(self, newns):
+	def setNamespace(self, newns, recheck=False):
 		"""
 		Change the namespace number of a page object
 		and update the title with the new prefix
+		recheck - redo pageinfo checks
 		"""
 		if not newns in self.site.namespaces.keys():
 			raise BadNamespace
@@ -151,6 +156,9 @@ class Page:
 			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
 		else:
 			self.namespace = newns
+		if recheck:
+			self.pageid = False
+			self.setPageInfo()
 		
 	def setSection(self, section=False, number=False):
 		"""
@@ -276,8 +284,8 @@ class Page:
 		response = req.query(False)
 		if self.pageid == 0:
 			self.pageid = response['query']['pages'].keys()[0]
-		self.wikitext = response['query']['pages'][self.pageid]['revisions'][0]['*'].encode('utf-8')
-		self.lastedittime = response['query']['pages'][self.pageid]['revisions'][0]['timestamp']
+		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*'].encode('utf-8')
+		self.lastedittime = response['query']['pages'][str(self.pageid)]['revisions'][0]['timestamp']
 		return self.wikitext
 	
 	def getLinks(self, force=False):
@@ -363,8 +371,8 @@ class Page:
 		response = req.query()
 		self.templates = []
 		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
-			for page in response:
-				self.templates.extend(self.__extractToList(page, 'templates'))
+			for part in response:
+				self.templates.extend(self.__extractToList(part, 'templates'))
 		else:
 			self.templates = self.__extractToList(response, 'templates')
 		return self.templates
@@ -373,9 +381,9 @@ class Page:
 		list = []
 		if self.pageid == 0:
 			self.pageid = json['query']['pages'].keys()[0]
-		if stuff in json['query']['pages'][self.pageid]:
-			for template in json['query']['pages'][self.pageid][stuff]:
-				list.append(template['title'])
+		if stuff in json['query']['pages'][str(self.pageid)]:
+			for item in json['query']['pages'][str(self.pageid)][stuff]:
+				list.append(item['title'])
 		return list
 	
 	def edit(self, *args, **kwargs):
@@ -589,7 +597,7 @@ class Page:
 		response = req.query()
 		if self.pageid == 0:
 			self.pageid = response['query']['pages'].keys()[0]
-		token = response['query']['pages'][self.pageid][type+'token']
+		token = response['query']['pages'][str(self.pageid)][type+'token']
 		return token
 	
 	def __eq__(self, other):

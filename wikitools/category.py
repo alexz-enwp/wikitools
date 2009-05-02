@@ -25,64 +25,74 @@ class Category(page.Page):
 		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 		self.members = []
 		if self.namespace != 14:
-			self.title = self.site.namespaces[14]['*']+':'+self.title
+			self.setNamespace(14, check)
 			
-	def getAllMembers(self, titleonly=False, reload=False):
+	def getAllMembers(self, titleonly=False, reload=False, namespaces=False):
 		"""
 		Gets a list of pages in the category
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
 		reload - reload the list even if it was generated before
+		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
 		"""
 		if self.members and not reload:
 			if titleonly:
-				ret = []
-				for member in self.members:
-					ret.append(member.title)
-				return ret
-			return self.members
+				if namespaces is not False:
+					return [p.title for p in self.members if p.namespace in namespaces]
+				else:
+					return [p.title for p in self.members]
+			if namespaces is False:
+				return self.members
+			else:
+				return [p for p in self.members if p.namespace in namespaces]
 		else:
 			ret = []
-			self.members = []
-			for member in self.__getMembersInternal():
-				self.members.append(member)
+			members = []
+			for member in self.__getMembersInternal(namespaces):
+				members.append(member)
 				if titleonly:
 					ret.append(member.title)
 			if titleonly:
 				return ret
-			return self.members
+			if namespaces is False:
+				self.members = members
+			return members
 	
-	def getAllMembersGen(self, titleonly=False, reload=False):
+	def getAllMembersGen(self, titleonly=False, reload=False, namespaces=False):
 		"""
 		Generator function for pages in the category
 		titleonly - set to True to return strings,
 		else it will return Page objects
 		reload - reload the list even if it was generated before
+		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
 		"""
 		if self.members and not reload:
 			for member in self.members:
-				if titleonly:
-					yield member.title
-				else:
-					yield member
+				if namespaces is False or member.namespace in namespaces:
+					if titleonly:
+						yield member.title
+					else:
+						yield member
 		else:
-			self.members = []
+			if namespaces is False:
+				self.members = []
 			for member in self.__getMembersInternal():
-				self.members.append(member)
+				if namespaces is False:
+					self.members.append(member)
 				if titleonly:
 					yield member.title
 				else:
 					yield member
 				
-	def __getMembersInternal(self, namespace=False):
+	def __getMembersInternal(self, namespaces=False):
 		params = {'action':'query',
 			'list':'categorymembers',
 			'cmtitle':self.title,
 			'cmlimit':self.site.limit,
 			'cmprop':'title'
 		}
-		if namespace != False:
-			params['cmnamespace'] = namespace
+		if namespaces is not False:
+			params['cmnamespace'] = '|'.join(namespaces)
 		while True:
 			req = api.APIRequest(self.site, params)
 			data = req.query(False)
