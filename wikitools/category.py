@@ -92,7 +92,7 @@ class Category(page.Page):
 			'cmprop':'title'
 		}
 		if namespaces is not False:
-			params['cmnamespace'] = '|'.join(namespaces)
+			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
 		while True:
 			req = api.APIRequest(self.site, params)
 			data = req.query(False)
