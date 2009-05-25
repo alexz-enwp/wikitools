@@ -120,6 +120,8 @@ class Page:
 			self.exists = True
 		if 'missing' in response['query']['pages'][str(self.pageid)]:
 			self.exists = False
+		if 'invalid' in response['query']['pages'][str(self.pageid)]:
+			raise BadTitle(self.title)
 		if 'title' in response['query']['pages'][str(self.pageid)]:
 			self.title = response['query']['pages'][str(self.pageid)]['title'].encode('utf-8')
 			self.namespace = int(response['query']['pages'][str(self.pageid)]['ns'])

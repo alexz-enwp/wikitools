@@ -40,35 +40,84 @@ class File(page.Page):
 			self.setNamespace(6, check)
 		self.usage = []
 			
-	def getUsage(self, force=False, namespaces=False):
-		"""Gets all list of all the pages that use the file
+			
+	def getUsage(self, titleonly=False, force=False, namespaces=False):
+		"""Gets a list of pages that use the file
 		
-		force - load the list even if we already loaded it before
-		namespaces - list of namespaces to look in
+		titleonly - set to True to only create a list of strings,
+		else it will be a list of Page objects
+		force - reload the list even if it was generated before
+		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
 		
-		"""	
-		if self.usage and not force:
-			return self.usage
-		if not self.title:
-			self.setPageInfo()
-			if not self.title:
-				raise page.NoPage
-		params = {
-			'action': 'query',
-			'list': 'imageusage',
-			'iulimit': self.site.limit,
+		"""
+		if self.usage and not reload:
+			if titleonly:
+				if namespaces is not False:
+					return [p.title for p in self.usage if p.namespace in namespaces]
+				else:
+					return [p.title for p in self.usage]
+			if namespaces is False:
+				print "Foo"
+				return self.usage
+			else:
+				return [p for p in self.usage if p.namespace in namespaces]
+		else:
+			ret = []
+			usage = []
+			for title in self.__getUsageInternal(namespaces):
+				usage.append(title)
+				if titleonly:
+					ret.append(title.title)
+			if titleonly:
+				return ret
+			if namespaces is False:
+				self.usage = usage
+			return usage
+	
+	def getUsageGen(self, titleonly=False, force=False, namespaces=False):
+		"""Generator function for pages that use the file
+		
+		titleonly - set to True to return strings,
+		else it will return Page objects
+		force - reload the list even if it was generated before
+		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		
+		"""
+		if self.usage and not reload:
+			for title in self.usage:
+				if namespaces is False or title.namespace in namespaces:
+					if titleonly:
+						yield title.title
+					else:
+						yield title
+		else:
+			if namespaces is False:
+				self.usage = []
+			for title in self.__getUsageInternal():
+				if namespaces is False:
+					self.usage.append(title)
+				if titleonly:
+					yield title.title
+				else:
+					yield title
+				
+	def __getUsageInternal(self, namespaces=False):
+		params = {'action':'query',
+			'list':'imageusage',
+			'iutitle':self.title,
+			'iulimit':self.site.limit,
 		}
 		if namespaces is not False:
 			params['iunamespace'] = '|'.join([str(ns) for ns in namespaces])
-		params['iutitle'] = self.title	
-		req = api.APIRequest(self.site, params)
-		response = req.query()
-		if isinstance(response, list):
-			for part in response:
-				self.usage.extend(self.__extractToList(part, 'imageusage'))
-		else:
-			self.usage = self.__extractToList(response, 'imageusage')
-		return self.usage
+		while True:
+			req = api.APIRequest(self.site, params)
+			data = req.query(False)
+			for item in data['query']['imageusage']:
+				yield page.Page(self.site, item['title'], check=False, followRedir=False)
+			try:
+				params['iucontinue'] = data['query-continue']['imageusage']['iucontinue']
+			except:
+				break 
 		
 	def __extractToList(self, json, stuff):
 		list = []
