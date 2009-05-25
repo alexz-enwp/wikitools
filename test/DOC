@@ -35,6 +35,8 @@ What this script does do:
 What this script doesn't do:
 * Verifies output is correct
 * Test write functions (edit, delete, block, etc)
+* Test any of the pagelist.py functions
+* Test API queries that require multiple requests
 * Be very thorough
 
 Pageids, namespaces, site settings can vary from site to site, the output from my own wiki is (using wikitools r194):
