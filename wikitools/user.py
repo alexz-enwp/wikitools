@@ -15,7 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wiki, page, api, socket
+import wiki
+import page
+import api
+import socket
 
 class User:
 	""" A user on the wiki
@@ -137,5 +140,10 @@ class User:
 		if self.name == other.name and self.site == other.wiki:
 			return False
 		return True
-			
+	
+	def __str__(self):
+		return self.__class__.__name__ + ' ' + repr(self.name) + " on " + repr(self.site.domain)
+	
+	def __repr__(self):
+		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(self.name)+" on "+repr(self.site.apibase)+">"
 		

@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime, wiki, api, urllib, re
+import datetime
+import wiki
+import api
+import urllib
+import re
 from hashlib import md5
 
 class BadTitle(wiki.WikiError):
@@ -599,6 +603,20 @@ class Page:
 			self.pageid = response['query']['pages'].keys()[0]
 		token = response['query']['pages'][str(self.pageid)][type+'token']
 		return token
+	
+	def __str__(self):
+		if self.title:
+			title = self.title
+		else:
+			title = 'pageid: '+self.pageid
+		return self.__class__.__name__ +' '+repr(title) + " from " + repr(self.site.domain)
+	
+	def __repr__(self):
+		if self.title:
+			title = self.title
+		else:
+			title = 'pageid: '+self.pageid
+		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(title)+" using "+repr(self.site.apibase)+">"
 	
 	def __eq__(self, other):
 		if not isinstance(other, Page):

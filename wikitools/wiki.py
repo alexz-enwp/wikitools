@@ -15,7 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib, api, urllib, re, time, os
+import cookielib
+import api
+import urllib
+import re
+import time
+import os
+from urlparse import urlparse
 try:
 	import cPickle as pickle
 except:
@@ -50,6 +56,8 @@ class Wiki:
 		self.siteinfo = {}
 		self.namespaces = {}
 		self.NSaliases = {}
+		urlbits = urlparse(self.apibase)
+		self.domain = '://'.join([urlbits.scheme, urlbits.netloc])
 		try:
 			self.setSiteinfo()
 		except api.APIError: # probably read-restricted
@@ -207,6 +215,22 @@ class Wiki:
 		if self.apibase == other.apibase:
 			return False
 		return True
+		
+	def __str__(self):
+		if self.username:
+			user = ' - using User:'+self.username
+		else:
+			user = ' - not logged in'
+		return self.domain + user
+	
+	def __repr__(self):
+		if self.username:
+			user = ' User:'+self.username
+		else:
+			user = ' not logged in'
+		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(self.apibase)+user+">"
+		
+		
 
 class CookiesExpired(WikiError):
 	"""Cookies are expired, needs to be an exception so login() will use the API instead"""

@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wiki, page, api
+import wiki
+import page
+import api
 
 class Category(page.Page):
 	"""

@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import api, page, category, math
+import api
+import page
+import category
+import wikifile
+import math
 
 def listFromQuery(site, queryresult):
 	"""
@@ -32,6 +36,8 @@ def listFromQuery(site, queryresult):
 				pageid = item['pageid']
 			if item['ns'] == 14:
 				item = category.Category(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
+			if item['ns'] == 6:
+				item = wikifile.File(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
 			else:
 				item = page.Page(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
 			ret.append(item)
@@ -43,6 +49,8 @@ def listFromQuery(site, queryresult):
 				pageid = item['pageid']
 			if item['ns'] == 14:
 				item = category.Category(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
+			if item['ns'] == 6:
+				item = wikifile.File(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
 			else:
 				item = page.Page(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
 			ret.append(item)
@@ -140,6 +148,8 @@ def makePage(key, result, site):
 		title = result['title']
 	if 'ns' in result and result['ns'] == 14:
 		item = category.Category(site, title=title, check=False, followRedir=False, pageid=key)
+	elif 'ns' in result and result['ns'] == 6:
+		item = wikifile.File(site, title=title, check=False, followRedir=False, pageid=key)
 	else:
 		item = page.Page(site, title=title, check=False, followRedir=False, pageid=key)
 	if 'missing' in result:
@@ -147,5 +157,5 @@ def makePage(key, result, site):
 	if 'invalid' in result:
 		item = False
 	if 'ns' in result:
-		item.namespace = str(result['ns'])
+		item.setNamespace(int(result['ns']))
 	return item
