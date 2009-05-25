@@ -42,7 +42,7 @@ class File(page.Page):
 			self.setNamespace(6, check)
 		self.usage = []
 			
-	def getUsage(self, namespaces=False):
+	def getUsage(self, force=False namespaces=False):
 		"""Gets all list of all the pages that use the file
 		
 		force - load the list even if we already loaded it before
