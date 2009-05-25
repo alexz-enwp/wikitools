@@ -34,15 +34,15 @@ class APIError(Exception):
 	"""Base class for errors"""
 	
 class APIRequest:
-	"""
-	A request to the site's API
-	wiki - A Wiki object
-	data - API parameters in the form of a dict
-	write - set to True if doing a write query, so it won't try again on error
-	maxlag is set by default to 5 but can be changed
-	format is always set to json
-	"""
+	"""A request to the site's API"""
 	def __init__(self, wiki, data, write=False):
+		"""	
+		wiki - A Wiki object
+		data - API parameters in the form of a dict
+		write - set to True if doing a write query, so it won't try again on error
+		maxlag is set by default to 5 but can be changed
+		format is always set to json
+		"""
 		self.sleep = 5
 		self.data = data.copy()
 		self.data['format'] = "json"
@@ -63,9 +63,10 @@ class APIRequest:
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
 		
 	def changeParam(self, param, value):
-		"""
-		Change or add a parameter after making the request object
-		simply changing self.data won't work ask it needs to update other things
+		"""Change or add a parameter after making the request object
+		
+		Simply changing self.data won't work ask it needs to update other things
+		
 		"""
 		if param == 'format':
 			raise APIError('You can not change the result format')
@@ -75,10 +76,12 @@ class APIRequest:
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
 	
 	def query(self, querycontinue=True):
-		"""
-		Actually do the query here and return usable stuff
-		"""
+		"""Actually do the query here and return usable stuff
 		
+		querycontinue - look for query-continue in the results and continue querying
+		until there is no more data to retrieve
+		
+		"""
 		data = False
 		while not data:
 			rawdata = self.__getRaw()
@@ -91,9 +94,7 @@ class APIRequest:
 		return data
 	
 	def __longQuery(self, initialdata):
-		"""
-		For queries that require multiple requests
-		"""
+		"""For queries that require multiple requests"""
 		self._continues = set()
 		self._generator = ''
 		total = initialdata
@@ -197,10 +198,11 @@ class APIResult(dict):
 	response = []
 		
 def resultCombine(type, old, new):
-	"""
-	Experimental-ish result-combiner thing
+	"""Experimental-ish result-combiner thing
+	
 	If the result isn't something from action=query,
 	this will just explode, but that shouldn't happen hopefully?
+	
 	"""
 	ret = old
 	if type in new['query']: # Basic list, easy
@@ -228,7 +230,6 @@ def urlencode(query,doseq=0):
 	utf-8, but for unknown reasons, chooses not to by 
 	trying to encode everything as ascii
     """
-
     if hasattr(query,"items"):
         # mapping objects
         query = query.items()

@@ -38,16 +38,17 @@ class ProtectError(wiki.WikiError):
 	"""Problem with protection request"""
 
 class Page:
-	""" A page on the wiki
-	wiki - A wiki object
-	title - The page title, as a string
-	check - Checks for existence, normalizes title, required for most things
-	followRedir - follow redirects (check must be true)
-	section - the section name
-	sectionnumber - the section number
-	pageid - pageid, can be in place of title
-	""" 
+	""" A page on the wiki"""
 	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False):
+		"""	
+		wiki - A wiki object
+		title - The page title, as a string or unicode object
+		check - Checks for existence, normalizes title, required for most things
+		followRedir - follow redirects (check must be true)
+		section - the section name
+		sectionnumber - the section number
+		pageid - pageid, can be in place of title
+		""" 
 		if not title and not pageid:
 			raise wiki.WikiError("No title or pageid given")
 		self.site = site
@@ -103,9 +104,7 @@ class Page:
 			self.urltitle = False
 
 	def setPageInfo(self):
-		"""
-		Sets basic page info, required for almost everything
-		"""
+		"""Sets basic page info, required for almost everything"""
 		followRedir = self.followRedir
 		params = {'action':'query'}
 		if self.pageid:
@@ -131,10 +130,11 @@ class Page:
 			self.pageid = 0
 		
 	def setNamespace(self, newns, recheck=False):
-		"""
-		Change the namespace number of a page object
-		and update the title with the new prefix
+		"""Change the namespace number of a page object
+		
+		Updates the title with the new prefix
 		recheck - redo pageinfo checks
+		
 		"""
 		if not newns in self.site.namespaces.keys():
 			raise BadNamespace
@@ -165,9 +165,11 @@ class Page:
 			self.setPageInfo()
 		
 	def setSection(self, section=False, number=False):
-		"""
-		Set a section for the page
+		"""Set a section for the page
+		
 		section - the section name
+		number - the section number
+		
 		"""
 		if not section and number is False:
 			self.section = False
@@ -200,11 +202,13 @@ class Page:
 		return number
 		
 	def canHaveSubpages(self):
+		"""Is the page in a namespace that allows subpages?"""
 		if not self.title:
 			self.setPageInfo()
 		return 'subpages' in self.site.namespaces[self.namespace]
 		
 	def isRedir(self):
+		"""Is the page a redirect?"""
 		params = {'action':'query',
 			'redirects':''
 		}
@@ -228,14 +232,19 @@ class Page:
 			return False
 	
 	def isTalk(self):
+		"""Is the page a discussion page?"""
 		if not self.title:
 			self.setPageInfo()
 		return (self.namespace%2==1 and self.namespace >= 0)
 		
 	def toggleTalk(self, check=True, followRedir=True):
-		"""
+		"""Switch to and from the talk namespaces
+		
 		Returns a new page object that's either the talk or non-talk
 		version of the current page
+		
+		check and followRedir - same meaning as Page constructor
+		
 		"""
 		if not self.title:
 			self.setPageInfo()
@@ -258,10 +267,11 @@ class Page:
 		return Page(self.site, newname, check, followRedir)						
 			
 	def getWikiText(self, expandtemplates=False, force=False):
-		"""
-		Gets the Wikitext of the page
+		"""Gets the Wikitext of the page
+		
 		expandtemplates - expand the templates to wikitext instead of transclusions
 		force - load the text even if we already loaded it before
+		
 		"""
 	
 		if self.wikitext and not force:
@@ -293,9 +303,10 @@ class Page:
 		return self.wikitext
 	
 	def getLinks(self, force=False):
-		"""
-		Gets a list of all the internal links on the page
+		"""Gets a list of all the internal links *on* the page
+		
 		force - load the list even if we already loaded it before
+		
 		"""
 		if self.links and not force:
 			return self.links
@@ -323,6 +334,7 @@ class Page:
 		return self.links
 		
 	def getProtection(self, force=False):
+		"""Returns the current protection status of the page"""
 		if self.protection and not force:
 			return self.protection
 		if self.pageid == 0 and not self.title:
@@ -351,11 +363,11 @@ class Page:
 		return self.protection
 	
 	def getTemplates(self, force=False):
-		"""
-		Gets all list of all the templates on the page
+		"""Gets all list of all the templates on the page
+		
 		force - load the list even if we already loaded it before
-		"""
-	
+		
+		"""	
 		if self.templates and not force:
 			return self.templates
 		if self.pageid == 0 and not self.title:
@@ -391,12 +403,17 @@ class Page:
 		return list
 	
 	def edit(self, *args, **kwargs):
-		"""
-		Edit the page
+		"""Edit the page
+		
 		Arguments are a subset of the API's action=edit arguments, valid arguments
 		are defined in the validargs set
-		To skip MD5 check, set "skipmd5" keyword argument to True
+		To skip the MD5 check, set "skipmd5" keyword argument to True
 		http://www.mediawiki.org/wiki/API:Edit_-_Create%26Edit_pages#Parameters
+		
+		For backwards compatibility:
+		'newtext' is equivalent to  'text'
+		'basetime' is equivalent to 'basetimestamp'
+		
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
 			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'prependtext', 'appendtext', 'section'])			
@@ -452,11 +469,16 @@ class Page:
 		return result
 		
 	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):
-		"""
-		Move the page
-		Most params are self-explanatory
-		mvto (move to) is the only required param
-		must have "suppressredirect" right to use noredirect
+		"""Move the page
+		
+		Params are the same as the API:
+		mvto - page title to move to, the only required param
+		reason - summary for the log
+		movetalk - move the corresponding talk page
+		noredirect - don't create a redirect at the previous title
+		watch - add the page to your watchlist
+		unwatch - remove the page from your watchlist
+		
 		"""
 		if not self.title and self.pageid == 0:
 			self.setPageInfo()
@@ -494,12 +516,16 @@ class Page:
 		return result
 
 	def protect(self, restrictions={}, expirations={}, reason=False, cascade=False):
-		"""
-		Protect a page
-		restrictions and expirations are dictionaries of
-		protection level/expiry settings, eg, {'edit':'sysop'} and
+		"""Protect a page
+		
+		Restrictions and expirations are dictionaries of
+		protection level/expiry settings, e.g., {'edit':'sysop'} and
 		{'move':'3 days'}. expirations can also be a string to set 
 		all levels to the same expiration
+		
+		reason - summary for log
+		cascade - apply protection to all pages transcluded on the page
+		
 		"""
 		if not self.title:
 			self.setPageInfo()
@@ -542,9 +568,12 @@ class Page:
 		return result
 	
 	def delete(self, reason=False, watch=False, unwatch=False):
-		"""
-		Delete the page
-		Most params are self-explanatory
+		"""Delete the page
+		
+		reason - summary for log
+		watch - add the page to your watchlist
+		unwatch - remove the page from your watchlist
+		
 		"""
 		if not self.title and self.pageid == 0:
 			self.setPageInfo()
@@ -578,12 +607,12 @@ class Page:
 		return result
 	
 	def getToken(self, type):
-		""" 
-		Get a token for everything except blocks and rollbacks
-		type (String) - edit, delete, protect, move, block, unblock, email
+		"""Get a token for everything except rollbacks
+		
+		type (string) - edit, delete, protect, move, block, unblock, email
 		Currently all the tokens are interchangeable, but this may change in the future
-		"""
-			
+		
+		"""			
 		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists and type != 'edit':

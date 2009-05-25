@@ -40,11 +40,12 @@ class EditError(WikiError):
 	"""Problem with edit request"""
 
 class Wiki:
-	"""
-	A Wiki site
-	url - A URL to the site's API, defaults to en.wikipedia
-	"""	
+	"""A Wiki site"""
+
 	def __init__(self, url="http://en.wikipedia.org/w/api.php"):
+		"""
+		url - A URL to the site's API, defaults to en.wikipedia
+		"""
 		self.apibase = url
 		self.cookies = WikiCookieJar()
 		self.username = ''
@@ -64,6 +65,12 @@ class Wiki:
 			pass
 	
 	def setSiteinfo(self):
+		"""Retrieves basic siteinfo
+		
+		Called when constructing,
+		or after login if the first call failed
+		
+		"""
 		params = {'action':'query',
 			'meta':'siteinfo',
 			'siprop':'general|namespaces|namespacealiases',
@@ -90,15 +97,16 @@ class Wiki:
 			print "WARNING: Some features may not work on older versions of MediaWiki"
 	
 	def login(self, username, password=False, remember=False, force=False, verify=True):
-		"""
-		Login to the site
+		"""Login to the site
+		
 		remember - saves cookies to a file - the filename will be:
 		hash(username - apibase).cookies
 		the cookies will be saved in the current directory, change cookiepath
 		to use a different location
 		force - forces login over the API even if a cookie file exists 
 		and overwrites an existing cookie file if remember is True
-		verify - Checks cookie validity with isLoggedIn
+		verify - Checks cookie validity with isLoggedIn()
+		
 		"""
 		if not force:
 			try:	
@@ -167,9 +175,10 @@ class Wiki:
 		self.limit = 500
 		
 	def isLoggedIn(self, username = False):
-		"""
-		Verify that we are a logged in user
+		"""Verify that we are a logged in user
+		
 		username - specify a username to check against
+		
 		"""
 		
 		data = {
@@ -188,8 +197,10 @@ class Wiki:
 			return True
 	
 	def setMaxlag(self, maxlag = 5):
-		"""
-		Set the maxlag for all requests to something other than 5
+		"""Set the maximum server lag to allow
+		
+		If the lag is > the maxlag value, all requests will wait
+		
 		"""
 		try:
 			int(maxlag)
@@ -198,9 +209,7 @@ class Wiki:
 		self.maxlag = int(maxlag)
 		
 	def setUserAgent(self, useragent):
-		"""
-		Function to set a different user-agent
-		"""
+		"""Function to set a different user-agent"""
 		self.useragent['User-agent'] = str(useragent)
 
 	def __eq__(self, other):

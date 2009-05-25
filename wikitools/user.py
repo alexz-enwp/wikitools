@@ -21,12 +21,13 @@ import api
 import socket
 
 class User:
-	""" A user on the wiki
-	wiki - A wiki object
-	name - The username, as a string
-	check - Checks for existence, normalizes name
-	"""	
+	"""A user on the wiki"""
 	def __init__(self, site, name, check=True):
+		"""
+		wiki - A wiki object
+		name - The username, as a string
+		check - Checks for existence, normalizes name
+		"""	
 		self.site = site
 		self.name = name
 		if not isinstance(self.name, unicode):
@@ -48,9 +49,7 @@ class User:
 		self.page = page.Page(self.site, ':'.join([self.site.namespaces[2]['*'], self.name]), check=check, followRedir=False)
 	
 	def setUserInfo(self):
-		"""
-		Sets basic user info
-		"""		
+		"""Sets basic user info"""		
 		params = {
 			'action': 'query',
 			'list': 'users',
@@ -71,6 +70,20 @@ class User:
 			self.blocked = True
 			
 	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
+		"""Block the user
+		
+		Params are the same as the API
+		reason - block reason
+		expiry - block expiration
+		anononly - block anonymous users only
+		nocreate - disable account creation
+		autoblock - block IP addresses used by the user
+		noemail - block user from sending email through the site
+		hidename - hide the username from the log (requires hideuser right)
+		allowusertalk - allow the user to edit their talk page
+		reblock - overwrite existing block
+		
+		"""
 		params = {'action':'block',
 			'user':self.name,
 			'gettoken':''
@@ -107,6 +120,11 @@ class User:
 		return res
 		
 	def unblock(self, reason=False):
+		"""Unblock the user
+		
+		reason - reason for the log
+		
+		"""
 		params = {
 		    'action': 'unblock',
 			'user': self.name,

@@ -24,11 +24,17 @@ class FileDimensionError(wiki.WikiError):
 	"""Invalid dimensions"""
 
 class File(page.Page):
-	"""
-	A File on the wiki
-	title should be the full title, including "File:"
-	"""
+	"""A file on the wiki"""
 	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False):
+		"""	
+		wiki - A wiki object
+		title - The page title, as a string or unicode object
+		check - Checks for existence, normalizes title, required for most things
+		followRedir - follow redirects (check must be true)
+		section - the section name
+		sectionnumber - the section number
+		pageid - pageid, can be in place of title
+		""" 
 		self.local = ''
 		self.url = ''
 		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber)
@@ -37,10 +43,11 @@ class File(page.Page):
 		self.usage = []
 			
 	def getUsage(self, namespaces=False):
-		"""
-		Gets all list of all the pages that use the file
+		"""Gets all list of all the pages that use the file
+		
 		force - load the list even if we already loaded it before
 		namespaces - list of namespaces to look in
+		
 		"""	
 		if self.usage and not force:
 			return self.usage
@@ -73,11 +80,12 @@ class File(page.Page):
 		return list
 	
 	def download(self, width=False, height=False, location=False):
-		"""
-		Download the image to a local file
+		"""Download the image to a local file
+		
 		width/height - set width OR height of the downloaded image
 		location - set the filename to save to. If not set, the page title
-		minus the namespace prefix will be used
+		minus the namespace prefix will be used and saved to the current directory
+		
 		"""
 		if self.pageid == 0:
 			self.setPageInfo()

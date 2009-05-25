@@ -22,11 +22,12 @@ import wikifile
 import math
 
 def listFromQuery(site, queryresult):
-	"""
-	Generate a list of pages from an API query result
+	"""Generate a list of pages from an API query result
+	
 	queryresult is the list of pages from a list or generator query
 	e.g. - for a list=categorymembers query, use result['query']['categorymembers']
 	for a generator query, use result['query']['pages']
+	
 	"""
 	ret = []
 	if isinstance(queryresult, list):
@@ -57,9 +58,10 @@ def listFromQuery(site, queryresult):
 	return ret
 
 def listFromTitles(site, titles, check=True, followRedir=False):
-	"""
-	Create a list of page objects from a list of titles
+	"""Create a list of page objects from a list of titles
+	
 	check and followRedir have the same meaning as in page.Page
+	
 	"""
 	ret = []
 	if not check:
@@ -101,9 +103,10 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 	return ret
 
 def listFromPageids(site, pageids, check=True, followRedir=False):			
-	"""
-	Create a list of page objects from a list of pageids
+	"""Create a list of page objects from a list of pageids
+	
 	check and followRedir have the same meaning as in page.Page
+	
 	"""
 	ret = []
 	if not check:

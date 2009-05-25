@@ -20,22 +20,30 @@ import page
 import api
 
 class Category(page.Page):
-	"""
-	A category on the wiki
-	"""
+	"""A category on the wiki"""
 	def __init__(self, site, title=False, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
+		"""	
+		wiki - A wiki object
+		title - The page title, as a string or unicode object
+		check - Checks for existence, normalizes title, required for most things
+		followRedir - follow redirects (check must be true)
+		section - the section name
+		sectionnumber - the section number
+		pageid - pageid, can be in place of title
+		""" 
 		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 		self.members = []
 		if self.namespace != 14:
 			self.setNamespace(14, check)
 			
 	def getAllMembers(self, titleonly=False, reload=False, namespaces=False):
-		"""
-		Gets a list of pages in the category
+		"""Gets a list of pages in the category
+		
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
 		reload - reload the list even if it was generated before
 		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		
 		"""
 		if self.members and not reload:
 			if titleonly:
@@ -61,12 +69,13 @@ class Category(page.Page):
 			return members
 	
 	def getAllMembersGen(self, titleonly=False, reload=False, namespaces=False):
-		"""
-		Generator function for pages in the category
+		"""Generator function for pages in the category
+		
 		titleonly - set to True to return strings,
 		else it will return Page objects
 		reload - reload the list even if it was generated before
 		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		
 		"""
 		if self.members and not reload:
 			for member in self.members:
