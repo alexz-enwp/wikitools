@@ -59,8 +59,8 @@ class Page:
 		self.followRedir = followRedir
 		self.title = title
 		self.wikitext = ''
-		self.templates = ''
-		self.links = ''
+		self.templates = []
+		self.links = []
 		self.exists = True # If we're not going to check, assume it does
 		self.protection = {}
 		
@@ -165,6 +165,9 @@ class Page:
 		if recheck:
 			self.pageid = False
 			self.setPageInfo()
+		self.wikitext = ''
+		self.templates = []
+		self.links = []
 		return self.namespace
 		
 	def setSection(self, section=False, number=False):
@@ -183,6 +186,7 @@ class Page:
 				raise WikiError("Section number must be an int")
 		else:
 			self.section = self.__getSection(section)
+		self.wikitext = ''
 		return self.section
 	
 	def __getSection(self, section):
