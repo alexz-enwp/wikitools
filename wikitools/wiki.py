@@ -215,7 +215,7 @@ class Wiki:
 		
 	def setUserAgent(self, useragent):
 		"""Function to set a different user-agent"""
-		self.useragent['User-agent'] = str(useragent)
+		self.useragent = str(useragent)
 		return self.useragent
 
 	def __eq__(self, other):
