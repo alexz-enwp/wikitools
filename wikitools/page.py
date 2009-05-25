@@ -128,18 +128,20 @@ class Page:
 		self.pageid = int(self.pageid)
 		if self.pageid < 0:
 			self.pageid = 0
+		return self
 		
 	def setNamespace(self, newns, recheck=False):
 		"""Change the namespace number of a page object
 		
 		Updates the title with the new prefix
+		newns - integer namespace number
 		recheck - redo pageinfo checks
 		
 		"""
 		if not newns in self.site.namespaces.keys():
 			raise BadNamespace
 		if self.namespace == newns:
-			return
+			return self.namespace
 		if self.title:
 			if self.namespace != 0:
 				bits = self.title.split(':', 1)
@@ -163,6 +165,7 @@ class Page:
 		if recheck:
 			self.pageid = False
 			self.setPageInfo()
+		return self.namespace
 		
 	def setSection(self, section=False, number=False):
 		"""Set a section for the page
@@ -180,6 +183,7 @@ class Page:
 				raise WikiError("Section number must be an int")
 		else:
 			self.section = self.__getSection(section)
+		return self.section
 	
 	def __getSection(self, section):
 		if not self.title:

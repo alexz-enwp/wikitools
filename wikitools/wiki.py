@@ -95,6 +95,7 @@ class Wiki:
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
 		if not int(version.group(1)) >= 13: # Will this even work on 13?
 			print "WARNING: Some features may not work on older versions of MediaWiki"
+		return self
 	
 	def login(self, username, password=False, remember=False, force=False, verify=True):
 		"""Login to the site
@@ -114,7 +115,7 @@ class Wiki:
 				self.cookies.load(self, cookiefile, True, True)
 				self.username = username
 				if not verify or self.isLoggedIn(self.username):
-					return
+					return True
 			except:
 				pass
 		if not password:
@@ -137,6 +138,7 @@ class Wiki:
 			except:
 				print info['error']['code']
 				print info['error']['info']
+			return False
 		if not self.siteinfo:
 			self.setSiteinfo()
 		params = {
@@ -154,6 +156,7 @@ class Wiki:
 		if remember:
 			cookiefile = self.cookiepath + str(hash(self.username+' - '+self.apibase))+'.cookies'
 			self.cookies.save(self, cookiefile, True, True)
+		return True
 	
 	def logout(self):
 		params = { 'action': 'logout' }
@@ -173,6 +176,7 @@ class Wiki:
 		self.maxlag = 5
 		self.useragent = "python-wikitools/1.0"
 		self.limit = 500
+		return True
 		
 	def isLoggedIn(self, username = False):
 		"""Verify that we are a logged in user
@@ -207,10 +211,12 @@ class Wiki:
 		except:
 			raise WikiError("maxlag must be an integer")
 		self.maxlag = int(maxlag)
+		return self.maxlag
 		
 	def setUserAgent(self, useragent):
 		"""Function to set a different user-agent"""
 		self.useragent['User-agent'] = str(useragent)
+		return self.useragent
 
 	def __eq__(self, other):
 		if not isinstance(other, Wiki):

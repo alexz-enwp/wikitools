@@ -68,6 +68,7 @@ class User:
 			self.groups = user['groups']
 		if 'blockedby' in user:
 			self.blocked = True
+		return self
 			
 	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
 		"""Block the user
