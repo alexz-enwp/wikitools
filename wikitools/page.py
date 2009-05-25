@@ -165,6 +165,8 @@ class Page:
 		if recheck:
 			self.pageid = False
 			self.setPageInfo()
+		else:
+			self.pageid = 0
 		self.wikitext = ''
 		self.templates = []
 		self.links = []
