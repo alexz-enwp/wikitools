@@ -1,0 +1,162 @@
+This is a simple testing framework for wikitools.
+
+To use:
+
+1. Create the user account "Wikitools test"
+
+2. Create a settings.py file containing the username and password for an account on the wiki used for testing.
+For example:
+test = 'Wikitools test'
+testpass = 'password'
+
+3. Change the URL in the test.py script to the API url of the wiki used for testing
+
+4. Upload the file "Wikitools_test_file.jpg" to the wiki using that name
+Use the following as the file description:
+
+Test page for [[wikitools]] test framework
+
+==Test section==
+File test page
+
+==Test==
+{{Wikitools test page}}
+[[Category:Wikitools test page]]
+
+5. Import the wikitoolstestpages.xml file using Special:Import
+
+6. Run the script
+
+
+What this script does do:
+* Verifies things aren't totally broken
+* Gives an easy way to check that output is reasonable
+
+What this script doesn't do:
+* Verifies output is correct
+* Test write functions (edit, delete, block, etc)
+* Be very thorough
+
+Pageids, namespaces, site settings can vary from site to site, the output from my own wiki is (using wikitools r194):
+
+Testing wiki
+Site: http://main.wikisite - not logged in <wikitools.wiki.Wiki 'http://main.wikisite/w/api.php' not logged in>
+Login: True
+Login check: True
+Change maxlag: 7
+Change UA: python-wikitools/test
+NSaliases: {'TEST': 4, 'Image': 6, 'Image talk': 7}
+__doc__: A Wiki site
+__module__: wikitools.wiki
+apibase: http://main.wikisite/w/api.php
+cookiepath: 
+cookies: <wikitools.wiki.WikiCookieJar[<Cookie mainwikiUserID=3 for main.wikisite/>, <Cookie mainwikiUserName=Wikitools+test for main.wikisite/>, <Cookie mainwiki_session=f2d74aa2158be7e5404d0f88e6886897 for main.wikisite/>, <Cookie test_centralauth_Session=4fee15066e10b9d64949354227f9d781 for main.wikisite/>, <Cookie test_centralauth_Token=5d250ac1500917ef7420918b89f8218f for main.wikisite/>, <Cookie test_centralauth_User=Wikitools+test for main.wikisite/>]>
+domain: http://main.wikisite
+limit: 500
+maxlag: 7
+maxwaittime: 120
+namespaces: {0: {'*': '', 'id': 0}, 1: {'subpages': '', '*': 'Talk', 'id': 1, 'canonical': 'Talk'}, 2: {'subpages': '', '*': 'User', 'id': 2, 'canonical': 'User'}, 3: {'subpages': '', '*': 'User talk', 'id': 3, 'canonical': 'User talk'}, 4: {'subpages': '', '*': 'MainWiki', 'id': 4, 'canonical': 'Project'}, 5: {'subpages': '', '*': 'MainWiki talk', 'id': 5, 'canonical': 'Project talk'}, 6: {'*': 'File', 'id': 6, 'canonical': 'File'}, 7: {'subpages': '', '*': 'File talk', 'id': 7, 'canonical': 'File talk'}, 8: {'*': 'MediaWiki', 'id': 8, 'canonical': 'MediaWiki'}, 9: {'subpages': '', '*': 'MediaWiki talk', 'id': 9, 'canonical': 'MediaWiki talk'}, 10: {'*': 'Template', 'id': 10, 'canonical': 'Template'}, 11: {'subpages': '', '*': 'Template talk', 'id': 11, 'canonical': 'Template talk'}, 12: {'*': 'Help', 'id': 12, 'canonical': 'Help'}, 13: {'subpages': '', '*': 'Help talk', 'id': 13, 'canonical': 'Help talk'}, 14: {'*': 'Category', 'id': 14, 'canonical': 'Category'}, 15: {'subpages': '', '*': 'Category talk', 'id': 15, 'canonical': 'Category talk'}, -2: {'*': 'Media', 'id': -2, 'canonical': 'Media'}, -1: {'*': 'Special', 'id': -1, 'canonical': 'Special'}}
+siteinfo: {'wikiid': 'mainwiki', 'scriptpath': '/w', 'timezone': 'UTC', 'phpversion': '5.2.9', 'script': '/w/index.php', 'sitename': 'MainWiki', 'rev': 50983, 'variantarticlepath': False, 'timeoffset': 0, 'writeapi': '', 'case': 'first-letter', 'dbversion': '5.0.77', 'base': 'http://main.wikisite/wiki/Main_Page', 'articlepath': '/wiki/$1', 'lang': 'en', 'fallback8bitEncoding': 'windows-1252', 'generator': 'MediaWiki 1.16alpha', 'rights': '', 'phpsapi': 'apache2handler', 'server': 'http://main.wikisite', 'dbtype': 'mysql', 'mainpage': 'Main Page'}
+useragent: python-wikitools/test
+username: Wikitools test
+
+Testing page
+Page:  Page u'Wikitools test page' from 'http://main.wikisite' <wikitools.page.Page u'Wikitools test page' using 'http://main.wikisite/w/api.php'>
+Subpage check: False
+Redirect check: False
+Talk check: False
+Talk page: Page u'Talk:Wikitools test page' from 'http://main.wikisite'
+Wikitext: Test page for [[wikitools]] test framework
+
+==Test section==
+Mainspace test page
+
+==Test==
+{{Wikitools test page}}
+[[Category:Wikitools test page]]
+Links: ['Wikitools']
+Protection: {}
+Templates: ['Template:Wikitools test page']
+Edit token: caaa81a6843991219f03f84bf07e26ae+\
+Changing section: 1
+Wikitext II: ==Test section==
+Mainspace test page
+Changing namespace: 4
+Wikitext III: ==Test section==
+Projectspace test page
+Links II ['Wikitools']
+__doc__:  A page on the wiki
+__module__: wikitools.page
+exists: True
+followRedir: True
+lastedittime: 2009-05-25T19:31:24Z
+links: ['Wikitools']
+namespace: 4
+pageid: 60
+protection: {}
+section: 1
+site: http://main.wikisite - using User:Wikitools test
+templates: []
+title: MainWiki:Wikitools test page
+urltitle: MainWiki%3AWikitools_test_page
+wikitext: ==Test section==
+Projectspace test page
+
+Testing category
+Category:  Category u'Category:Wikitools test page' from 'http://main.wikisite' <wikitools.category.Category u'Category:Wikitools test page' using 'http://main.wikisite/w/api.php'>
+Members I: [<wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>]
+Members II: [<wikitools.page.Page u'File:Wikitools test file.jpg' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Template:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Wikitools test page' using 'http://main.wikisite/w/api.php'>]
+Members III: [<wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>]
+__doc__: A category on the wiki
+__module__: wikitools.category
+exists: True
+followRedir: False
+links: []
+members: [<wikitools.page.Page u'File:Wikitools test file.jpg' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Template:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Wikitools test page' using 'http://main.wikisite/w/api.php'>]
+namespace: 14
+pageid: 61
+protection: {}
+section: False
+site: http://main.wikisite - using User:Wikitools test
+templates: []
+title: Category:Wikitools test page
+urltitle: Category%3AWikitools_test_page
+wikitext: 
+
+Testing file
+File:  File 'File:Wikitools test file.jpg' from 'http://main.wikisite' <wikitools.wikifile.File 'File:Wikitools test file.jpg' using 'http://main.wikisite/w/api.php'>
+Usage I: [<wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>]
+Usage II: [<wikitools.page.Page u'Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Category:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Template:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'File:Wikitools test file.jpg' using 'http://main.wikisite/w/api.php'>]
+Usage III: [<wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>]
+Downloaded file thumbnail: Wikitools test file.jpg
+File size: 9022
+__doc__: A file on the wiki
+__module__: wikitools.wikifile
+exists: True
+followRedir: False
+links: []
+namespace: 6
+pageid: 63
+protection: {}
+section: False
+site: http://main.wikisite - using User:Wikitools test
+templates: []
+title: File:Wikitools test file.jpg
+urltitle: File%3AWikitools_test_file.jpg
+usage: [<wikitools.page.Page u'Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'MainWiki:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Category:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'Template:Wikitools test page' using 'http://main.wikisite/w/api.php'>, <wikitools.page.Page u'File:Wikitools test file.jpg' using 'http://main.wikisite/w/api.php'>]
+wikitext: 
+
+Testing user
+User:  User 'Wikitools test' on 'http://main.wikisite' <wikitools.user.User 'Wikitools test' on 'http://main.wikisite/w/api.php'>
+__doc__: A user on the wiki
+__module__: wikitools.user
+blocked: False
+editcount: 9
+exists: True
+groups: []
+isIP: False
+name: Wikitools test
+page: Page u'User:Wikitools test' from 'http://main.wikisite'
+site: http://main.wikisite - using User:Wikitools test
+
+
