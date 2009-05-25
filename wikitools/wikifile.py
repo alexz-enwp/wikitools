@@ -35,8 +35,6 @@ class File(page.Page):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		""" 
-		self.local = ''
-		self.url = ''
 		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber)
 		if self.namespace != 6:
 			self.setNamespace(6, check)
