@@ -3,10 +3,10 @@
 from distutils.core import setup
 
 setup(name='wikitools',
-      version='0.1.1',
+      version='1.0',
       description='Python package for interacting with a MediaWiki wiki',
 	  long_description = """A Python package for interacting with a MediaWiki wiki using the MediaWiki API.
-Designed for MediaWiki version 1.14 and higher, should work on 1.13, older
+Designed for MediaWiki version 1.15 and higher, should work on 1.13, older
 versions may have bugs.
 The edit-API must be enabled on the site to use editing features.
 This is atill a beta release and may have bugs, especially when dealing with
@@ -16,4 +16,5 @@ non-ASCII text.""",
       url='http://code.google.com/p/python-wikitools/',
 	  license='GPL v3',
       packages=['wikitools'],
+	  package_data={'wikitools': ['wikitools/COPYING', 'wikitools/README', 'wikitools/CHANGELOG']},
      )
