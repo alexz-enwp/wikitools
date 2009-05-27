@@ -1,4 +1,4 @@
-﻿wikitools v0.1 -- Package for working with MediaWiki wikis
+﻿wikitools v1.0 -- Package for working with MediaWiki wikis
 -----------------------------------------------------------
 
 Requirements:
@@ -15,6 +15,7 @@ Installation:
     to an appropriate Python module directory.
   * An exe installer for Windows is also available (should be run as an 
     administrator to avoid errors)
+  * An RPM for Linux is also available.
 
 Available modules:
 
@@ -27,6 +28,10 @@ Available modules:
 	other actions if enabled on the wiki
   * category.py - Category is a subclass of Page with extra functions for
     working with categories
+  * wikifile.py - File is a subclass of Page with extra functions for
+    working with files - note that there may be some issues with shared 
+	repositories, as the pages for files on shared repos technically don't
+	exist.
   * user.py - Contains the User class for getting information about and 
     blocking/unblocking users
   * pagelist.py - Contains several functions for getting a list of Page
@@ -39,18 +44,21 @@ Current limitations:
 	protect pages, only retrieve information about them. The API also 
 	currently has no way of uploading files or changing userrights.
   * May have issues with some non-ASCII characters, but most of these bugs
-    should be resolved
+    should be resolved, though full UTF-8 support is still a little flaky
+  * Usage on restricted-access (logged-out users can't read) wikis is
+    mostly untested
   
 API examples:
 To do a simple query:
 
-import wikitools
+from wikitools import wiki
+from wikitools import api
 # create a Wiki object
-site = wikitools.wiki.Wiki("http://my.wikisite.org/w/api.php") 
+site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
 # define the params for the query
 params = {'action':'query', 'titles':'Main Page'}
 # create the request object
-request = wikitools.api.APIRequest(site, params)
+request = api.APIRequest(site, params)
 # query the API
 result = request.query()
 
@@ -62,7 +70,22 @@ The result will look something like:
 		}
 	}
 }
+
+For most normal usage, you may not have to do API queries yourself and can just
+use the various classes. For example, to add a template to the top of all the 
+pages in namespace 0 in a category:
+
+from wikitools import wiki
+from wikitools import category
+site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
+# Create object for "Category:Foo"
+cat = category.Category(site, "Foo")
+# iterate through all the pages in ns 0
+for article in cat.getAllMembersGen(namespaces=[0]):
+	# edit each page
+	article.edit(prependtext="{{template}}\n")
  
+
 See the MediaWiki API documentation at <http://www.mediawiki.org/wiki/API>
 for more information about using the MediaWiki API. You can get an example of
 what query results will look like by doing the queries in your web browser using

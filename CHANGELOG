@@ -25,3 +25,28 @@ List of changes since 0.1 release:
 * improve namespace guessing/title normalization, include namespace aliases,
   add the namespace prefix to category objects if its not already there		
 		
+Changes since 0.1.1:
+
+* pagelist.listFromTitles() fixed
+* automatic query-continue alogrithm improved
+* performace of pagelist functions improved
+* API query results now use the APIResult class, subclassing dict. HTTP response headers are
+  included in the results as .response member variable
+* setNamespace() function added to Page class to allow changing the namespace of a Page object
+* Title normalization improved
+* API requests now print the actual exception info when retrying. If not retrying, the 
+  exception is not caught. The ServerError exception has been removed.
+* Added option to skip MD5 check when editing, as PHP's urldecoding fails in some corner cases
+* Handling of sections in the Page class (particularly section 0) is improved
+* Added some compatibility for read-restricted wikis. Not having read access previously caused
+  creating a Wiki object to fail as it tried to retrive the site info before login
+* Handling of non-existent pages improved
+* All modules imported when doing "import wikitools"
+* Category.getAllMembers() can now be filtered by namespace by passing a list of
+  namespaces as the "namespaces" parameter
+* File class (subclass of Page) added in wikifile.py (to avoid conflict with builtin file 
+  objects) - includes functions to get file usage and download the file
+* __str__ and __repr__ functions added for most objects to give useful string representations
+* in-code documentation improved
+* More functions now return some value, useful for debugging
+* Broken Wiki.setUserAgent() function fixed
