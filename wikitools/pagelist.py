@@ -81,7 +81,9 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 			querylist.append(titles)
 		response = False
 		for item in querylist:
-			tlist = unicode('|'.join(item), 'utf8')
+			tlist = '|'.join(item)
+			if not isinstance(tlist, unicode):
+				tlist = unicode(tlist)
 			params = {'action':'query',
 				'titles':tlist,
 			}
