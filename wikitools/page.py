@@ -37,9 +37,30 @@ class EditError(wiki.WikiError):
 class ProtectError(wiki.WikiError):
 	"""Problem with protection request"""
 
-class Page:
+def namespaceDetect(title, site):
+	""" Detect the namespace of a given title
+	title - the page title
+	site - the wiki object the page is on
+	"""
+	bits = title.split(':', 1)
+	if len(bits) == 1 or bits[0] == '':
+		return 0
+	else:
+		nsprefix = bits[0].lower() # wp:Foo and caTEGory:Foo are normalized by MediaWiki
+		for ns in site.namespaces:
+			if nsprefix == site.namespaces[ns]['*'].lower():
+				return int(ns)
+		else:
+			if site.NSaliases:
+				for ns in site.NSaliases:
+					if nsprefix == ns.lower():
+						return int(site.NSaliases[ns])
+	return 0	
+	
+class Page(object):
 	""" A page on the wiki"""
-	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False):
+
+	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False, namespace=False):
 		"""	
 		wiki - A wiki object
 		title - The page title, as a string or unicode object
@@ -48,7 +69,9 @@ class Page:
 		section - the section name
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
+		namespace - use to set the namespace prefix *if its not already in the title*
 		""" 
+		# Initialize instance vars from function args
 		if not title and not pageid:
 			raise wiki.WikiError("No title or pageid given")
 		self.site = site
@@ -58,50 +81,50 @@ class Page:
 			self.pageid = 0
 		self.followRedir = followRedir
 		self.title = title
+		self.unprefixedtitle = False # will be set later
+		self.urltitle = ''
 		self.wikitext = ''
 		self.templates = []
 		self.links = []
 		self.exists = True # If we're not going to check, assume it does
 		self.protection = {}
+		self.namespace = namespace
 		
+		# Things that need to be done before anything else
+		if self.title:
+			self.title = self.title.replace('_', ' ')
+		if self.namespace:
+			if namespace not in self.site.namespaces.keys():
+				raise BadNamespace(namespace)
+			if self.title:
+				self.unprefixedtitle = self.title
+				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title))
+		if self.namespace is 0 and self.title:
+			self.unprefixedtitle = self.title		
+		# Setting page info with API, should set:
+		# pageid, exists, title, unprefixedtitle, namespace
 		if check:
 			self.setPageInfo()
-		else: # Guess at some stuff
-			self.namespace = False
-			if self.title:
-				self.title = self.title.replace('_', ' ')
-				bits = self.title.split(':', 1)
-				if len(bits) == 1 or bits[0] == '':
-					self.namespace = 0
+		else:
+			if self.namespace is False and self.title:
+				self.namespace = namespaceDetect(self.title, self.site)
+				if self.namespace is not 0:
+					nsname = self.site.namespaces[self.namespace]['*']
+					self.unprefixedtitle = self.title.split(':', 1)[1]
+					self.title = ':'.join((nsname, self.unprefixedtitle))
 				else:
-					nsprefix = bits[0].lower() # wp:Foo and caTEGory:Foo are normalized by MediaWiki
-					for ns in self.site.namespaces:
-						if nsprefix == self.site.namespaces[ns]['*'].lower():
-							self.namespace = int(ns)
-							self.title = self.site.namespaces[ns]['*']+':'+bits[1]
-							break
-					else:
-						if self.site.NSaliases:
-							for ns in self.site.NSaliases:
-								if nsprefix == ns.lower():
-									self.namespace = int(self.site.NSaliases[ns])
-									self.title = self.site.namespaces[self.namespace]['*']+':'+bits[1]
-									break
-					if not self.namespace:
-						self.namespace = 0
-			else:
-				self.namespace = 0
+					self.unprefixedtitle = self.title
+					
 		if section or sectionnumber is not False:
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = False
-		if title and not isinstance(self.title, unicode):
-			self.title = unicode(self.title, 'utf-8')
-			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
-		elif title:
+		if title:
+			if not isinstance(self.title, unicode):
+				self.title = unicode(self.title, 'utf-8')
+			if not isinstance(self.unprefixedtitle, unicode):
+				self.unprefixedtitle = unicode(self.unprefixedtitle, 'utf-8')
 			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
-		else:
-			self.urltitle = False
 
 	def setPageInfo(self):
 		"""Sets basic page info, required for almost everything"""
@@ -119,12 +142,19 @@ class Page:
 		if self.pageid > 0:
 			self.exists = True
 		if 'missing' in response['query']['pages'][str(self.pageid)]:
+			if not self.title:
+				# Pageids are never recycled, so a bad pageid with no title will never work
+				raise wiki.WikiError("Bad pageid given with no title")
 			self.exists = False
 		if 'invalid' in response['query']['pages'][str(self.pageid)]:
 			raise BadTitle(self.title)
 		if 'title' in response['query']['pages'][str(self.pageid)]:
 			self.title = response['query']['pages'][str(self.pageid)]['title'].encode('utf-8')
 			self.namespace = int(response['query']['pages'][str(self.pageid)]['ns'])
+			if self.namespace is not 0:
+				self.unprefixedtitle = self.title.split(':', 1)[1]	
+			else:
+				self.unprefixedtitle = self.title
 		if 'invalid' in response['query']['pages'][str(self.pageid)]:
 			raise BadTitle(self.title)
 		self.pageid = int(self.pageid)
@@ -520,6 +550,11 @@ class Page:
 		result = req.query()
 		if 'move' in result:
 			self.title = result['move']['to']
+			self.namespace = namespaceDetect(self.title, self.site)
+			if self.namespace is not 0:
+				self.unprefixedtitle = self.title.split(':', 1)[1]
+			else:
+				self.unprefixedtitle = self.title			
 			if not isinstance(self.title, unicode):
 				self.title = unicode(self.title, 'utf-8')
 				self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
