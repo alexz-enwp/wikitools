@@ -47,7 +47,7 @@ class APIRequest:
 		self.data = data.copy()
 		self.data['format'] = "json"
 		self.iswrite = write
-		if not 'maxlag' in self.data:
+		if not 'maxlag' in self.data and not wiki.maxlag < 0:
 			self.data['maxlag'] = wiki.maxlag
 		self.encodeddata = urlencode(self.data, 1)
 		self.headers = {

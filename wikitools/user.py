@@ -33,7 +33,7 @@ class User:
 		if not isinstance(self.name, unicode):
 			self.name = unicode(self.name, 'utf8')
 		self.exists = True # If we're not going to check, assume it does
-		self.blocked = False
+		self.blocked = None # So we can tell the difference between blocked/not blocked/haven't checked
 		self.editcount = -1
 		self.groups = []
 		if check:
@@ -68,7 +68,26 @@ class User:
 			self.groups = user['groups']
 		if 'blockedby' in user:
 			self.blocked = True
+		else:
+			self.blocked = False
 		return self
+		
+	def isBlocked(self, force=False):
+		"""Determine if a user is blocked"""
+		if self.blocked is not None and not force:
+			return self.blocked
+		params = {'action':'query',
+			'list':'blocks',
+			'bkusers':self.name,
+			'bkprop':'id'
+		}
+		req = api.APIRequest(self.site, params)
+		res = req.query(False)
+		if len(res['query']['blocks']) > 0:
+			self.blocked = True
+		else:
+			self.blocked = False
+		return self.blocked		
 			
 	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
 		"""Block the user

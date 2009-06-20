@@ -204,6 +204,7 @@ class Wiki:
 		"""Set the maximum server lag to allow
 		
 		If the lag is > the maxlag value, all requests will wait
+		Setting to a negative number will disable maxlag checks
 		
 		"""
 		try:
