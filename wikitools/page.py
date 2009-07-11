@@ -98,7 +98,7 @@ class Page(object):
 				raise BadNamespace(namespace)
 			if self.title:
 				self.unprefixedtitle = self.title
-				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title))
+				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title.decode('utf8')))
 		if self.namespace is 0 and self.title:
 			self.unprefixedtitle = self.title		
 		# Setting page info with API, should set:
