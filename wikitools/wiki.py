@@ -97,7 +97,7 @@ class Wiki:
 			print "WARNING: Some features may not work on older versions of MediaWiki"
 		return self
 	
-	def login(self, username, password=False, remember=False, force=False, verify=True):
+	def login(self, username, password=False, remember=False, force=False, verify=True, domain=None):
 		"""Login to the site
 		
 		remember - saves cookies to a file - the filename will be:
@@ -107,6 +107,7 @@ class Wiki:
 		force - forces login over the API even if a cookie file exists 
 		and overwrites an existing cookie file if remember is True
 		verify - Checks cookie validity with isLoggedIn()
+		domain - domain name, required for some auth systems like LDAP
 		
 		"""
 		if not force:
@@ -126,6 +127,8 @@ class Wiki:
 			"lgname" : username,
 			"lgpassword" : password,
 		}
+		if domain is not None:
+			data["lgdomain"] = domain
 		if self.maxlag < 120:
 			data['maxlag'] = 120
 		req = api.APIRequest(self, data)
@@ -290,4 +293,4 @@ class WikiCookieJar(cookielib.FileCookieJar):
 			self.set_cookie(cook)
 		exec sitedata
 		f.close()
-		
+	
