@@ -32,14 +32,7 @@ except:
 
 class APIError(Exception):
 	"""Base class for errors"""
-
-class APIErrorHandler(urllib2.BaseHandler):
-	"""Class to handle 503 maxlag errors"""
 	
-	def http_error_503(self, req, fp, code, msg, hdrs):
-		if 'MediaWiki-API-Error' in hdrs and hdrs['MediaWiki-API-Error'] == 'maxlag':
-			return fp
-
 class APIRequest:
 	"""A request to the site's API"""
 	def __init__(self, wiki, data, write=False):
@@ -66,9 +59,7 @@ class APIRequest:
 			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
 		self.response = False
-		cookieprocessor = urllib2.HTTPCookieProcessor(wiki.cookies)
-		errorhandler = APIErrorHandler()
-		self.opener = urllib2.build_opener(errorhandler, cookieprocessor)
+		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
 		
 	def changeParam(self, param, value):
