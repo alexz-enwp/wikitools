@@ -21,6 +21,12 @@ import time
 import sys
 from urllib import quote_plus, _is_unicode
 try:
+	from poster.encode import multipart_encode
+	canupload = True
+except:
+	canupload = False
+
+try:
 	import json
 except:
 	import simplejson as json
@@ -35,26 +41,38 @@ class APIError(Exception):
 	
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, wiki, data, write=False):
+	def __init__(self, wiki, data, write=False, multipart=False):
 		"""	
 		wiki - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
+		multipart - use multipart data transfer, required for file uploads,
+		requires the poster package
+		
 		maxlag is set by default to 5 but can be changed
 		format is always set to json
 		"""
+		if not canupload and multipart:
+			raise APIError("The poster module is required for multipart support")
 		self.sleep = 5
 		self.data = data.copy()
 		self.data['format'] = "json"
 		self.iswrite = write
 		if not 'maxlag' in self.data and not wiki.maxlag < 0:
 			self.data['maxlag'] = wiki.maxlag
-		self.encodeddata = urlencode(self.data, 1)
-		self.headers = {
-			"Content-type": "application/x-www-form-urlencoded",
-			"User-agent": wiki.useragent,
-			"Content-length": len(self.encodeddata)
-		}
+		self.multipart = multipart
+		if self.multipart:
+			(datagen, self.headers) = multipart_encode(self.data)
+			self.encodeddata = ''
+			for singledata in datagen:
+				self.encodeddata = self.encodeddata + singledata
+		else:
+			self.encodeddata = urlencode(self.data, 1)
+			self.headers = {
+				"Content-type": "application/x-www-form-urlencoded",
+				"Content-length": len(self.encodeddata)
+			}
+		self.headers["User-agent"] = wiki.useragent,
 		if gzip:
 			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
@@ -62,18 +80,38 @@ class APIRequest:
 		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
 		
+	def setMultipart(self, multipart=True):
+		"""Enable multipart data transfer, required for file uploads."""
+		if not canupload and multipart:
+			raise APIError("The poster package is required for multipart support")
+		self.multipart = multipart
+
 	def changeParam(self, param, value):
 		"""Change or add a parameter after making the request object
 		
-		Simply changing self.data won't work ask it needs to update other things
+		Simply changing self.data won't work as it needs to update other things.
+
+		value can either be a normal string value, or a file-like object,
+		which will be uploaded, if setMultipart was called previously.
 		
 		"""
 		if param == 'format':
 			raise APIError('You can not change the result format')
 		self.data[param] = value
-		self.encodeddata = urlencode(self.data, 1)
-		self.headers['Content-length'] = len(self.encodeddata)
-		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
+		if self.multipart:
+			(datagen, headers) = multipart_encode(self.data)
+			self.headers.pop('Content-length')
+			self.headers.pop('Content-type')
+			self.headers.update(headers)
+			self.encodeddata = ''
+			for singledata in datagen:
+				self.encodeddata = self.encodeddata + singledata
+			self.encodeddata = data
+		else:
+			self.encodeddata = urlencode(self.data, 1)
+			self.headers['Content-length'] = len(self.encodeddata)
+			self.headers['Content-type'] = "application/x-www-form-urlencoded"
+			self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
 	
 	def query(self, querycontinue=True):
 		"""Actually do the query here and return usable stuff
