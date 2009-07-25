@@ -6,9 +6,12 @@ import inspect
 import settings
 import os
 import os.path
+import sys
+
+wikiurl = sys.argv[1]
 
 print "Testing wiki"
-site = wiki.Wiki('http://main.wikisite/w/api.php')
+site = wiki.Wiki(wikiurl)
 print "Site:", str(site), repr(site)
 print "Login:", site.login(settings.test, settings.testpass)
 print "Login check:", site.isLoggedIn(settings.test)
