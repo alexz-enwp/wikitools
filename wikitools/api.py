@@ -78,7 +78,7 @@ class APIRequest:
 		self.wiki = wiki
 		self.response = False
 		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
-		self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
+		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 		
 	def setMultipart(self, multipart=True):
 		"""Enable multipart data transfer, required for file uploads."""
@@ -111,7 +111,7 @@ class APIRequest:
 			self.encodeddata = urlencode(self.data, 1)
 			self.headers['Content-length'] = len(self.encodeddata)
 			self.headers['Content-type'] = "application/x-www-form-urlencoded"
-			self.request = urllib2.Request(wiki.apibase, self.encodeddata, self.headers)
+		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 	
 	def query(self, querycontinue=True):
 		"""Actually do the query here and return usable stuff
