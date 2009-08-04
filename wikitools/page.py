@@ -86,6 +86,7 @@ class Page(object):
 		self.wikitext = ''
 		self.templates = []
 		self.links = []
+		self.categories = []
 		self.exists = True # If we're not going to check, assume it does
 		self.protection = {}
 		self.namespace = namespace
@@ -434,6 +435,37 @@ class Page(object):
 		else:
 			self.templates = self.__extractToList(response, 'templates')
 		return self.templates
+	
+	def getCategories(self, force=False):
+		"""Gets all list of all the categories on the page
+		
+		force - load the list even if we already loaded it before
+		
+		"""	
+		if self.categories and not force:
+			return self.templates
+		if self.pageid == 0 and not self.title:
+			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
+		params = {
+			'action': 'query',
+			'prop': 'categories',
+			'cllimit': self.site.limit,
+		}
+		if self.pageid:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title	
+		req = api.APIRequest(self.site, params)
+		response = req.query()
+		self.categories = []
+		if isinstance(response, list):
+			for part in response:
+				self.categories.extend(self.__extractToList(part, 'categories'))
+		else:
+			self.categories = self.__extractToList(response, 'categories')
+		return self.categories
 	
 	def __extractToList(self, json, stuff):
 		list = []
