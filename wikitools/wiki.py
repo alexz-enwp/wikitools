@@ -258,6 +258,7 @@ class WikiCookieJar(cookielib.FileCookieJar):
 	def save(self, site, filename=None, ignore_discard=False, ignore_expires=False):
 		if not filename:
 			filename = self.filename
+		old_umask = os.umask(0077)
 		f = open(filename, 'w')
 		f.write('')
 		content = ''
@@ -272,6 +273,7 @@ class WikiCookieJar(cookielib.FileCookieJar):
 		content+='site.limit = %d;' % (site.limit) # This eventially might have more stuff in it
 		f.write(content)
 		f.close()
+		os.umask(old_umask)
 	
 	def load(self, site, filename, ignore_discard, ignore_expires):
 		f = open(filename, 'r')
