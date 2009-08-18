@@ -38,6 +38,9 @@ except:
 
 class APIError(Exception):
 	"""Base class for errors"""
+
+class APIDisabled(APIError):
+	"""API not enabled"""
 	
 class APIRequest:
 	"""A request to the site's API"""
@@ -228,7 +231,12 @@ class APIRequest:
 						maxlag = True
 						time.sleep(int(lagtime)+0.5)
 						return False
-			except: # Something's wrong with the data....
+			except: # Something's wrong with the data...
+				data.seek(0)
+				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
+					raise APIDisabled("The API is not enabled on this site")
+				print "Invalid JSON, trying request again"
+				# FIXME: Would be nice if this didn't just go forever if its never going to work
 				return False
 		return content
 		
