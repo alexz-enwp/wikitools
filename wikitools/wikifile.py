@@ -43,7 +43,7 @@ class File(page.Page):
 		
 	def getHistory(self, force=False):
 		if self.history and not force:
-			return self.links
+			return self.history
 		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists:
