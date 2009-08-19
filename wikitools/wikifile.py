@@ -39,7 +39,28 @@ class File(page.Page):
 		if self.namespace != 6:
 			self.setNamespace(6, check)
 		self.usage = []
-			
+		self.history = []
+		
+	def getHistory(self, force=False):
+		if self.history and not force:
+			return self.links
+		if self.pageid == 0 and not self.title:
+			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
+		params = {
+			'action': 'query',
+			'prop': 'imageinfo',
+			'iilimit': self.site.limit,
+		}
+		if self.pageid > 0:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title	
+		req = api.APIRequest(self.site, params)
+		response = req.query()
+		self.history = response['query']['pages'][str(self.pageid)]['imageinfo']
+		return self.history
 			
 	def getUsage(self, titleonly=False, force=False, namespaces=False):
 		"""Gets a list of pages that use the file
@@ -57,7 +78,6 @@ class File(page.Page):
 				else:
 					return [p.title for p in self.usage]
 			if namespaces is False:
-				print "Foo"
 				return self.usage
 			else:
 				return [p for p in self.usage if p.namespace in namespaces]
