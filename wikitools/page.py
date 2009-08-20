@@ -443,7 +443,7 @@ class Page(object):
 		
 		"""	
 		if self.categories and not force:
-			return self.templates
+			return self.categories
 		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists:
