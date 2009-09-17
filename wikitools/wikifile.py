@@ -22,6 +22,9 @@ import urllib2
 
 class FileDimensionError(wiki.WikiError):
 	"""Invalid dimensions"""
+	
+class UploadError(wiki.WikiError):
+	"""Error during uploading"""
 
 class File(page.Page):
 	"""A file on the wiki"""
@@ -190,5 +193,44 @@ class File(page.Page):
 		f.write(data.read())
 		f.close()
 		return location
-			
+		
+	def upload(self, fileobj=None, comment='', url=None, ignorewarnings=False, watch=False):
+		"""Upload a file, requires the "poster" module
+		
+		fileobj - A file object opened for reading
+		comment - The log comment, used as the inital page content if the file 
+		doesn't already exist on the wiki
+		url - A URL to upload the file from, if allowed on the wiki
+		ignorewarnings - Ignore warnings about duplicate files, etc.
+		watch - Add the page to your watchlist
+		
+		"""
+		if not api.canupload and fileobj:
+			raise UploadError("The poster module is required for file uploading")
+		if not fileobj and not url:
+			raise UploadError("Must give either a file object or a URL")
+		if fileobj and url:
+			raise UploadError("Cannot give a file and a URL")
+		params = {'action':'upload',
+			'comment':comment,
+			'filename':self.unprefixedtitle,
+			'token':self.getToken('edit') # There's no specific "upload" token
+		}
+		if url:
+			params['url'] = url
+		else:
+			params['file'] = fileobj
+		if ignorewarnings:
+			params['ignorewarnings'] = ''
+		if watch:
+			params['watch'] = ''
+		req = api.APIRequest(self.site, params, write=True, multipart=bool(fileobj))
+		res = req.query()
+		if 'upload' in res and res['upload']['result'] == 'Success':
+			self.wikitext = ''
+			self.links = []
+			self.templates = []
+			self.exists = True
+		return res
+		
 			

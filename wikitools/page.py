@@ -540,6 +540,7 @@ class Page(object):
 			self.wikitext = ''
 			self.links = []
 			self.templates = []
+			self.exists = True
 		return result
 		
 	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):

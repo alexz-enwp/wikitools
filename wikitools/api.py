@@ -88,6 +88,18 @@ class APIRequest:
 		if not canupload and multipart:
 			raise APIError("The poster package is required for multipart support")
 		self.multipart = multipart
+		if multipart:
+			(datagen, headers) = multipart_encode(self.data)
+			self.headers.pop('Content-Length')
+			self.headers.pop('Content-Type')
+			self.headers.update(headers)
+			self.encodeddata = ''
+			for singledata in datagen:
+				self.encodeddata = self.encodeddata + singledata
+		else:
+			self.encodeddata = urlencode(self.data, 1)
+			self.headers['Content-Length'] = len(self.encodeddata)
+			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
 
 	def changeParam(self, param, value):
 		"""Change or add a parameter after making the request object
