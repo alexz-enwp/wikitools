@@ -109,7 +109,6 @@ class APIRequest:
 			self.encodeddata = ''
 			for singledata in datagen:
 				self.encodeddata = self.encodeddata + singledata
-			self.encodeddata = data
 		else:
 			self.encodeddata = urlencode(self.data, 1)
 			self.headers['Content-Length'] = len(self.encodeddata)
