@@ -72,8 +72,8 @@ class APIRequest:
 		else:
 			self.encodeddata = urlencode(self.data, 1)
 			self.headers = {
-				"Content-type": "application/x-www-form-urlencoded",
-				"Content-length": len(self.encodeddata)
+				"Content-Type": "application/x-www-form-urlencoded",
+				"Content-Length": len(self.encodeddata)
 			}
 		self.headers["User-agent"] = wiki.useragent,
 		if gzip:
@@ -103,8 +103,8 @@ class APIRequest:
 		self.data[param] = value
 		if self.multipart:
 			(datagen, headers) = multipart_encode(self.data)
-			self.headers.pop('Content-length')
-			self.headers.pop('Content-type')
+			self.headers.pop('Content-Length')
+			self.headers.pop('Content-Type')
 			self.headers.update(headers)
 			self.encodeddata = ''
 			for singledata in datagen:
@@ -112,8 +112,8 @@ class APIRequest:
 			self.encodeddata = data
 		else:
 			self.encodeddata = urlencode(self.data, 1)
-			self.headers['Content-length'] = len(self.encodeddata)
-			self.headers['Content-type'] = "application/x-www-form-urlencoded"
+			self.headers['Content-Length'] = len(self.encodeddata)
+			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
 		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 	
 	def query(self, querycontinue=True):
