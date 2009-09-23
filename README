@@ -6,6 +6,8 @@ Requirements:
   * Python 2.5 or newer. (not tested on older versions)
   * Bob Ippolito's simplejson module, if using Python < 2.6
     <http://pypi.python.org/pypi/simplejson>
+  * To upload files or import XML, you need Chris AtLee's poster package
+    <http://pypi.python.org/pypi/poster>  
   * The wiki this is used for should be running at least MediaWiki
     version 1.13 and have the API enabled.
 
@@ -31,7 +33,7 @@ Available modules:
   * wikifile.py - File is a subclass of Page with extra functions for
     working with files - note that there may be some issues with shared 
 	repositories, as the pages for files on shared repos technically don't
-	exist.
+	exist on the local wiki.
   * user.py - Contains the User class for getting information about and 
     blocking/unblocking users
   * pagelist.py - Contains several functions for getting a list of Page
@@ -41,9 +43,8 @@ Current limitations:
 
   * Can only do what the API can do. On a site without the edit-API enabled
     (disabled by default prior to MediaWiki 1.14), you cannot edit/delete/
-	protect pages, only retrieve information about them. The API also 
-	currently has no way of uploading files or changing userrights.
-  * May have issues with some non-ASCII characters, but most of these bugs
+	protect pages, only retrieve information about them. 
+  * May have issues with some non-ASCII characters. Most of these bugs
     should be resolved, though full UTF-8 support is still a little flaky
   * Usage on restricted-access (logged-out users can't read) wikis is
     mostly untested
