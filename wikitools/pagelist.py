@@ -83,7 +83,7 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 		for item in querylist:
 			tlist = '|'.join(item)
 			if not isinstance(tlist, unicode):
-				tlist = unicode(tlist)
+				tlist = unicode(tlist, 'utf8')
 			params = {'action':'query',
 				'titles':tlist,
 			}
