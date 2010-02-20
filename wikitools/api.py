@@ -230,8 +230,17 @@ class APIRequest:
 		while maxlag:
 			try:
 				maxlag = False
-				content = APIResult(json.loads(data.read()))
-				content.response = self.response.items()
+				parsed = json.loads(data.read())
+				content = None
+				if isinstance(parsed, dict):
+					content = APIResult(parsed)
+					content.response = self.response.items()
+				elif isinstance(parsed, list):
+					content = APIListResult(parsed)
+					content.response = self.response.items()
+				else:
+					content = parsed
+				print content
 				if 'error' in content:
 					error = content['error']['code']
 					if error == "maxlag":
@@ -252,6 +261,9 @@ class APIRequest:
 		return content
 		
 class APIResult(dict):
+	response = []
+	
+class APIListResult(list):
 	response = []
 		
 def resultCombine(type, old, new):
