@@ -39,6 +39,20 @@ class NoPage(WikiError):
 class EditError(WikiError):
 	"""Problem with edit request"""
 
+class Namespace(int):
+	"""
+	Class for namespace 'constants'
+	Names are based on canonical (non-localized) names
+	This functions as an integer in every way, except that the OR operator ( | )
+	is overridden to produce a string namespace list for use in API queries
+	wikiobj.NS_MAIN|wikiobj.NS_USER|wikiobj.NS_PROJECT returns '0|2|4'
+	"""
+	def __or__(self, other):
+		return '|'.join([str(self), str(other)])
+	
+	def __ror__(self, other):
+		return '|'.join([str(other), str(self)])
+
 class Wiki:
 	"""A Wiki site"""
 
@@ -86,6 +100,11 @@ class Wiki:
 		for ns in nsdata:
 			nsinfo = nsdata[ns]
 			self.namespaces[nsinfo['id']] = nsinfo
+			if ns != "0":
+				attr = "NS_%s" % (nsdata[ns]['canonical'].replace(' ', '_').upper())
+			else:
+				attr = "NS_MAIN"
+			setattr(self, attr, Namespace(ns))			
 		nsaliasdata = info['query']['namespacealiases']
 		if nsaliasdata:
 			for ns in nsaliasdata:
