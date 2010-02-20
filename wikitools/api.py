@@ -240,7 +240,6 @@ class APIRequest:
 					content.response = self.response.items()
 				else:
 					content = parsed
-				print content
 				if 'error' in content:
 					error = content['error']['code']
 					if error == "maxlag":
