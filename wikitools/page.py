@@ -205,16 +205,16 @@ class Page(object):
 		self.links = []
 		return self.namespace
 		
-	def setSection(self, section=False, number=False):
+	def setSection(self, section=None, number=None):
 		"""Set a section for the page
 		
 		section - the section name
 		number - the section number
 		
 		"""
-		if not section and number is False:
+		if section is None and number is None:
 			self.section = False
-		elif number is not False:
+		elif number is not None:
 			try:
 				self.section = str(int(number))
 			except ValueError:
@@ -229,18 +229,17 @@ class Page(object):
 			self.setPageInfo()
 		params = {
 			'action': 'parse',
-			'text': '{{:'+self.title+'}}__TOC__',
-			'title':self.title,
+			'page':self.title,
 			'prop':'sections'
 		}
 		number = False
 		req = api.APIRequest(self.site, params)
 		response = req.query()
-		counter = 0
 		for item in response['parse']['sections']:
-			counter+=1
-			if section == item['line']:
-				number = counter
+			if section == item['line'] or section == item['anchor']:
+				if item['index'].startswith('T'): # TODO: It would be cool if it set the page title to the template in this case 
+					continue
+				number = item['index']
 				break
 		return number
 		
@@ -490,7 +489,8 @@ class Page(object):
 		
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
-			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'prependtext', 'appendtext', 'section'])			
+			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'watchlist', 'prependtext', 'appendtext', 
+			'section'])			
 		# For backwards compatibility
 		if 'newtext' in kwargs:
 			kwargs['text'] = kwargs['newtext']
