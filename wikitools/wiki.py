@@ -53,6 +53,8 @@ class Namespace(int):
 	def __ror__(self, other):
 		return '|'.join([str(other), str(self)])
 
+VERSION = '1.1'
+		
 class Wiki:
 	"""A Wiki site"""
 
@@ -65,7 +67,7 @@ class Wiki:
 		self.username = ''
 		self.maxlag = 5
 		self.maxwaittime = 120
-		self.useragent = "python-wikitools/1.0"
+		self.useragent = "python-wikitools/%s" % VERSION
 		self.cookiepath = ''
 		self.limit = 500
 		self.siteinfo = {}
@@ -178,6 +180,8 @@ class Wiki:
 		if remember:
 			cookiefile = self.cookiepath + str(hash(self.username+' - '+self.apibase))+'.cookies'
 			self.cookies.save(self, cookiefile, True, True)
+		if self.useragent == "python-wikitools/%s" % VERSION:
+			self.useragent = "python-wikitools/%s (User:%s)" % (VERSION, self.username)
 		return True
 	
 	def logout(self):
