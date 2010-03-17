@@ -1,5 +1,65 @@
-List of changes since 0.1 release:
+Changes since 1.0:
+* Unicode bug in pagelsit.listFromTitles fixed.
+* Page objects now have an "unprefixedtitle" attribute with the title minus the namespace
+  prefix
+* The page object sconstructor now accepts a "namespace" argument to set the namespace
+  based on a namespace index rather than the title
+* The Page class now subclasses object
+* maxlag can be ignored entirely by setting it to <0
+* New function: User.isBlocked()
+* The User.blocked attribute now has three possible values - None, False, True - 
+  corresponding to unknown, not blocked, blocked. Previously False could mean 
+  either unknown or not blocked.
+* Wiki.login() now has a domain argument, used for wikis that have LDAP login
+* File upload support has been added for action=import and action=upload, the poster
+  package <http://pypi.python.org/pypi/poster> is required for this
+* Bug in APIRequest.changeParam() fixed
+* New Page.getCategories() function to get a list of categories on a page, also 
+  added a "categories" attribute to Page
+* Cookiejar files are no longer world-readable by setting the umask to 0077 before
+  creating the file
+* If the API is disabled, an APIDisabled exception will be raised instead of repeating the 
+  request forever
+* Added File.getHistory() function and File.history attribute to get file upload history
+* Added File.upload() function to upload files and UploadError exception for errors
+  during uploading
+* Added an APIListResult class for cases where the API result is only a list such as
+  action=opensearch
+* Added a Namespace class to wiki.py. Namespace 'constants' are now added as attributes 
+  to Wiki objects. The attributes use the canonical name, in the same style as MediaWiki - 
+  NS_NAME. Namespace subclasses int, so they function as integers in every way, except 
+  the OR operator ( | ) is overridden to produce a list of namespaces for use in an API query
+* Page.__getSection now uses a better, non-hacky way to determine section numbers from section
+  names, and now works correctly on pages with transcluded sections
+* Page.edit() now accepts the new "watchlist" option
+* If logged in, the default User-Agent header now includes the username
 
+Changes since 0.1.1:
+* pagelist.listFromTitles() fixed
+* automatic query-continue alogrithm improved
+* performace of pagelist functions improved
+* API query results now use the APIResult class, subclassing dict. HTTP response headers are
+  included in the results as .response member variable
+* setNamespace() function added to Page class to allow changing the namespace of a Page object
+* Title normalization improved
+* API requests now print the actual exception info when retrying. If not retrying, the 
+  exception is not caught. The ServerError exception has been removed.
+* Added option to skip MD5 check when editing, as PHP's urldecoding fails in some corner cases
+* Handling of sections in the Page class (particularly section 0) is improved
+* Added some compatibility for read-restricted wikis. Not having read access previously caused
+  creating a Wiki object to fail as it tried to retrive the site info before login
+* Handling of non-existent pages improved
+* All modules imported when doing "import wikitools"
+* Category.getAllMembers() can now be filtered by namespace by passing a list of
+  namespaces as the "namespaces" parameter
+* File class (subclass of Page) added in wikifile.py (to avoid conflict with builtin file 
+  objects) - includes functions to get file usage and download the file
+* __str__ and __repr__ functions added for most objects to give useful string representations
+* in-code documentation improved
+* More functions now return some value, useful for debugging
+* Broken Wiki.setUserAgent() function fixed
+
+List of changes since 0.1 release:
 * Make page existence and setPageInfo() checks more consistent.
 * Use **kwargs in Page.edit() rather than dozen keyword arguments all False by default,
   this is a breaking change for anything didn't explicitly use the keyword arguments 
@@ -24,29 +84,3 @@ List of changes since 0.1 release:
 * support reblock option for user blocks		
 * improve namespace guessing/title normalization, include namespace aliases,
   add the namespace prefix to category objects if its not already there		
-		
-Changes since 0.1.1:
-
-* pagelist.listFromTitles() fixed
-* automatic query-continue alogrithm improved
-* performace of pagelist functions improved
-* API query results now use the APIResult class, subclassing dict. HTTP response headers are
-  included in the results as .response member variable
-* setNamespace() function added to Page class to allow changing the namespace of a Page object
-* Title normalization improved
-* API requests now print the actual exception info when retrying. If not retrying, the 
-  exception is not caught. The ServerError exception has been removed.
-* Added option to skip MD5 check when editing, as PHP's urldecoding fails in some corner cases
-* Handling of sections in the Page class (particularly section 0) is improved
-* Added some compatibility for read-restricted wikis. Not having read access previously caused
-  creating a Wiki object to fail as it tried to retrive the site info before login
-* Handling of non-existent pages improved
-* All modules imported when doing "import wikitools"
-* Category.getAllMembers() can now be filtered by namespace by passing a list of
-  namespaces as the "namespaces" parameter
-* File class (subclass of Page) added in wikifile.py (to avoid conflict with builtin file 
-  objects) - includes functions to get file usage and download the file
-* __str__ and __repr__ functions added for most objects to give useful string representations
-* in-code documentation improved
-* More functions now return some value, useful for debugging
-* Broken Wiki.setUserAgent() function fixed
