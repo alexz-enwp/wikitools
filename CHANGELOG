@@ -1,5 +1,5 @@
 Changes since 1.0:
-* Unicode bug in pagelsit.listFromTitles fixed.
+* Unicode bug in pagelist.listFromTitles fixed.
 * Page objects now have an "unprefixedtitle" attribute with the title minus the namespace
   prefix
 * The page object sconstructor now accepts a "namespace" argument to set the namespace
