@@ -53,7 +53,7 @@ class Namespace(int):
 	def __ror__(self, other):
 		return '|'.join([str(other), str(self)])
 
-VERSION = '1.1'
+VERSION = '1.2'
 		
 class Wiki:
 	"""A Wiki site"""
