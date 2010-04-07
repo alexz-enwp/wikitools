@@ -143,6 +143,13 @@ class Wiki:
 		if not password:
 			from getpass import getpass
 			password = getpass()
+		def loginerror(info):
+			try:
+				print info['login']['result']
+			except:
+				print info['error']['code']
+				print info['error']['info']
+			return False
 		data = {
 			"action" : "login",
 			"lgname" : username,
@@ -156,13 +163,15 @@ class Wiki:
 		info = req.query()
 		if info['login']['result'] == "Success":
 			self.username = username
+		elif info['login']['result'] == "NeedToken":
+			req.changeParam('lgtoken', info['login']['token'])
+			info = req.query()
+			if info['login']['result'] == "Success":
+				self.username = username
+			else:
+				return loginerror(info)
 		else:
-			try:
-				print info['login']['result']
-			except:
-				print info['error']['code']
-				print info['error']['info']
-			return False
+			return loginerror(info)
 		if not self.siteinfo:
 			self.setSiteinfo()
 		params = {
