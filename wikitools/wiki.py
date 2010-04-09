@@ -209,7 +209,7 @@ class Wiki:
 		self.cookies = WikiCookieJar()
 		self.username = ''
 		self.maxlag = 5
-		self.useragent = "python-wikitools/1.0"
+		self.useragent = "python-wikitools/%s" % VERSION
 		self.limit = 500
 		return True
 		
