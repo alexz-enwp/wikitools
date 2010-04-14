@@ -1,3 +1,8 @@
+Changes since 1.1:
+* Compatibility added for the new login method in MediaWiki 1.15.3 and higher.
+  See <https://bugzilla.wikimedia.org/show_bug.cgi?id=23076> for more details.
+* Using the logout() function sets the correct version number in the user-agent
+
 Changes since 1.0:
 * Unicode bug in pagelist.listFromTitles fixed.
 * Page objects now have an "unprefixedtitle" attribute with the title minus the namespace

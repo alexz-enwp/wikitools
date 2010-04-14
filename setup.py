@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='wikitools',
-      version='1.1',
+      version='1.1.1',
       description='Python package for interacting with a MediaWiki wiki',
 	  long_description = """A Python package for interacting with a MediaWiki wiki using the MediaWiki API.
 Designed for MediaWiki version 1.16 and higher, should work on 1.13, older
