@@ -61,6 +61,8 @@ class APIRequest:
 		self.data = data.copy()
 		self.data['format'] = "json"
 		self.iswrite = write
+		if wiki.assertval is not None and self.iswrite:
+			self.data['assert'] =  wiki.assertval
 		if not 'maxlag' in self.data and not wiki.maxlag < 0:
 			self.data['maxlag'] = wiki.maxlag
 		self.multipart = multipart

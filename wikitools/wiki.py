@@ -64,6 +64,7 @@ class Wiki:
 		self.siteinfo = {}
 		self.namespaces = {}
 		self.NSaliases = {}
+		self.assertval = None
 		urlbits = urlparse(self.apibase)
 		self.domain = '://'.join([urlbits.scheme, urlbits.netloc])
 		try:
@@ -245,6 +246,23 @@ class Wiki:
 		self.useragent = str(useragent)
 		return self.useragent
 
+	def setAssert(self, value):
+		"""Set an assertion value
+		
+		This only makes a difference on sites with the AssertEdit extension
+		on others it will be silently ignored
+		This is only checked on edits, so only applied to write queries
+		
+		Set to None (the default) to not use anything
+		http://www.mediawiki.org/wiki/Extension:Assert_Edit
+		
+		"""
+		valid = ['user', 'bot', 'true', 'false', 'exists', 'test', None]
+		if value not in valid:
+			raise WikiError("Invalid assertion")
+		self.assertval = value
+		return self.assertval
+		
 	def __eq__(self, other):
 		if not isinstance(other, Wiki):
 			return False
