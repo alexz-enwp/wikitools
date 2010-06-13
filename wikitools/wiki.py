@@ -30,15 +30,6 @@ except:
 class WikiError(Exception):
 	"""Base class for errors"""
 
-class BadTitle(WikiError):
-	"""Invalid title"""
-	
-class NoPage(WikiError):
-	"""Non-existent page"""
-
-class EditError(WikiError):
-	"""Problem with edit request"""
-
 class Namespace(int):
 	"""
 	Class for namespace 'constants'
