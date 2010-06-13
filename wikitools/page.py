@@ -156,8 +156,6 @@ class Page(object):
 				self.unprefixedtitle = self.title.split(':', 1)[1]	
 			else:
 				self.unprefixedtitle = self.title
-		if 'invalid' in response['query']['pages'][str(self.pageid)]:
-			raise BadTitle(self.title)
 		self.pageid = int(self.pageid)
 		if self.pageid < 0:
 			self.pageid = 0
