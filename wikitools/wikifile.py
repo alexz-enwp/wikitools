@@ -164,7 +164,7 @@ class File(page.Page):
 			'iiprop':'url'
 		}
 		if width and height:
-			raise DimensionError("Can't specify both width and height")
+			raise FileDimensionError("Can't specify both width and height")
 		if width:
 			params['iiurlwidth'] = width
 		if height:
