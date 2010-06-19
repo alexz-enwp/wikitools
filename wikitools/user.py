@@ -169,13 +169,13 @@ class User:
 	def __eq__(self, other):
 		if not isinstance(other, User):
 			return False
-		if self.name == other.name and self.site == other.wiki:
+		if self.name == other.name and self.site == other.site:
 			return True
 		return False
 	def __ne__(self, other):
 		if not isinstance(other, User):
 			return True
-		if self.name == other.name and self.site == other.wiki:
+		if self.name == other.name and self.site == other.site:
 			return False
 		return True
 	
