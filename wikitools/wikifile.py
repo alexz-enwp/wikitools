@@ -211,6 +211,12 @@ class File(page.Page):
 			raise UploadError("Must give either a file object or a URL")
 		if fileobj and url:
 			raise UploadError("Cannot give a file and a URL")
+		if fileobj:
+			if not isinstance(fileobj, file):
+				raise UploadError('If uploading from a file, a file object must be passed')
+			if fileobj.mode not in ['r', 'rb', 'r+']:
+				raise UploadError('File must be readable')
+			fileobj.seek(0)
 		params = {'action':'upload',
 			'comment':comment,
 			'filename':self.unprefixedtitle,
