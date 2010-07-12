@@ -98,7 +98,7 @@ class Wiki:
 				attr = "NS_%s" % (nsdata[ns]['canonical'].replace(' ', '_').upper())
 			else:
 				attr = "NS_MAIN"
-			setattr(self, attr, Namespace(ns))			
+			setattr(self, attr.encode('utf8'), Namespace(ns.encode('utf8')))			
 		nsaliasdata = info['query']['namespacealiases']
 		if nsaliasdata:
 			for ns in nsaliasdata:
