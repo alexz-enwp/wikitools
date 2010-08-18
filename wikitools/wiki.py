@@ -95,7 +95,10 @@ class Wiki:
 			nsinfo = nsdata[ns]
 			self.namespaces[nsinfo['id']] = nsinfo
 			if ns != "0":
-				attr = "NS_%s" % (nsdata[ns]['canonical'].replace(' ', '_').upper())
+				try:
+					attr = "NS_%s" % (nsdata[ns]['canonical'].replace(' ', '_').upper())
+				except KeyError:
+					attr = "NS_%s" % (nsdata[ns]['*'].replace(' ', '_').upper())
 			else:
 				attr = "NS_MAIN"
 			setattr(self, attr.encode('utf8'), Namespace(ns.encode('utf8')))			
