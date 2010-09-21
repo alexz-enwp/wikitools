@@ -77,9 +77,9 @@ class APIRequest:
 			self.encodeddata = urlencode(self.data, 1)
 			self.headers = {
 				"Content-Type": "application/x-www-form-urlencoded",
-				"Content-Length": len(self.encodeddata)
+				"Content-Length": str(len(self.encodeddata))
 			}
-		self.headers["User-agent"] = wiki.useragent,
+		self.headers["User-agent"] = wiki.useragent
 		if gzip:
 			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
