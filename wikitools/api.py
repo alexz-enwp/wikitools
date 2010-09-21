@@ -102,7 +102,7 @@ class APIRequest:
 				self.encodeddata = self.encodeddata + singledata
 		else:
 			self.encodeddata = urlencode(self.data, 1)
-			self.headers['Content-Length'] = len(self.encodeddata)
+			self.headers['Content-Length'] = str(len(self.encodeddata))
 			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
 
 	def changeParam(self, param, value):
@@ -127,7 +127,7 @@ class APIRequest:
 				self.encodeddata = self.encodeddata + singledata
 		else:
 			self.encodeddata = urlencode(self.data, 1)
-			self.headers['Content-Length'] = len(self.encodeddata)
+			self.headers['Content-Length'] = str(len(self.encodeddata))
 			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
 		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 	
