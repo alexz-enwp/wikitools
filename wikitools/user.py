@@ -36,6 +36,7 @@ class User:
 		self.blocked = None # So we can tell the difference between blocked/not blocked/haven't checked
 		self.editcount = -1
 		self.groups = []
+		self.id = 0
 		if check:
 			self.setUserInfo()
 		self.isIP = False
@@ -63,6 +64,7 @@ class User:
 		if 'missing' in user or 'invalid' in user:
 			self.exists = False
 			return
+		self.id = int(user['userid'])
 		self.editcount = int(user['editcount'])
 		if 'groups' in user:
 			self.groups = user['groups']
