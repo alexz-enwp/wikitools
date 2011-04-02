@@ -74,6 +74,10 @@ class User:
 			self.blocked = False
 		return self
 		
+	def getTalkPage(self, check=True, followRedir=False):
+		"""Convenience function to get an object for the user's talk page"""
+		return page.Page(self.site, ':'.join([self.site.namespaces[3]['*'], self.name]), check=check, followRedir=False)
+		
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""
 		if self.blocked is not None and not force:
