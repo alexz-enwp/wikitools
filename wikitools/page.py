@@ -337,9 +337,9 @@ class Page(object):
 		req = api.APIRequest(self.site, params)
 		response = req.query(False)
 		if self.pageid == 0:
-			self.pageid = response['query']['pages'].keys()[0]
+			self.pageid = int(response['query']['pages'].keys()[0])
 			if self.pageid == -1:
-				self.exists == 0
+				self.exists == False
 				raise NoPage
 		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*'].encode('utf-8')
 		self.lastedittime = response['query']['pages'][str(self.pageid)]['revisions'][0]['timestamp']
