@@ -28,7 +28,7 @@ class UploadError(wiki.WikiError):
 
 class File(page.Page):
 	"""A file on the wiki"""
-	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False):
+	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
 		"""	
 		wiki - A wiki object
 		title - The page title, as a string or unicode object
@@ -38,7 +38,7 @@ class File(page.Page):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		""" 
-		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber)
+		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber, pageid)
 		if self.namespace != 6:
 			self.setNamespace(6, check)
 		self.usage = []
