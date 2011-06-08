@@ -29,6 +29,9 @@ except:
 
 class WikiError(Exception):
 	"""Base class for errors"""
+	
+class UserBlocked(WikiError):
+	"""Trying to edit while blocked"""
 
 class Namespace(int):
 	"""

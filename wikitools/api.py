@@ -21,6 +21,7 @@ import urllib2
 import re
 import time
 import sys
+import wiki
 from urllib import quote_plus, _is_unicode
 try:
 	from poster.encode import multipart_encode
@@ -142,8 +143,9 @@ class APIRequest:
 		while not data:
 			rawdata = self.__getRaw()
 			data = self.__parseJSON(rawdata)				
-		#Certain errors should probably be handled here...
 		if 'error' in data:
+			if self.iswrite and data['error']['code'] == 'blocked':
+				raise wiki.UserBlocked(data['error']['info'])
 			raise APIError(data['error']['code'], data['error']['info'])
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
