@@ -714,6 +714,9 @@ class Page(object):
 		token = response['query']['pages'][str(self.pageid)][type+'token']
 		return token
 	
+	def __hash__(self):
+		return int(self.pageid) ^ hash(self.site.apibase)
+	
 	def __str__(self):
 		if self.title:
 			title = self.title

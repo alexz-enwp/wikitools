@@ -172,6 +172,9 @@ class User:
 			self.blocked = False
 		return res
 	
+	def __hash__(self):
+		return int(self.name) ^ hash(self.site.apibase)
+	
 	def __eq__(self, other):
 		if not isinstance(other, User):
 			return False

@@ -269,6 +269,9 @@ class Wiki:
 		self.assertval = value
 		return self.assertval
 		
+	def __hash__(self):
+		return hash(self.apibase)
+		
 	def __eq__(self, other):
 		if not isinstance(other, Wiki):
 			return False
