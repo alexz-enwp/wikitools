@@ -1,3 +1,16 @@
+Changes since 1.1.1:
+* Added support for AssertEdit
+* Fixed equality checks for user objects
+* No longer breaks with Unicode namespace names
+* Files are reset to the beginning before upload
+* HTTP headers forced to be strings (Python 2.7 fix)
+* User object now includes user ID number
+* User.getTalkPage() added to easily get the Page object for a user's talk page
+* wiki.UserBlocked exception raised if trying to edit while blocked
+* Page, User, and Wiki objects now have hash functions
+* File object constructor takes a pageid argument to align it with Page
+* Fixed bug when trying to use pagelist to make a list of categories
+
 Changes since 1.1:
 * Compatibility added for the new login method in MediaWiki 1.15.3 and higher.
   See <https://bugzilla.wikimedia.org/show_bug.cgi?id=23076> for more details.
