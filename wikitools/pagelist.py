@@ -37,7 +37,7 @@ def listFromQuery(site, queryresult):
 				pageid = item['pageid']
 			if item['ns'] == 14:
 				item = category.Category(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			if item['ns'] == 6:
+			elif item['ns'] == 6:
 				item = wikifile.File(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
 			else:
 				item = page.Page(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
@@ -50,7 +50,7 @@ def listFromQuery(site, queryresult):
 				pageid = item['pageid']
 			if item['ns'] == 14:
 				item = category.Category(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			if item['ns'] == 6:
+			elif item['ns'] == 6:
 				item = wikifile.File(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
 			else:
 				item = page.Page(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
