@@ -491,7 +491,7 @@ class Page(object):
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
 			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'watchlist', 'prependtext', 'appendtext', 
-			'section'])			
+			'section', 'captchaword', 'captchaid'])			
 		# For backwards compatibility
 		if 'newtext' in kwargs:
 			kwargs['text'] = kwargs['newtext']
