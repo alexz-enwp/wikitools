@@ -1,4 +1,5 @@
 Changes since 1.1.1:
+* generator queries with an empty result set don't get caught in an infinite loop
 * Added support for AssertEdit
 * Fixed equality checks for user objects
 * No longer breaks with Unicode namespace names

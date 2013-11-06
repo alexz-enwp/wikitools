@@ -142,7 +142,9 @@ class APIRequest:
 		data = False
 		while not data:
 			rawdata = self.__getRaw()
-			data = self.__parseJSON(rawdata)				
+			data = self.__parseJSON(rawdata)
+			if not data and type(data) is APIListResult:
+				break
 		if 'error' in data:
 			if self.iswrite and data['error']['code'] == 'blocked':
 				raise wiki.UserBlocked(data['error']['info'])
