@@ -87,7 +87,7 @@ class Category(page.Page):
 		else:
 			if namespaces is False:
 				self.members = []
-			for member in self.__getMembersInternal():
+			for member in self.__getMembersInternal(namespaces):
 				if namespaces is False:
 					self.members.append(member)
 				if titleonly:
