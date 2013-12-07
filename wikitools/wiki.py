@@ -22,6 +22,7 @@ import re
 import time
 import os
 from urlparse import urlparse
+from urllib2 import HTTPPasswordMgrWithDefaultRealm
 try:
 	import cPickle as pickle
 except:
@@ -52,13 +53,26 @@ VERSION = '1.2'
 class Wiki:
 	"""A Wiki site"""
 
-	def __init__(self, url="http://en.wikipedia.org/w/api.php"):
+	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None):
 		"""
 		url - A URL to the site's API, defaults to en.wikipedia
+		httpuser - optional user name for HTTP Auth
+        	httppass - password for HTTP Auth, leave out to enter interactively
+
 		"""
 		self.apibase = url
 		self.cookies = WikiCookieJar()
 		self.username = ''
+		urlbits = urlparse(self.apibase)
+		self.domain = '://'.join([urlbits.scheme, urlbits.netloc])
+		if httpuser is not None:
+			if httppass is None:
+				from getpass import getpass
+				self.httppass = getpass("HTTP Auth password for "+httpuser+": ")
+			self.passman = HTTPPasswordMgrWithDefaultRealm()
+			self.passman.add_password(None, self.domain, httpuser, httppass)
+		else:
+			self.passman = None
 		self.maxlag = 5
 		self.maxwaittime = 120
 		self.useragent = "python-wikitools/%s" % VERSION
@@ -68,8 +82,6 @@ class Wiki:
 		self.namespaces = {}
 		self.NSaliases = {}
 		self.assertval = None
-		urlbits = urlparse(self.apibase)
-		self.domain = '://'.join([urlbits.scheme, urlbits.netloc])
 		try:
 			self.setSiteinfo()
 		except api.APIError: # probably read-restricted
@@ -140,7 +152,7 @@ class Wiki:
 				pass
 		if not password:
 			from getpass import getpass
-			password = getpass()
+			password = getpass("Wiki password for "+username+": ")
 		def loginerror(info):
 			try:
 				print info['login']['result']

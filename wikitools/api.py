@@ -85,7 +85,10 @@ class APIRequest:
 			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
 		self.response = False
-		self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
+		if wiki.passman is not None:
+			self.opener = urllib2.build_opener(urllib2.HTTPDigestAuthHandler(wiki.passman), urllib2.HTTPCookieProcessor(wiki.cookies))
+		else:
+			self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
 		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 		
 	def setMultipart(self, multipart=True):
