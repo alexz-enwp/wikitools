@@ -466,6 +466,101 @@ class Page(object):
 		else:
 			self.categories = self.__extractToList(response, 'categories')
 		return self.categories
+		
+	def getHistory(self, direction='older', content=True, limit='all'):
+		"""Get the history of a page
+		
+		direction - 2 options: 'older' (default) - start with the current revision and get older ones
+			'newer' - start with the oldest revision and get newer ones
+		content - If False, get only metadata (timestamp, edit summary, user, etc)
+			If True (default), also get the revision text
+		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned 
+		
+		The data is returned in essentially the same format as the API, a list of dicts that look like:
+		{u'*': u"Page content", # Only returned when content=True
+		 u'comment': u'Edit summary',
+		 u'contentformat': u'text/x-wiki', # Only returned when content=True
+		 u'contentmodel': u'wikitext', # Only returned when content=True
+		 u'parentid': 139946, # id of previous revision
+		 u'revid': 139871, # revision id
+		 u'sha1': u'0a5cec3ca3e084e767f00c9a5645c17ac27b2757', # sha1 hash of page content
+		 u'size': 129, # size of page in bytes
+		 u'timestamp': u'2002-08-05T14:11:27Z', # timestamp of edit
+		 u'user': u'Username',
+		 u'userid': 48 # user id
+		}		
+		
+		Note that unlike other get* functions, the data is not cached
+		"""
+		max = limit
+		if limit == 'all':
+			max = float("inf")
+		if limit == 'all' or limit > self.site.limit:
+			limit = self.site.limit
+		history = []
+		rvc = None
+		while True:
+			revs, rvc = self.__getHistoryInternal(direction, content, limit, rvc)
+			history = history+revs
+			if len(history) == max or rvc is None:
+				break
+			if max - len(history) < self.site.limit:
+				limit = max - len(history)
+		return history
+		
+	def getHistoryGen(self, direction='older', content=True, limit='all'):
+		"""Generator function for page history
+		
+		The interface is the same as getHistory, but it will only retrieve 1 revision at a time.
+		This will be slower and have much higher network overhead, but does not require storing
+		the entire page history in memory	
+		"""
+		max = limit
+		count = 0
+		rvc = None
+		while True:
+			revs, rvc = self.__getHistoryInternal(direction, content, 1, rvc)
+			yield revs[0]
+			count += 1
+			if count == max or rvc is None:
+				break
+	
+	def __getHistoryInternal(self, direction, content, limit, rvcontinue):
+	
+		if self.pageid == 0 and not self.title:
+			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
+		if direction != 'newer' and direction != 'older':
+			raise wiki.WikiError("direction must be 'newer' or 'older'")
+		params = {
+			'action':'query',
+			'prop':'revisions',
+			'rvdir':direction,
+			'rvprop':'ids|flags|timestamp|user|userid|size|sha1|comment',
+			'continue':'',
+			'rvlimit':limit
+		}
+		if self.pageid:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title	
+
+		if content:
+			params['rvprop']+='|content'
+		if rvcontinue:
+			params['continue'] = rvcontinue['continue']
+			params['rvcontinue'] = rvcontinue['rvcontinue']
+		req = api.APIRequest(self.site, params)
+		response = req.query(False)
+		id = response['query']['pages'].keys()[0]
+		if not self.pageid:
+			self.pageid = int(id)
+		revs = response['query']['pages'][id]['revisions']
+		rvc = None
+		if 'continue' in response:
+			rvc = response['continue']
+		return (revs, rvc)
 	
 	def __extractToList(self, json, stuff):
 		list = []

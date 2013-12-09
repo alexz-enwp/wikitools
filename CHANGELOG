@@ -1,4 +1,5 @@
 Changes since 1.1.1:
+* Added getHistory and getHistoryGen functions to Page to get revision history/content
 * Support for HTTP Auth
 * Category.getAllMembersGen passes the namespace parameter correctly
 * generator queries with an empty result set don't get caught in an infinite loop
