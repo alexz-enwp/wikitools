@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
@@ -17,27 +17,20 @@
 
 # This module is documented at http://code.google.com/p/python-wikitools/wiki/api
 
-import urllib2
+import requests
+from requests.auth import HTTPDigestAuth
+
 import re
 import time
 import sys
 import wiki
+import StringIO
 from urllib import quote_plus, _is_unicode
-try:
-	from poster.encode import multipart_encode
-	canupload = True
-except:
-	canupload = False
 
 try:
 	import json
 except:
 	import simplejson as json
-try:
-	import gzip
-	import StringIO
-except:
-	gzip = False
 
 class APIError(Exception):
 	"""Base class for errors"""
@@ -47,19 +40,17 @@ class APIDisabled(APIError):
 	
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, wiki, data, write=False, multipart=False):
+	def __init__(self, wiki, data, write=False, multipart=True):
 		"""	
 		wiki - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
-		multipart - use multipart data transfer, required for file uploads,
-		requires the poster package
-		
+        multipart - obsolete and unused option, you can use file objet to send
+        multipart requests.
+
 		maxlag is set by default to 5 but can be changed
-		format is always set to json
+		format is always overriden to force 'json'
 		"""
-		if not canupload and multipart:
-			raise APIError("The poster module is required for multipart support")
 		self.sleep = 5
 		self.data = data.copy()
 		self.data['format'] = "json"
@@ -68,72 +59,25 @@ class APIRequest:
 			self.data['assert'] =  wiki.assertval
 		if not 'maxlag' in self.data and not wiki.maxlag < 0:
 			self.data['maxlag'] = wiki.maxlag
-		self.multipart = multipart
-		if self.multipart:
-			(datagen, self.headers) = multipart_encode(self.data)
-			self.encodeddata = ''
-			for singledata in datagen:
-				self.encodeddata = self.encodeddata + singledata
-		else:
-			self.encodeddata = urlencode(self.data, 1)
-			self.headers = {
-				"Content-Type": "application/x-www-form-urlencoded",
-				"Content-Length": str(len(self.encodeddata))
-			}
+		self.headers = {}
 		self.headers["User-agent"] = wiki.useragent
-		if gzip:
-			self.headers['Accept-Encoding'] = 'gzip'
+		self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
 		self.response = False
-		if wiki.passman is not None:
-			self.opener = urllib2.build_opener(urllib2.HTTPDigestAuthHandler(wiki.passman), urllib2.HTTPCookieProcessor(wiki.cookies))
-		else:
-			self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
-		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
+		self.authman = None if wiki.auth is None else HTTPDigest(wiki.auth) 
 		
-	def setMultipart(self, multipart=True):
-		"""Enable multipart data transfer, required for file uploads."""
-		if not canupload and multipart:
-			raise APIError("The poster package is required for multipart support")
-		self.multipart = multipart
-		if multipart:
-			(datagen, headers) = multipart_encode(self.data)
-			self.headers.pop('Content-Length')
-			self.headers.pop('Content-Type')
-			self.headers.update(headers)
-			self.encodeddata = ''
-			for singledata in datagen:
-				self.encodeddata = self.encodeddata + singledata
-		else:
-			self.encodeddata = urlencode(self.data, 1)
-			self.headers['Content-Length'] = str(len(self.encodeddata))
-			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
-
 	def changeParam(self, param, value):
 		"""Change or add a parameter after making the request object
 		
 		Simply changing self.data won't work as it needs to update other things.
 
 		value can either be a normal string value, or a file-like object,
-		which will be uploaded, if setMultipart was called previously.
+		which will be uploaded.
 		
 		"""
 		if param == 'format':
 			raise APIError('You can not change the result format')
 		self.data[param] = value
-		if self.multipart:
-			(datagen, headers) = multipart_encode(self.data)
-			self.headers.pop('Content-Length')
-			self.headers.pop('Content-Type')
-			self.headers.update(headers)
-			self.encodeddata = ''
-			for singledata in datagen:
-				self.encodeddata = self.encodeddata + singledata
-		else:
-			self.encodeddata = urlencode(self.data, 1)
-			self.headers['Content-Length'] = str(len(self.encodeddata))
-			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
-		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 	
 	def query(self, querycontinue=True):
 		"""Actually do the query here and return usable stuff
@@ -144,7 +88,7 @@ class APIRequest:
 		"""
 		data = False
 		while not data:
-			rawdata = self.__getRaw()
+			rawdata = StringIO.StringIO(self.__getRaw().content)
 			data = self.__parseJSON(rawdata)
 			if not data and type(data) is APIListResult:
 				break
@@ -222,12 +166,8 @@ class APIRequest:
 					catcherror = None
 				else:
 					catcherror = Exception
-				data = self.opener.open(self.request)
-				self.response = data.info()
-				if gzip:
-					encoding = self.response.get('Content-encoding')
-					if encoding in ('gzip', 'x-gzip'):
-						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
+				data = self.response = requests.get(self.wiki.apibase, params=self.data,
+                                    headers=self.headers, auth=self.authman)
 			except catcherror, exc:
 				errname = sys.exc_info()[0].__name__
 				errinfo = exc
@@ -245,10 +185,10 @@ class APIRequest:
 				content = None
 				if isinstance(parsed, dict):
 					content = APIResult(parsed)
-					content.response = self.response.items()
+					content.response = self.response.headers.items()
 				elif isinstance(parsed, list):
 					content = APIListResult(parsed)
-					content.response = self.response.items()
+					content.response = self.response.headers.items()
 				else:
 					content = parsed
 				if 'error' in content:
@@ -303,61 +243,3 @@ def resultCombine(type, old, new):
 					ret['query']['pages'][key][type] = [dict(entry) for entry in retset]
 	return ret
 		
-def urlencode(query,doseq=0):
-    """
-	Hack of urllib's urlencode function, which can handle
-	utf-8, but for unknown reasons, chooses not to by 
-	trying to encode everything as ascii
-    """
-    if hasattr(query,"items"):
-        # mapping objects
-        query = query.items()
-    else:
-        # it's a bother at times that strings and string-like objects are
-        # sequences...
-        try:
-            # non-sequence items should not work with len()
-            # non-empty strings will fail this
-            if len(query) and not isinstance(query[0], tuple):
-                raise TypeError
-            # zero-length sequences of all types will get here and succeed,
-            # but that's a minor nit - since the original implementation
-            # allowed empty dicts that type of behavior probably should be
-            # preserved for consistency
-        except TypeError:
-            ty,va,tb = sys.exc_info()
-            raise TypeError, "not a valid non-string sequence or mapping object", tb
-
-    l = []
-    if not doseq:
-        # preserve old behavior
-        for k, v in query:
-            k = quote_plus(str(k))
-            v = quote_plus(str(v))
-            l.append(k + '=' + v)
-    else:
-        for k, v in query:
-            k = quote_plus(str(k))
-            if isinstance(v, str):
-                v = quote_plus(v)
-                l.append(k + '=' + v)
-            elif _is_unicode(v):
-                # is there a reasonable way to convert to ASCII?
-                # encode generates a string, but "replace" or "ignore"
-                # lose information and "strict" can raise UnicodeError
-                v = quote_plus(v.encode("utf8","replace"))
-                l.append(k + '=' + v)
-            else:
-                try:
-                    # is this a sufficient test for sequence-ness?
-                    x = len(v)
-                except TypeError:
-                    # not a sequence
-                    v = quote_plus(str(v))
-                    l.append(k + '=' + v)
-                else:
-                    # loop over the sequence
-                    for elt in v:
-                        l.append(k + '=' + quote_plus(str(elt)))
-    return '&'.join(l)
-
