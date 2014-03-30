@@ -56,6 +56,8 @@ from wikitools import wiki
 from wikitools import api
 # create a Wiki object
 site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
+# login - required for read-restricted wikis
+site.login("username", "password")
 # define the params for the query
 params = {'action':'query', 'titles':'Main Page'}
 # create the request object
@@ -79,6 +81,7 @@ pages in namespace 0 in a category:
 from wikitools import wiki
 from wikitools import category
 site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
+site.login("username", "password")
 # Create object for "Category:Foo"
 cat = category.Category(site, "Foo")
 # iterate through all the pages in ns 0
