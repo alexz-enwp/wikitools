@@ -14,5 +14,5 @@ Please report any bugs to <https://github.com/alexz-enwp/wikitools/issues>""",
       url='https://github.com/alexz-enwp/wikitools',
 	  license='GPL v3',
       packages=['wikitools'],
-	  package_data={'wikitools': ['wikitools/COPYING', 'wikitools/README', 'wikitools/CHANGELOG']},
+	  package_data={'wikitools': ['COPYING', '../README', '../CHANGELOG']},
      )
