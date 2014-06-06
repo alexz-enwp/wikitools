@@ -39,6 +39,9 @@ Available modules:
   * pagelist.py - Contains several functions for getting a list of Page
     objects from lists of titles, pageids, or API query results
 
+Further documentation:
+  * https://code.google.com/p/python-wikitools/wiki/Documentation
+
 Current limitations:
 
   * Can only do what the API can do. On a site without the edit-API enabled
