@@ -3,7 +3,7 @@
 
 Requirements:
 
-  * Python 2.5 or newer. (not tested on older versions)
+  * Python 2.5+. (not compatible with Python 3; not tested on older versions)
   * Bob Ippolito's simplejson module, if using Python < 2.6
     <http://pypi.python.org/pypi/simplejson>
   * To upload files or import XML, you need Chris AtLee's poster package
@@ -38,6 +38,9 @@ Available modules:
     blocking/unblocking users
   * pagelist.py - Contains several functions for getting a list of Page
     objects from lists of titles, pageids, or API query results
+
+Further documentation:
+  * https://code.google.com/p/python-wikitools/wiki/Documentation
 
 Current limitations:
 
