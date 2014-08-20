@@ -1,7 +1,8 @@
-﻿wikitools -- Package for working with MediaWiki wikis
------------------------------------------------------------
+wikitools -- Package for working with MediaWiki wikis
+=====================================================
 
-Requirements:
+Requirements
+------------
 
   * Python 2.5+. (not compatible with Python 3; not tested on older versions)
   * Bob Ippolito's simplejson module, if using Python < 2.6
@@ -11,7 +12,8 @@ Requirements:
   * The wiki this is used for should be running at least MediaWiki
     version 1.13 and have the API enabled.
 
-Installation:
+Installation
+------------
 
   * Run "python setup.py install" or copy the wikitools directory
     to an appropriate Python module directory.
@@ -19,7 +21,8 @@ Installation:
     administrator to avoid errors)
   * An RPM for Linux is also available.
 
-Available modules:
+Available modules
+-----------------
 
   * api.py - Contains the APIRequest class, for doing queries directly,
 	see API examples below
@@ -39,10 +42,12 @@ Available modules:
   * pagelist.py - Contains several functions for getting a list of Page
     objects from lists of titles, pageids, or API query results
 
-Further documentation:
+Further documentation
+---------------------
   * https://code.google.com/p/python-wikitools/wiki/Documentation
 
-Current limitations:
+Current limitations
+-------------------
 
   * Can only do what the API can do. On a site without the edit-API enabled
     (disabled by default prior to MediaWiki 1.14), you cannot edit/delete/
@@ -52,11 +57,17 @@ Current limitations:
   * Usage on restricted-access (logged-out users can't read) wikis is
     mostly untested
   
-API examples:
-To do a simple query:
+Quick start
+-----------
+
+Let's make simple query:
+
+```python
+#!/usr/bin/python
 
 from wikitools import wiki
 from wikitools import api
+
 # create a Wiki object
 site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
 # login - required for read-restricted wikis
@@ -67,8 +78,11 @@ params = {'action':'query', 'titles':'Main Page'}
 request = api.APIRequest(site, params)
 # query the API
 result = request.query()
+```
 
 The result will look something like:
+
+```json
 {u'query':
 	{u'pages':
 		{u'15580374':
@@ -76,13 +90,18 @@ The result will look something like:
 		}
 	}
 }
+```
 
 For most normal usage, you may not have to do API queries yourself and can just
 use the various classes. For example, to add a template to the top of all the 
 pages in namespace 0 in a category:
 
+```python
+#!/usr/bin/python
+
 from wikitools import wiki
 from wikitools import category
+
 site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
 site.login("username", "password")
 # Create object for "Category:Foo"
@@ -91,7 +110,7 @@ cat = category.Category(site, "Foo")
 for article in cat.getAllMembersGen(namespaces=[0]):
 	# edit each page
 	article.edit(prependtext="{{template}}\n")
- 
+``` 
 
 See the MediaWiki API documentation at <http://www.mediawiki.org/wiki/API>
 for more information about using the MediaWiki API. You can get an example of
@@ -101,7 +120,8 @@ the "jsonfm" format option
 Licensed under the GNU General Public License, version 3. A copy of the
 license is included with this release.
 
-Author/maintainer:
-Alex Z. (User:Mr.Z-man @ en.wikipedia) <mrzmanwiki@gmail.com>
-Some code/assistance from:
-(User:Bjweeks @ en.wikipedia)
+Authors
+-------
+
+* Original source code Alex Z. (User:Mr.Z-man @ en.wikipedia) <mrzmanwiki@gmail.com>
+* Some code/assistance (User:Bjweeks @ en.wikipedia)
