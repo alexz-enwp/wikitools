@@ -1,7 +1,7 @@
- wikitools -- Package for working with MediaWiki wikis
--------------------------------------------------------
+wikitools -- Package for working with MediaWiki wikis
 
-Requirements:
+Requirements
+------------
 
   * Python 2.5+. (not compatible with Python 3; not tested on older versions)
   * Bob Ippolito's simplejson module, if using Python < 2.6
@@ -11,7 +11,8 @@ Requirements:
   * The wiki this is used for should be running at least MediaWiki
     version 1.13 and have the API enabled.
 
-Installation:
+Installation
+------------
 
   * Run "python setup.py install" or copy the wikitools directory
     to an appropriate Python module directory.
@@ -19,7 +20,8 @@ Installation:
     administrator to avoid errors)
   * An RPM for Linux is also available.
 
-Available modules:
+Available modules
+-----------------
 
   * api.py - Contains the APIRequest class, for doing queries directly,
 	see API examples below
@@ -39,10 +41,12 @@ Available modules:
   * pagelist.py - Contains several functions for getting a list of Page
     objects from lists of titles, pageids, or API query results
 
-Further documentation:
+Further documentation
+---------------------
   * https://code.google.com/p/python-wikitools/wiki/Documentation
 
-Current limitations:
+Current limitations
+-------------------
 
   * Can only do what the API can do. On a site without the edit-API enabled
     (disabled by default prior to MediaWiki 1.14), you cannot edit/delete/
@@ -52,8 +56,13 @@ Current limitations:
   * Usage on restricted-access (logged-out users can't read) wikis is
     mostly untested
   
-API examples:
-To do a simple query:
+Quick start
+-----------
+
+Let's make simple query:
+
+```python
+#!/usr/bin/python
 
 ```python
 #!/usr/bin/python
@@ -113,7 +122,8 @@ the "jsonfm" format option
 Licensed under the GNU General Public License, version 3. A copy of the
 license is included with this release.
 
-Author/maintainer:
-Alex Z. (User:Mr.Z-man @ en.wikipedia) <mrzmanwiki@gmail.com>
-Some code/assistance from:
-(User:Bjweeks @ en.wikipedia)
+Authors
+-------
+
+* Original source code Alex Z. (User:Mr.Z-man @ en.wikipedia) <mrzmanwiki@gmail.com>
+* Some code/assistance (User:Bjweeks @ en.wikipedia)
