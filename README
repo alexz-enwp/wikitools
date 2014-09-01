@@ -1,5 +1,5 @@
-﻿wikitools -- Package for working with MediaWiki wikis
------------------------------------------------------------
+ wikitools -- Package for working with MediaWiki wikis
+-------------------------------------------------------
 
 Requirements:
 
@@ -55,8 +55,12 @@ Current limitations:
 API examples:
 To do a simple query:
 
+```python
+#!/usr/bin/python
+
 from wikitools import wiki
 from wikitools import api
+
 # create a Wiki object
 site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
 # login - required for read-restricted wikis
@@ -67,8 +71,11 @@ params = {'action':'query', 'titles':'Main Page'}
 request = api.APIRequest(site, params)
 # query the API
 result = request.query()
+```
 
 The result will look something like:
+
+```json
 {u'query':
 	{u'pages':
 		{u'15580374':
@@ -76,13 +83,18 @@ The result will look something like:
 		}
 	}
 }
+```
 
 For most normal usage, you may not have to do API queries yourself and can just
 use the various classes. For example, to add a template to the top of all the 
 pages in namespace 0 in a category:
 
+```python
+#!/usr/bin/python
+
 from wikitools import wiki
 from wikitools import category
+
 site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
 site.login("username", "password")
 # Create object for "Category:Foo"
@@ -91,7 +103,7 @@ cat = category.Category(site, "Foo")
 for article in cat.getAllMembersGen(namespaces=[0]):
 	# edit each page
 	article.edit(prependtext="{{template}}\n")
- 
+``` 
 
 See the MediaWiki API documentation at <http://www.mediawiki.org/wiki/API>
 for more information about using the MediaWiki API. You can get an example of
