@@ -232,11 +232,20 @@ class File(page.Page):
 			params['watch'] = ''
 		req = api.APIRequest(self.site, params, write=True, multipart=bool(fileobj))
 		res = req.query()
-		if 'upload' in res and res['upload']['result'] == 'Success':
-			self.wikitext = ''
-			self.links = []
-			self.templates = []
-			self.exists = True
+		if 'upload' in res:
+			if res['upload']['result'] == 'Success':
+				self.wikitext = ''
+				self.links = []
+				self.templates = []
+				self.exists = True
+		elif res['upload']['result'] == 'Warning':
+				for warning in res['upload']['warnings'].keys():
+					if warning == 'duplicate':
+						print 'File is a duplicate of ' + res['upload']['warnings']['duplicate'][0]
+					elif warning == 'page-exists' or warning == 'exists':
+						print 'Page already exists: ' + res['upload']['warnings'][warning]
+					else:
+						print 'Warning: ' + warning + ' ' + res['upload']['warnings'][warning]
 		return res
 		
 			
