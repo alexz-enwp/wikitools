@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
@@ -17,12 +17,11 @@
 
 import cookielib
 import api
-import urllib
 import re
 import time
 import os
 from urlparse import urlparse
-from urllib2 import HTTPPasswordMgrWithDefaultRealm
+
 try:
 	import cPickle as pickle
 except:
@@ -57,7 +56,7 @@ class Wiki:
 		"""
 		url - A URL to the site's API, defaults to en.wikipedia
 		httpuser - optional user name for HTTP Auth
-        	httppass - password for HTTP Auth, leave out to enter interactively
+        httppass - password for HTTP Auth, leave out to enter interactively
 
 		"""
 		self.apibase = url
@@ -68,11 +67,10 @@ class Wiki:
 		if httpuser is not None:
 			if httppass is None:
 				from getpass import getpass
-				self.httppass = getpass("HTTP Auth password for "+httpuser+": ")
-			self.passman = HTTPPasswordMgrWithDefaultRealm()
-			self.passman.add_password(None, self.domain, httpuser, httppass)
+				httppass = getpass("HTTP Auth password for "+httpuser+": ")
+			self.auth = (httpuser, httppass)
 		else:
-			self.passman = None
+			self.auth = None
 		self.maxlag = 5
 		self.maxwaittime = 120
 		self.useragent = "python-wikitools/%s" % VERSION
