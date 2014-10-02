@@ -53,11 +53,13 @@ VERSION = '1.2'
 class Wiki:
 	"""A Wiki site"""
 
-	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None):
+	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None, preauth=False):
 		"""
 		url - A URL to the site's API, defaults to en.wikipedia
 		httpuser - optional user name for HTTP Auth
         	httppass - password for HTTP Auth, leave out to enter interactively
+		preauth - true to send headers for HTTP Auth on the first request
+		          instead of relying on the negotiation for them
 
 		"""
 		self.apibase = url
@@ -69,8 +71,12 @@ class Wiki:
 			if httppass is None:
 				from getpass import getpass
 				self.httppass = getpass("HTTP Auth password for "+httpuser+": ")
-			self.passman = HTTPPasswordMgrWithDefaultRealm()
-			self.passman.add_password(None, self.domain, httpuser, httppass)
+			if preauth:
+				self.httppass = httppass
+				self.auth = httpuser
+			else:
+				self.passman = HTTPPasswordMgrWithDefaultRealm()
+				self.passman.add_password(None, self.domain, httpuser, httppass)
 		else:
 			self.passman = None
 		self.maxlag = 5

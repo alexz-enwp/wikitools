@@ -22,6 +22,7 @@ import re
 import time
 import sys
 import wiki
+import base64
 from urllib import quote_plus, _is_unicode
 try:
 	from poster.encode import multipart_encode
@@ -85,7 +86,10 @@ class APIRequest:
 			self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
 		self.response = False
-		if wiki.passman is not None:
+		if wiki.auth:
+			self.headers['Authorization'] = "Basic {0}".format(
+				base64.encodestring(wiki.auth + ":" + wiki.httppass)).replace('\n','')
+		if hasattr(wiki, "passman"):
 			self.opener = urllib2.build_opener(urllib2.HTTPDigestAuthHandler(wiki.passman), urllib2.HTTPCookieProcessor(wiki.cookies))
 		else:
 			self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
