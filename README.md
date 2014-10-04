@@ -59,10 +59,7 @@ Current limitations
 Quick start
 -----------
 
-Let's make simple query:
-
-```python
-#!/usr/bin/python
+To make a simple query:
 
 ```python
 #!/usr/bin/python
