@@ -238,7 +238,7 @@ class File(page.Page):
 				self.links = []
 				self.templates = []
 				self.exists = True
-		elif res['upload']['result'] == 'Warning':
+			elif res['upload']['result'] == 'Warning':
 				for warning in res['upload']['warnings'].keys():
 					if warning == 'duplicate':
 						print 'File is a duplicate of ' + res['upload']['warnings']['duplicate'][0]
