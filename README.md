@@ -3,7 +3,7 @@ wikitools -- Package for working with MediaWiki wikis
 Requirements
 ------------
 
-  * Python 2.5+. (not compatible with Python 3; not tested on older versions)
+  * Python 2.5+. Not compatible with Python 3; not tested on older versions
   * Bob Ippolito's simplejson module, if using Python < 2.6
     <http://pypi.python.org/pypi/simplejson>
   * To upload files or import XML, you need Chris AtLee's poster package
