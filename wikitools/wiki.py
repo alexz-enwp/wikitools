@@ -48,7 +48,7 @@ class Namespace(int):
 	def __ror__(self, other):
 		return '|'.join([str(other), str(self)])
 
-VERSION = '1.2'
+VERSION = '1.3'
 		
 class Wiki:
 	"""A Wiki site"""
@@ -79,6 +79,7 @@ class Wiki:
 				self.passman.add_password(None, self.domain, httpuser, httppass)
 		else:
 			self.passman = None
+			self.auth = None
 		self.maxlag = 5
 		self.maxwaittime = 120
 		self.useragent = "python-wikitools/%s" % VERSION
@@ -287,6 +288,23 @@ class Wiki:
 		self.assertval = value
 		return self.assertval
 		
+	def getToken(self, type):
+		"""Get a token
+		
+		type (string) - csrf, deleteglobalaccount, patrol, rollback, setglobalaccountstatus, userrights, watch
+		
+		"""			
+		params = {
+			'action':'query',
+			'meta':'tokens',
+			'type':type,
+		}
+		req = api.APIRequest(self, params)
+		response = req.query()
+		token = response['query']['tokens'][type+'token']
+		return token
+
+
 	def __hash__(self):
 		return hash(self.apibase)
 		

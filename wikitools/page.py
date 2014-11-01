@@ -613,7 +613,7 @@ class Page(object):
 			raise EditError("Bad param combination")
 		if 'createonly' in kwargs and 'nocreate' in kwargs:
 			raise EditError("Bad param combination")
-		token = self.getToken('edit')
+		token = self.site.getToken('csrf')
 		if 'text' in kwargs:
 			hashtext = kwargs['text']
 		elif 'prependtext' in kwargs and 'appendtext' in kwargs:
@@ -655,7 +655,7 @@ class Page(object):
 			self.setPageInfo()
 		if not self.exists:
 			raise NoPage
-		token = self.getToken('move')
+		token = self.site.getToken('csrf')
 		params = {
 			'action': 'move',
 			'to':mvto,
@@ -709,7 +709,7 @@ class Page(object):
 			raise ProtectError("No protection levels given")
 		if len(expirations) > len(restrictions):
 			raise ProtectError("More expirations than restrictions given")
-		token = self.getToken('protect')
+		token = self.site.getToken('csrf')
 		protections = ''
 		expiry = ''
 		if isinstance(expirations, str):
@@ -755,7 +755,7 @@ class Page(object):
 			self.setPageInfo()
 		if not self.exists:
 			raise NoPage
-		token = self.getToken('delete')
+		token = self.site.getToken('csrf')
 		params = {
 			'action': 'delete',
 			'token':token,
@@ -782,32 +782,6 @@ class Page(object):
 			self.section = False			
 		return result
 	
-	def getToken(self, type):
-		"""Get a token for everything except rollbacks
-		
-		type (string) - edit, delete, protect, move, block, unblock, email
-		Currently all the tokens are interchangeable, but this may change in the future
-		
-		"""			
-		if self.pageid == 0 and not self.title:
-			self.setPageInfo()
-		if not self.exists and type != 'edit':
-			raise NoPage
-		params = {
-			'action':'query',
-			'prop':'info',
-			'intoken':type,
-		}
-		if self.exists and self.pageid:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
-		req = api.APIRequest(self.site, params)
-		response = req.query()
-		if self.pageid == 0:
-			self.pageid = response['query']['pages'].keys()[0]
-		token = response['query']['pages'][str(self.pageid)][type+'token']
-		return token
 	
 	def __hash__(self):
 		return int(self.pageid) ^ hash(self.site.apibase)

@@ -149,13 +149,7 @@ class User:
 		reblock - overwrite existing block
 		
 		"""
-		params = {'action':'block',
-			'user':self.name,
-			'gettoken':''
-		}
-		req = api.APIRequest(self.site, params)
-		res = req.query()
-		token = res['block']['blocktoken']
+		token = self.site.getToken('csrf')
 		params = {'action':'block',
 			'user':self.name,
 			'token':token
@@ -190,14 +184,7 @@ class User:
 		reason - reason for the log
 		
 		"""
-		params = {
-		    'action': 'unblock',
-			'user': self.name,
-			'gettoken': ''
-		}
-		req = api.APIRequest(self.site, params)
-		res = req.query()
-		token = res['unblock']['unblocktoken']
+		token = self.site.getToken('csrf')
 		params = {
 		    'action': 'unblock',
 			'user': self.name,

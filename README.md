@@ -8,8 +8,7 @@ Requirements
     <http://pypi.python.org/pypi/simplejson>
   * To upload files or import XML, you need Chris AtLee's poster package
     <http://pypi.python.org/pypi/poster>  
-  * The wiki this is used for should be running at least MediaWiki
-    version 1.13 and have the API enabled.
+  * As of v1.3, MediaWiki 1.24+ is required
 
 Installation
 ------------

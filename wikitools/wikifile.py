@@ -220,7 +220,7 @@ class File(page.Page):
 		params = {'action':'upload',
 			'comment':comment,
 			'filename':self.unprefixedtitle,
-			'token':self.getToken('edit') # There's no specific "upload" token
+			'token':self.site.getToken('csrf')
 		}
 		if url:
 			params['url'] = url
