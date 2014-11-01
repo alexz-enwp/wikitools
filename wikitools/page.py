@@ -100,7 +100,8 @@ class Page(object):
 			if self.title:
 				self.unprefixedtitle = self.title
 				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title.decode('utf8')))
-		if self.namespace is 0 and self.title:
+		if int(self.namespace) is 0 and self.title:
+			self.namespace = int(self.namespace)
 			self.unprefixedtitle = self.title		
 		# Setting page info with API, should set:
 		# pageid, exists, title, unprefixedtitle, namespace
