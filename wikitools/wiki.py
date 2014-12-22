@@ -108,7 +108,7 @@ class Wiki:
 		if self.maxlag < 120:
 			params['maxlag'] = 120
 		req = api.APIRequest(self, params)
-		info = req.query()
+		info = req.query(False)
 		sidata = info['query']['general']
 		for item in sidata:
 			self.siteinfo[item] = sidata[item]
@@ -199,7 +199,7 @@ class Wiki:
 		if self.maxlag < 120:
 			params['maxlag'] = 120
 		req = api.APIRequest(self, params)
-		info = req.query()
+		info = req.query(False)
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
 			self.limit = 5000
@@ -244,7 +244,7 @@ class Wiki:
 		if self.maxlag < 120:
 			data['maxlag'] = 120
 		req = api.APIRequest(self, data)
-		info = req.query()
+		info = req.query(False)
 		if info['query']['userinfo']['id'] == 0:
 			return False
 		elif username and info['query']['userinfo']['name'] != username:
@@ -300,7 +300,7 @@ class Wiki:
 			'type':type,
 		}
 		req = api.APIRequest(self, params)
-		response = req.query()
+		response = req.query(False)
 		token = response['query']['tokens'][type+'token']
 		return token
 

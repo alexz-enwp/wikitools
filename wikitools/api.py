@@ -23,6 +23,8 @@ import time
 import sys
 import wiki
 import base64
+import warnings
+import copy
 from urllib import quote_plus, _is_unicode
 try:
 	from poster.encode import multipart_encode
@@ -143,9 +145,14 @@ class APIRequest:
 		"""Actually do the query here and return usable stuff
 		
 		querycontinue - look for query-continue in the results and continue querying
-		until there is no more data to retrieve
+		until there is no more data to retrieve (DEPRECATED: use queryGen as a more
+		reliable and efficient alternative)
 		
 		"""
+		if querycontinue and self.data['action'] == 'query':
+			warnings.warn("""The querycontinue option is deprecated and will be removed
+in a future release, use the new queryGen function instead
+for queries requring multiple requests""", FutureWarning)
 		data = False
 		while not data:
 			rawdata = self.__getRaw()
@@ -160,6 +167,35 @@ class APIRequest:
 			data = self.__longQuery(data)
 		return data
 	
+	def queryGen(self):
+		"""Unlike the old query-continue method that tried to stitch results
+		together, which could work poorly for complex result sets and could
+		use a lot of memory, this yield each set returned by the API and lets
+		the user process the data. 
+		Loosely based on the recommended implementation on mediawiki.org
+		
+		"""
+		reqcopy = copy.deepcopy(self.request)
+		self.changeParam('continue', '')
+		while True:
+			data = False
+			while not data:
+				rawdata = self.__getRaw()
+				data = self.__parseJSON(rawdata)
+				if not data and type(data) is APIListResult:
+					break
+			if 'error' in data:
+				if self.iswrite and data['error']['code'] == 'blocked':
+					raise wiki.UserBlocked(data['error']['info'])
+				raise APIError(data['error']['code'], data['error']['info'])
+			yield data
+			if 'continue' not in data: 
+				break
+			else:
+				self.request = copy.deepcopy(reqcopy)
+				for param in data['continue']:
+					self.changeParam(param, data['continue'][param])
+
 	def __longQuery(self, initialdata):
 		"""For queries that require multiple requests"""
 		self._continues = set()

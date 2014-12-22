@@ -1,4 +1,14 @@
 Changes since 1.2:
+* Implements the new query-continue procedure in the MW API - The current querycontinue 
+  option in APIRequest.query() is deprecated and will be removed in a future release. 
+  A FutureWarning is issued for invocations of query() where the 'action' API parameter
+  == 'query' and querycontinue is True (the default setting). To silence the warning, set
+  querycontinue to False if unneeded or use the new queryGen() generator function.
+  queryGen does not attempt to stitch together the results into a single object, so it
+  requires slightly more effort to use, but the results should be more reliable.
+* wikiFile.File.getHistory is renamed getFileHistory, so as not to conflict with the 
+  same-named function in Page. getHistory() will still work as previously for now, but
+  issues a FutureWarning
 * Prints upload errors
 * Supports more auth methods
 * Uses new token retrieval method in MediaWiki 1.24 - WARNING: This will not work in

@@ -19,6 +19,7 @@ import wiki
 import page
 import api
 import urllib2
+import warnings
 
 class FileDimensionError(wiki.WikiError):
 	"""Invalid dimensions"""
@@ -42,15 +43,17 @@ class File(page.Page):
 		if self.namespace != 6:
 			self.setNamespace(6, check)
 		self.usage = []
-		self.history = []
-		
+		self.filehistory = []
+
 	def getHistory(self, force=False):
-		if self.history and not force:
-			return self.history
+		warnings.warn("""File.getHistory has been renamed to File.getFileHistory""", FutureWarning)
+		return self.getFileHistory(force)
+		
+	def getFileHistory(self, force=False):
+		if self.filehistory and not force:
+			return self.filehistory
 		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
-		if not self.exists:
-			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'imageinfo',
@@ -61,9 +64,12 @@ class File(page.Page):
 		else:
 			params['titles'] = self.title	
 		req = api.APIRequest(self.site, params)
-		response = req.query()
-		self.history = response['query']['pages'][str(self.pageid)]['imageinfo']
-		return self.history
+		self.filehistory = []
+		for data in req.queryGen():
+			pid = data['query']['pages'].keys()[0]
+			for item in data['query']['pages'][pid]['imageinfo']:
+				self.filehistory.append(item)
+		return self.filehistory
 			
 	def getUsage(self, titleonly=False, force=False, namespaces=False):
 		"""Gets a list of pages that use the file

@@ -91,17 +91,10 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 				params['redirects'] = ''
 			req = api.APIRequest(site, params)
 			res = req.query(False)
-			if not response:
-				response = res
-			else:
-				# This breaks on non-existent titles, the api gives them negative numbers
-				# resultCombine doesn't account for this and ignores or overwrites the 
-				# duplicate pageids
-				response = api.resultCombine('', response, res)
-		for key in response['query']['pages'].keys():
-			res = response['query']['pages'][key]
-			item = makePage(key, res, site)
-			ret.append(item)
+			for key in res['query']['pages']:
+				obj = res['query']['pages'][key]
+				item = makePage(key, obj, site)
+				ret.append(item)
 	return ret
 
 def listFromPageids(site, pageids, check=True, followRedir=False):			

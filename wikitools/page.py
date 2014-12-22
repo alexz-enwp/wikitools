@@ -139,7 +139,7 @@ class Page(object):
 		if followRedir:
 			params['redirects'] = ''
 		req = api.APIRequest(self.site, params)
-		response = req.query()
+		response = req.query(False)
 		self.pageid = response['query']['pages'].keys()[0]
 		if self.pageid > 0:
 			self.exists = True
@@ -266,7 +266,7 @@ class Page(object):
 			else:
 				raise NoPage
 		req = api.APIRequest(self.site, params)
-		res = req.query()
+		res = req.query(False)
 		if 'redirects' in res['query']:
 			return True
 		else:
@@ -368,13 +368,9 @@ class Page(object):
 		else:
 			params['titles'] = self.title	
 		req = api.APIRequest(self.site, params)
-		response = req.query()
 		self.links = []
-		if isinstance(response, list): #There shouldn't be more than 5000 links on a page...
-			for page in response:
-				self.links.extend(self.__extractToList(page, 'links'))
-		else:
-			self.links = self.__extractToList(response, 'links')
+		for data in req.queryGen():
+			self.links.extend(self.__extractToList(data, 'links'))
 		return self.links
 		
 	def getProtection(self, force=False):
@@ -393,7 +389,7 @@ class Page(object):
 		else:
 			params['titles'] = self.title
 		req = api.APIRequest(self.site, params)
-		response = req.query()
+		response = req.query(False)
 		for pr in response['query'].values()[0].values()[0]['protection']:
 			if pr['level']: 
 				if pr['expiry'] == 'infinity':
@@ -428,13 +424,9 @@ class Page(object):
 		else:
 			params['titles'] = self.title	
 		req = api.APIRequest(self.site, params)
-		response = req.query()
 		self.templates = []
-		if isinstance(response, list): #There shouldn't be more than 5000 templates on a page...
-			for part in response:
-				self.templates.extend(self.__extractToList(part, 'templates'))
-		else:
-			self.templates = self.__extractToList(response, 'templates')
+		for data in req.queryGen():
+			self.templates.extend(self.__extractToList(data, 'templates'))
 		return self.templates
 	
 	def getCategories(self, force=False):
@@ -459,13 +451,9 @@ class Page(object):
 		else:
 			params['titles'] = self.title	
 		req = api.APIRequest(self.site, params)
-		response = req.query()
 		self.categories = []
-		if isinstance(response, list):
-			for part in response:
-				self.categories.extend(self.__extractToList(part, 'categories'))
-		else:
-			self.categories = self.__extractToList(response, 'categories')
+		for data in req.queryGen():
+			self.categories.extend(self.__extractToList(data, 'categories'))
 		return self.categories
 		
 	def getHistory(self, direction='older', content=True, limit='all'):

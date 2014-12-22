@@ -97,7 +97,7 @@ class User:
 			'usprop':'blockinfo|groups|editcount'
 		}
 		req = api.APIRequest(self.site, params)
-		response = req.query()
+		response = req.query(False)
 		user = response['query']['users'][0]
 		self.name = user['name']
 		if 'missing' in user or 'invalid' in user:
