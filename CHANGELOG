@@ -11,9 +11,7 @@ Changes since 1.2:
   issues a FutureWarning
 * Prints upload errors
 * Supports more auth methods
-* Uses new token retrieval method in MediaWiki 1.24 - WARNING: This will not work in
-  older versions of MW. Wikitools 1.2 is the last version that will work with
-  MediawWiki 1.23 and older
+* Uses new token retrieval method in MediaWiki 1.24+
 
 Changes since 1.1.1:
 * Added getHistory and getHistoryGen functions to Page to get revision history/content

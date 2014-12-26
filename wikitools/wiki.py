@@ -21,6 +21,7 @@ import urllib
 import re
 import time
 import os
+import warnings
 from urlparse import urlparse
 from urllib2 import HTTPPasswordMgrWithDefaultRealm
 try:
@@ -89,6 +90,7 @@ class Wiki:
 		self.namespaces = {}
 		self.NSaliases = {}
 		self.assertval = None
+		self.newtoken = False
 		try:
 			self.setSiteinfo()
 		except api.APIError: # probably read-restricted
@@ -102,7 +104,7 @@ class Wiki:
 		
 		"""
 		params = {'action':'query',
-			'meta':'siteinfo',
+			'meta':'siteinfo|tokens',
 			'siprop':'general|namespaces|namespacealiases',
 		}
 		if self.maxlag < 120:
@@ -129,10 +131,12 @@ class Wiki:
 			for ns in nsaliasdata:
 				self.NSaliases[ns['*']] = ns['id']
 		if not 'writeapi' in sidata:
-			print "WARNING: Write-API not enabled, you will not be able to edit"
+			warnings.warn(UserWarning, "WARNING: Write-API not enabled, you will not be able to edit")
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
 		if not int(version.group(1)) >= 13: # Will this even work on 13?
-			print "WARNING: Some features may not work on older versions of MediaWiki"
+			warnings.warn(UserWarning, "WARNING: Some features may not work on older versions of MediaWiki")
+		if 'tokens' in info['query'].keys():
+			self.newtoken = True
 		return self
 	
 	def login(self, username, password=False, remember=False, force=False, verify=True, domain=None):
@@ -291,17 +295,34 @@ class Wiki:
 	def getToken(self, type):
 		"""Get a token
 		
+		For wikis with MW 1.24 or newer:
 		type (string) - csrf, deleteglobalaccount, patrol, rollback, setglobalaccountstatus, userrights, watch
+
+		For older wiki versions, only csrf (edit, move, etc.) tokens are supported
 		
-		"""			
-		params = {
-			'action':'query',
-			'meta':'tokens',
-			'type':type,
-		}
-		req = api.APIRequest(self, params)
-		response = req.query(False)
-		token = response['query']['tokens'][type+'token']
+		"""
+		if self.newtoken:
+			params = {
+				'action':'query',
+				'meta':'tokens',
+				'type':type,
+			}
+			req = api.APIRequest(self, params)
+			response = req.query(False)
+			token = response['query']['tokens'][type+'token']
+		else:
+			if type not in ['edit', 'delete', 'protect', 'move', 'block', 'unblock', 'email', 'csrf']:
+				raise WikiError('Token type unavailable')
+			params = {
+				'action':'query',
+				'prop':'info',
+				'intoken':'edit',
+				'titles':'1'
+			}
+			req = api.APIRequest(self, params)
+			response = req.query(False)
+			pid = response['data']['query']['pages'].keys()[0]
+			token = response['query']['pages'][pid]['edittoken']
 		return token
 
 
