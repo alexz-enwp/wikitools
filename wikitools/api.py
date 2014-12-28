@@ -17,7 +17,7 @@
 
 # This module is documented at http://code.google.com/p/python-wikitools/wiki/api
 
-import urllib.request, urllib.error, urllib.parse
+import urllib.request, urllib.parse
 import re
 import time
 import sys
@@ -25,17 +25,14 @@ import wikitools.wiki
 import base64
 import warnings
 import copy
-from urllib.parse import quote_plus
+import json
+
 try:
 	from poster.encode import multipart_encode
 	canupload = True
 except:
 	canupload = False
 
-try:
-	import json
-except:
-	import simplejson as json
 try:
 	import gzip
 	import io
@@ -58,7 +55,8 @@ class APIRequest:
 		multipart - use multipart data transfer, required for file uploads,
 		requires the poster package
 		
-		maxlag is set by default to 5 but can be changed
+		maxlag is set by default to 5 but can be changed via the setMaxlag method
+		of the Wiki class
 		format is always set to json
 		"""
 		if not canupload and multipart:
