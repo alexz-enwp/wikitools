@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 __all__ = ["wiki", "api", "page", "category", "user", "pagelist", "wikifile"]
-from wiki import *
-from api import *
-from page import *
-from category import *
-from user import *
-from wikifile import *
+#from wiki import *
+#from api import *
+#from page import *
+#from category import *
+#from user import *
+#from wikifile import *

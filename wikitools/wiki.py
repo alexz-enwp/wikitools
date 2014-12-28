@@ -15,17 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib
-import api
-import urllib
+import http.cookiejar
+import wikitools.api
+import urllib.request, urllib.parse, urllib.error
 import re
 import time
 import os
 import warnings
-from urlparse import urlparse
-from urllib2 import HTTPPasswordMgrWithDefaultRealm
+from urllib.parse import urlparse
+from urllib.request import HTTPPasswordMgrWithDefaultRealm
 try:
-	import cPickle as pickle
+	import pickle as pickle
 except:
 	import pickle
 
@@ -49,7 +49,7 @@ class Namespace(int):
 	def __ror__(self, other):
 		return '|'.join([str(other), str(self)])
 
-VERSION = '1.3'
+VERSION = '2.0'
 		
 class Wiki:
 	"""A Wiki site"""
@@ -93,7 +93,7 @@ class Wiki:
 		self.newtoken = False
 		try:
 			self.setSiteinfo()
-		except api.APIError: # probably read-restricted
+		except wikitools.api.APIError: # probably read-restricted
 			pass
 	
 	def setSiteinfo(self):
@@ -109,7 +109,7 @@ class Wiki:
 		}
 		if self.maxlag < 120:
 			params['maxlag'] = 120
-		req = api.APIRequest(self, params)
+		req = wikitools.api.APIRequest(self, params)
 		info = req.query(False)
 		sidata = info['query']['general']
 		for item in sidata:
@@ -125,7 +125,7 @@ class Wiki:
 					attr = "NS_%s" % (nsdata[ns]['*'].replace(' ', '_').upper())
 			else:
 				attr = "NS_MAIN"
-			setattr(self, attr.encode('utf8'), Namespace(ns.encode('utf8')))			
+			setattr(self, attr, Namespace(ns))			
 		nsaliasdata = info['query']['namespacealiases']
 		if nsaliasdata:
 			for ns in nsaliasdata:
@@ -135,7 +135,7 @@ class Wiki:
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
 		if not int(version.group(1)) >= 13: # Will this even work on 13?
 			warnings.warn(UserWarning, "WARNING: Some features may not work on older versions of MediaWiki")
-		if 'tokens' in info['query'].keys():
+		if 'tokens' in list(info['query'].keys()):
 			self.newtoken = True
 		return self
 	
@@ -166,10 +166,10 @@ class Wiki:
 			password = getpass("Wiki password for "+username+": ")
 		def loginerror(info):
 			try:
-				print info['login']['result']
+				print(info['login']['result'])
 			except:
-				print info['error']['code']
-				print info['error']['info']
+				print(info['error']['code'])
+				print(info['error']['info'])
 			return False
 		data = {
 			"action" : "login",
@@ -180,7 +180,7 @@ class Wiki:
 			data["lgdomain"] = domain
 		if self.maxlag < 120:
 			data['maxlag'] = 120
-		req = api.APIRequest(self, data)
+		req = wikitools.api.APIRequest(self, data)
 		info = req.query()
 		if info['login']['result'] == "Success":
 			self.username = username
@@ -202,7 +202,7 @@ class Wiki:
 		}
 		if self.maxlag < 120:
 			params['maxlag'] = 120
-		req = api.APIRequest(self, params)
+		req = wikitools.api.APIRequest(self, params)
 		info = req.query(False)
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
@@ -223,7 +223,7 @@ class Wiki:
 			os.remove(cookiefile)
 		except:
 			pass
-		req = api.APIRequest(self, params, write=True)
+		req = wikitools.api.APIRequest(self, params, write=True)
 		# action=logout returns absolutely nothing, which json.loads() treats as False
 		# causing APIRequest.query() to get stuck in a loop
 		req.opener.open(req.request)
@@ -247,7 +247,7 @@ class Wiki:
 		}
 		if self.maxlag < 120:
 			data['maxlag'] = 120
-		req = api.APIRequest(self, data)
+		req = wikitools.api.APIRequest(self, data)
 		info = req.query(False)
 		if info['query']['userinfo']['id'] == 0:
 			return False
@@ -307,7 +307,7 @@ class Wiki:
 				'meta':'tokens',
 				'type':type,
 			}
-			req = api.APIRequest(self, params)
+			req = wikitools.api.APIRequest(self, params)
 			response = req.query(False)
 			token = response['query']['tokens'][type+'token']
 		else:
@@ -319,9 +319,9 @@ class Wiki:
 				'intoken':'edit',
 				'titles':'1'
 			}
-			req = api.APIRequest(self, params)
+			req = wikitools.api.APIRequest(self, params)
 			response = req.query(False)
-			pid = response['data']['query']['pages'].keys()[0]
+			pid = list(response['data']['query']['pages'].keys())[0]
 			token = response['query']['pages'][pid]['edittoken']
 		return token
 
@@ -361,11 +361,11 @@ class Wiki:
 class CookiesExpired(WikiError):
 	"""Cookies are expired, needs to be an exception so login() will use the API instead"""
 
-class WikiCookieJar(cookielib.FileCookieJar):
+class WikiCookieJar(http.cookiejar.FileCookieJar):
 	def save(self, site, filename=None, ignore_discard=False, ignore_expires=False):
 		if not filename:
 			filename = self.filename
-		old_umask = os.umask(0077)
+		old_umask = os.umask(0o077)
 		f = open(filename, 'w')
 		f.write('')
 		content = ''
@@ -400,6 +400,6 @@ class WikiCookieJar(cookielib.FileCookieJar):
 			if not ignore_expires and cook.is_expired:
 				continue
 			self.set_cookie(cook)
-		exec sitedata
+		exec(sitedata)
 		f.close()
 	

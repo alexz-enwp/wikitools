@@ -17,15 +17,15 @@
 
 # This module is documented at http://code.google.com/p/python-wikitools/wiki/api
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import re
 import time
 import sys
-import wiki
+import wikitools.wiki
 import base64
 import warnings
 import copy
-from urllib import quote_plus, _is_unicode
+from urllib.parse import quote_plus
 try:
 	from poster.encode import multipart_encode
 	canupload = True
@@ -38,7 +38,7 @@ except:
 	import simplejson as json
 try:
 	import gzip
-	import StringIO
+	import io
 except:
 	gzip = False
 
@@ -78,7 +78,7 @@ class APIRequest:
 			for singledata in datagen:
 				self.encodeddata = self.encodeddata + singledata
 		else:
-			self.encodeddata = urlencode(self.data, 1)
+			self.encodeddata = urllib.parse.urlencode(self.data, 1).encode('utf-8')
 			self.headers = {
 				"Content-Type": "application/x-www-form-urlencoded",
 				"Content-Length": str(len(self.encodeddata))
@@ -92,10 +92,10 @@ class APIRequest:
 			self.headers['Authorization'] = "Basic {0}".format(
 				base64.encodestring(wiki.auth + ":" + wiki.httppass)).replace('\n','')
 		if hasattr(wiki, "passman"):
-			self.opener = urllib2.build_opener(urllib2.HTTPDigestAuthHandler(wiki.passman), urllib2.HTTPCookieProcessor(wiki.cookies))
+			self.opener = urllib.request.build_opener(urllib.request.HTTPDigestAuthHandler(wiki.passman), urllib.request.HTTPCookieProcessor(wiki.cookies))
 		else:
-			self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
-		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
+			self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(wiki.cookies))
+		self.request = urllib.request.Request(self.wiki.apibase, self.encodeddata, self.headers)
 		
 	def setMultipart(self, multipart=True):
 		"""Enable multipart data transfer, required for file uploads."""
@@ -111,7 +111,7 @@ class APIRequest:
 			for singledata in datagen:
 				self.encodeddata = self.encodeddata + singledata
 		else:
-			self.encodeddata = urlencode(self.data, 1)
+			self.encodeddata = urllib.parse.urlencode(self.data, 1).encode('utf-8')
 			self.headers['Content-Length'] = str(len(self.encodeddata))
 			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
 
@@ -136,10 +136,10 @@ class APIRequest:
 			for singledata in datagen:
 				self.encodeddata = self.encodeddata + singledata
 		else:
-			self.encodeddata = urlencode(self.data, 1)
+			self.encodeddata = urllib.parse.urlencode(self.data, 1).encode('utf-8')
 			self.headers['Content-Length'] = str(len(self.encodeddata))
 			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
-		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
+		self.request = urllib.request.Request(self.wiki.apibase, self.encodeddata, self.headers)
 	
 	def query(self, querycontinue=True):
 		"""Actually do the query here and return usable stuff
@@ -161,7 +161,7 @@ for queries requring multiple requests""", FutureWarning)
 				break
 		if 'error' in data:
 			if self.iswrite and data['error']['code'] == 'blocked':
-				raise wiki.UserBlocked(data['error']['info'])
+				raise wikitools.wiki.UserBlocked(data['error']['info'])
 			raise APIError(data['error']['code'], data['error']['info'])
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
@@ -186,7 +186,7 @@ for queries requring multiple requests""", FutureWarning)
 					break
 			if 'error' in data:
 				if self.iswrite and data['error']['code'] == 'blocked':
-					raise wiki.UserBlocked(data['error']['info'])
+					raise wikitools.wiki.UserBlocked(data['error']['info'])
 				raise APIError(data['error']['code'], data['error']['info'])
 			yield data
 			if 'continue' not in data: 
@@ -203,14 +203,14 @@ for queries requring multiple requests""", FutureWarning)
 		total = initialdata
 		res = initialdata
 		params = self.data
-		numkeys = len(res['query-continue'].keys())
+		numkeys = len(list(res['query-continue'].keys()))
 		while numkeys > 0:
 			key1 = ''
 			key2 = ''
-			possiblecontinues = res['query-continue'].keys()
+			possiblecontinues = list(res['query-continue'].keys())
 			if len(possiblecontinues) == 1:
 				key1 = possiblecontinues[0]
-				keylist = res['query-continue'][key1].keys()
+				keylist = list(res['query-continue'][key1].keys())
 				if len(keylist) == 1:
 					key2 = keylist[0]
 				else:
@@ -222,7 +222,7 @@ for queries requring multiple requests""", FutureWarning)
 						key2 = keylist[0]
 			else:
 				for posskey in possiblecontinues:
-					keylist = res['query-continue'][posskey].keys()
+					keylist = list(res['query-continue'][posskey].keys())
 					for key in keylist:
 						if len(key) < 11:
 							key1 = posskey
@@ -232,11 +232,11 @@ for queries requring multiple requests""", FutureWarning)
 						break
 				else:
 					key1 = possiblecontinues[0]
-					key2 = res['query-continue'][key1].keys()[0]
+					key2 = list(res['query-continue'][key1].keys())[0]
 			if isinstance(res['query-continue'][key1][key2], int):
 				cont = res['query-continue'][key1][key2]
 			else:
-				cont = res['query-continue'][key1][key2].encode('utf-8')
+				cont = res['query-continue'][key1][key2]
 			if len(key2) >= 11 and key2.startswith('g'):
 				self._generator = key2
 				for ckey in self._continues:
@@ -249,7 +249,7 @@ for queries requring multiple requests""", FutureWarning)
 			for type in possiblecontinues:
 				total = resultCombine(type, total, res)
 			if 'query-continue' in res:
-				numkeys = len(res['query-continue'].keys())
+				numkeys = len(list(res['query-continue'].keys()))
 			else:
 				numkeys = 0
 		return total
@@ -267,11 +267,11 @@ for queries requring multiple requests""", FutureWarning)
 				if gzip:
 					encoding = self.response.get('Content-encoding')
 					if encoding in ('gzip', 'x-gzip'):
-						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
-			except catcherror, exc:
+						data = gzip.GzipFile('', 'rb', 9, io.BytesIO(data.read()))
+			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
 				errinfo = exc
-				print("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep))
+				print(("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep)))
 				time.sleep(self.sleep+0.5)
 				self.sleep+=5
 		return data
@@ -281,14 +281,14 @@ for queries requring multiple requests""", FutureWarning)
 		while maxlag:
 			try:
 				maxlag = False
-				parsed = json.loads(data.read())
+				parsed = json.loads(data.read().decode('utf-8'))
 				content = None
 				if isinstance(parsed, dict):
 					content = APIResult(parsed)
-					content.response = self.response.items()
+					content.response = list(self.response.items())
 				elif isinstance(parsed, list):
 					content = APIListResult(parsed)
-					content.response = self.response.items()
+					content.response = list(self.response.items())
 				else:
 					content = parsed
 				if 'error' in content:
@@ -297,7 +297,7 @@ for queries requring multiple requests""", FutureWarning)
 						lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
 						if lagtime > self.wiki.maxwaittime:
 							lagtime = self.wiki.maxwaittime
-						print("Server lag, sleeping for "+str(lagtime)+" seconds")
+						print(("Server lag, sleeping for "+str(lagtime)+" seconds"))
 						maxlag = True
 						time.sleep(int(lagtime)+0.5)
 						return False
@@ -305,7 +305,7 @@ for queries requring multiple requests""", FutureWarning)
 				data.seek(0)
 				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
 					raise APIDisabled("The API is not enabled on this site")
-				print "Invalid JSON, trying request again"
+				print("Invalid JSON, trying request again")
 				# FIXME: Would be nice if this didn't just go forever if its never going to work
 				return False
 		return content
@@ -327,7 +327,7 @@ def resultCombine(type, old, new):
 	if type in new['query']: # Basic list, easy
 		ret['query'][type].extend(new['query'][type])
 	else: # Else its some sort of prop=thing and/or a generator query
-		for key in new['query']['pages'].keys(): # Go through each page
+		for key in list(new['query']['pages'].keys()): # Go through each page
 			if not key in old['query']['pages']: # if it only exists in the new one
 				ret['query']['pages'][key] = new['query']['pages'][key] # add it to the list
 			else:
@@ -342,62 +342,4 @@ def resultCombine(type, old, new):
 					retset.update(newset)
 					ret['query']['pages'][key][type] = [dict(entry) for entry in retset]
 	return ret
-		
-def urlencode(query,doseq=0):
-    """
-	Hack of urllib's urlencode function, which can handle
-	utf-8, but for unknown reasons, chooses not to by 
-	trying to encode everything as ascii
-    """
-    if hasattr(query,"items"):
-        # mapping objects
-        query = query.items()
-    else:
-        # it's a bother at times that strings and string-like objects are
-        # sequences...
-        try:
-            # non-sequence items should not work with len()
-            # non-empty strings will fail this
-            if len(query) and not isinstance(query[0], tuple):
-                raise TypeError
-            # zero-length sequences of all types will get here and succeed,
-            # but that's a minor nit - since the original implementation
-            # allowed empty dicts that type of behavior probably should be
-            # preserved for consistency
-        except TypeError:
-            ty,va,tb = sys.exc_info()
-            raise TypeError, "not a valid non-string sequence or mapping object", tb
-
-    l = []
-    if not doseq:
-        # preserve old behavior
-        for k, v in query:
-            k = quote_plus(str(k))
-            v = quote_plus(str(v))
-            l.append(k + '=' + v)
-    else:
-        for k, v in query:
-            k = quote_plus(str(k))
-            if isinstance(v, str):
-                v = quote_plus(v)
-                l.append(k + '=' + v)
-            elif _is_unicode(v):
-                # is there a reasonable way to convert to ASCII?
-                # encode generates a string, but "replace" or "ignore"
-                # lose information and "strict" can raise UnicodeError
-                v = quote_plus(v.encode("utf8","replace"))
-                l.append(k + '=' + v)
-            else:
-                try:
-                    # is this a sufficient test for sequence-ness?
-                    x = len(v)
-                except TypeError:
-                    # not a sequence
-                    v = quote_plus(str(v))
-                    l.append(k + '=' + v)
-                else:
-                    # loop over the sequence
-                    for elt in v:
-                        l.append(k + '=' + quote_plus(str(elt)))
-    return '&'.join(l)
 
