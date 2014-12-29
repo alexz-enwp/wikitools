@@ -59,7 +59,7 @@ class APIRequest:
 		self.headers["User-agent"] = wiki.useragent
 		self.headers['Accept-Encoding'] = 'gzip'
 		self.wiki = wiki
-		self.response = False
+		self.response = None
 		if wiki.auth:
 			self.headers['Authorization'] = "Basic {0}".format(
 				base64.encodestring(wiki.auth + ":" + wiki.httppass)).replace('\n','')

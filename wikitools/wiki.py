@@ -181,7 +181,10 @@ class Wiki:
 			self.limit = 5000
 		if self.useragent == "python-wikitools/%s" % VERSION:
 			self.useragent = "python-wikitools/%s (User:%s)" % (VERSION, self.username)
-		return True
+		if verify:
+			return self.isLoggedIn(self.username)
+		else:
+			return True
 	
 	def logout(self):
 		params = { 'action': 'logout' }
