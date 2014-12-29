@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com),  bjweeks
 
 # This file is part of wikitools.
@@ -18,7 +18,7 @@
 import datetime
 import wikitools.wiki
 import wikitools.api
-import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import re
 from hashlib import md5
 

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
