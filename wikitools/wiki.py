@@ -138,10 +138,10 @@ class Wiki:
 			password = getpass("Wiki password for "+username+": ")
 		def loginerror(info):
 			try:
-				print(info['login']['result'])
+				warnings.warn(UserWarning, info['login']['result'])
 			except:
-				print(info['error']['code'])
-				print(info['error']['info'])
+				warnings.warn(info['error']['code'])
+				warnings.warn(info['error']['info'])
 			return False
 		data = {
 			"action" : "login",
@@ -165,6 +165,8 @@ class Wiki:
 				return loginerror(info)
 		else:
 			return loginerror(info)
+		if verify and not self.isLoggedIn(self.username):
+			return False
 		if not self.siteinfo:
 			self.setSiteinfo()
 		params = {
@@ -181,9 +183,6 @@ class Wiki:
 			self.limit = 5000
 		if self.useragent == "python-wikitools/%s" % VERSION:
 			self.useragent = "python-wikitools/%s (User:%s)" % (VERSION, self.username)
-		if verify:
-			return self.isLoggedIn(self.username)
-		else:
 			return True
 	
 	def logout(self):
@@ -198,9 +197,10 @@ class Wiki:
 		self.maxlag = 5
 		self.useragent = "python-wikitools/%s" % VERSION
 		self.limit = 500
+		self.session = requests.Session()
 		return True
 		
-	def isLoggedIn(self, username = False):
+	def isLoggedIn(self, username=None):
 		"""Verify that we are a logged in user
 		
 		username - specify a username to check against
