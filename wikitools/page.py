@@ -16,25 +16,25 @@
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import wiki
-import api
-import urllib
+import wikitools.wiki
+import wikitools.api
+import urllib.request, urllib.parse, urllib.error
 import re
 from hashlib import md5
 
-class BadTitle(wiki.WikiError):
+class BadTitle(wikitools.wiki.WikiError):
 	"""Invalid title"""
 	
-class NoPage(wiki.WikiError):
+class NoPage(wikitools.wiki.WikiError):
 	"""Non-existent page"""
 	
-class BadNamespace(wiki.WikiError):
+class BadNamespace(wikitools.wiki.WikiError):
 	"""Invalid namespace number"""
 
-class EditError(wiki.WikiError):
+class EditError(wikitools.wiki.WikiError):
 	"""Problem with edit request"""
 
-class ProtectError(wiki.WikiError):
+class ProtectError(wikitools.wiki.WikiError):
 	"""Problem with protection request"""
 
 def namespaceDetect(title, site):
@@ -50,6 +50,8 @@ def namespaceDetect(title, site):
 		for ns in site.namespaces:
 			if nsprefix == site.namespaces[ns]['*'].lower():
 				return int(ns)
+			if 'canonical' in site.namespaces[ns] and nsprefix == site.namespaces[ns]['canonical'].lower():
+				return int(ns)
 		else:
 			if site.NSaliases:
 				for ns in site.NSaliases:
@@ -60,7 +62,7 @@ def namespaceDetect(title, site):
 class Page(object):
 	""" A page on the wiki"""
 
-	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False, namespace=False):
+	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None, namespace=None):
 		"""	
 		wiki - A wiki object
 		title - The page title, as a string or unicode object
@@ -73,15 +75,20 @@ class Page(object):
 		""" 
 		# Initialize instance vars from function args
 		if not title and not pageid:
-			raise wiki.WikiError("No title or pageid given")
+			raise wikitools.wiki.WikiError("No title or pageid given")
 		self.site = site
 		if pageid:
 			self.pageid = int(pageid)
 		else:
 			self.pageid = 0
 		self.followRedir = followRedir
-		self.title = title
-		self.unprefixedtitle = False # will be set later
+		if type(title) == bytes: 
+			self.title = title.decode('utf-8') 
+		else: 
+			self.title = title
+		if '#' in self.title and section is None:
+			self.title, section = self.title.split('#', 1)
+		self.unprefixedtitle = '' # will be set later
 		self.urltitle = ''
 		self.wikitext = ''
 		self.templates = []
@@ -90,25 +97,21 @@ class Page(object):
 		self.exists = True # If we're not going to check, assume it does
 		self.protection = {}
 		self.namespace = namespace
-		
 		# Things that need to be done before anything else
 		if self.title:
 			self.title = self.title.replace('_', ' ')
 		if self.namespace:
-			if namespace not in self.site.namespaces.keys():
+			if namespace not in list(self.site.namespaces.keys()):
 				raise BadNamespace(namespace)
 			if self.title:
 				self.unprefixedtitle = self.title
-				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title.decode('utf8')))
-		if int(self.namespace) is 0 and self.title:
-			self.namespace = int(self.namespace)
-			self.unprefixedtitle = self.title		
+				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title))		
 		# Setting page info with API, should set:
 		# pageid, exists, title, unprefixedtitle, namespace
 		if check:
 			self.setPageInfo()
 		else:
-			if self.namespace is False and self.title:
+			if self.namespace is None and self.title:
 				self.namespace = namespaceDetect(self.title, self.site)
 				if self.namespace is not 0:
 					nsname = self.site.namespaces[self.namespace]['*']
@@ -116,17 +119,12 @@ class Page(object):
 					self.title = ':'.join((nsname, self.unprefixedtitle))
 				else:
 					self.unprefixedtitle = self.title
-					
-		if section or sectionnumber is not False:
+		if section or sectionnumber is not None:
 			self.setSection(section, sectionnumber)
 		else:
-			self.section = False
+			self.section = None
 		if title:
-			if not isinstance(self.title, unicode):
-				self.title = unicode(self.title, 'utf-8')
-			if not isinstance(self.unprefixedtitle, unicode):
-				self.unprefixedtitle = unicode(self.unprefixedtitle, 'utf-8')
-			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
+			self.urltitle = urllib.parse.quote(self.title).replace('%20', '_').replace('%2F', '/')
 
 	def setPageInfo(self):
 		"""Sets basic page info, required for almost everything"""
@@ -138,31 +136,30 @@ class Page(object):
 			params['titles'] = self.title
 		if followRedir:
 			params['redirects'] = ''
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		self.pageid = response['query']['pages'].keys()[0]
+		self.pageid = int(list(response['query']['pages'].keys())[0])
 		if self.pageid > 0:
 			self.exists = True
 		if 'missing' in response['query']['pages'][str(self.pageid)]:
 			if not self.title:
 				# Pageids are never recycled, so a bad pageid with no title will never work
-				raise wiki.WikiError("Bad pageid given with no title")
+				raise wikitools.wiki.WikiError("Bad pageid given with no title")
 			self.exists = False
 		if 'invalid' in response['query']['pages'][str(self.pageid)]:
 			raise BadTitle(self.title)
 		if 'title' in response['query']['pages'][str(self.pageid)]:
-			self.title = response['query']['pages'][str(self.pageid)]['title'].encode('utf-8')
+			self.title = response['query']['pages'][str(self.pageid)]['title']
 			self.namespace = int(response['query']['pages'][str(self.pageid)]['ns'])
 			if self.namespace is not 0:
 				self.unprefixedtitle = self.title.split(':', 1)[1]	
 			else:
 				self.unprefixedtitle = self.title
-		self.pageid = int(self.pageid)
 		if self.pageid < 0:
 			self.pageid = 0
 		return self
 		
-	def setNamespace(self, newns, recheck=False):
+	def setNamespace(self, newns, recheck=True):
 		"""Change the namespace number of a page object
 		
 		Updates the title with the new prefix
@@ -170,7 +167,7 @@ class Page(object):
 		recheck - redo pageinfo checks
 		
 		"""
-		if not newns in self.site.namespaces.keys():
+		if not newns in list(self.site.namespaces.keys()):
 			raise BadNamespace
 		if self.namespace == newns:
 			return self.namespace
@@ -191,7 +188,7 @@ class Page(object):
 			self.namespace = newns
 			if self.namespace:
 				self.title = self.site.namespaces[self.namespace]['*']+':'+self.title
-			self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
+			self.urltitle = urllib.parse.quote(self.title).replace('%20', '_').replace('%2F', '/')
 		else:
 			self.namespace = newns
 		if recheck:
@@ -212,10 +209,10 @@ class Page(object):
 		
 		"""
 		if section is None and number is None:
-			self.section = False
+			self.section = None
 		elif number is not None:
 			try:
-				self.section = str(int(number))
+				self.section = int(number)
 			except ValueError:
 				raise WikiError("Section number must be an int")
 		else:
@@ -231,8 +228,8 @@ class Page(object):
 			'page':self.title,
 			'prop':'sections'
 		}
-		number = False
-		req = api.APIRequest(self.site, params)
+		number = None
+		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query()
 		for item in response['parse']['sections']:
 			if section == item['line'] or section == item['anchor']:
@@ -240,7 +237,7 @@ class Page(object):
 					continue
 				number = item['index']
 				break
-		return number
+		return int(number)
 		
 	def canHaveSubpages(self):
 		"""Is the page in a namespace that allows subpages?"""
@@ -265,7 +262,7 @@ class Page(object):
 				params['pageids'] = self.pageid
 			else:
 				raise NoPage
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		res = req.query(False)
 		if 'redirects' in res['query']:
 			return True
@@ -333,16 +330,16 @@ class Page(object):
 			params['titles'] = self.title		
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
-		if self.section is not False:
+		if self.section is not None:
 			params['rvsection'] = self.section
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
 		if self.pageid == 0:
-			self.pageid = int(response['query']['pages'].keys()[0])
+			self.pageid = int(list(response['query']['pages'].keys())[0])
 			if self.pageid == -1:
 				self.exists == False
 				raise NoPage
-		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*'].encode('utf-8')
+		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*']
 		self.lastedittime = response['query']['pages'][str(self.pageid)]['revisions'][0]['timestamp']
 		return self.wikitext
 	
@@ -367,7 +364,7 @@ class Page(object):
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title	
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		self.links = []
 		for data in req.queryGen():
 			self.links.extend(self.__extractToList(data, 'links'))
@@ -388,9 +385,9 @@ class Page(object):
 			params['titles'] = self.title
 		else:
 			params['titles'] = self.title
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		for pr in response['query'].values()[0].values()[0]['protection']:
+		for pr in list(response['query'].values())[0].values()[0]['protection']:
 			if pr['level']: 
 				if pr['expiry'] == 'infinity':
 					expiry = 'infinity'
@@ -423,7 +420,7 @@ class Page(object):
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title	
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		self.templates = []
 		for data in req.queryGen():
 			self.templates.extend(self.__extractToList(data, 'templates'))
@@ -450,7 +447,7 @@ class Page(object):
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title	
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		self.categories = []
 		for data in req.queryGen():
 			self.categories.extend(self.__extractToList(data, 'categories'))
@@ -521,7 +518,7 @@ class Page(object):
 		if not self.exists:
 			raise NoPage
 		if direction != 'newer' and direction != 'older':
-			raise wiki.WikiError("direction must be 'newer' or 'older'")
+			raise wikitools.wiki.WikiError("direction must be 'newer' or 'older'")
 		params = {
 			'action':'query',
 			'prop':'revisions',
@@ -540,9 +537,9 @@ class Page(object):
 		if rvcontinue:
 			params['continue'] = rvcontinue['continue']
 			params['rvcontinue'] = rvcontinue['rvcontinue']
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		id = response['query']['pages'].keys()[0]
+		id = list(response['query']['pages'].keys())[0]
 		if not self.pageid:
 			self.pageid = int(id)
 		revs = response['query']['pages'][id]['revisions']
@@ -554,7 +551,7 @@ class Page(object):
 	def __extractToList(self, json, stuff):
 		list = []
 		if self.pageid == 0:
-			self.pageid = json['query']['pages'].keys()[0]
+			self.pageid = list(json['query']['pages'].keys())[0]
 		if stuff in json['query']['pages'][str(self.pageid)]:
 			for item in json['query']['pages'][str(self.pageid)][stuff]:
 				list.append(item['title'])
@@ -619,7 +616,7 @@ class Page(object):
 		if not skipmd5:
 			params['md5'] = md5(hashtext).hexdigest()
 		params.update(kwargs)
-		req = api.APIRequest(self.site, params, write=True)
+		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'edit' in result and result['edit']['result'] == 'Success':
 			self.wikitext = ''
@@ -655,7 +652,7 @@ class Page(object):
 		else:
 			params['from'] = self.title
 		if reason:
-			params['reason'] = reason.encode('utf-8')
+			params['reason'] = reason
 		if movetalk:
 			params['movetalk'] = '1'
 		if noredirect:
@@ -664,7 +661,7 @@ class Page(object):
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.site, params, write=True)
+		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'move' in result:
 			self.title = result['move']['to']
@@ -673,11 +670,7 @@ class Page(object):
 				self.unprefixedtitle = self.title.split(':', 1)[1]
 			else:
 				self.unprefixedtitle = self.title			
-			if not isinstance(self.title, unicode):
-				self.title = unicode(self.title, 'utf-8')
-				self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')	
-			else:
-				self.urltitle = urllib.quote(self.title.encode('utf-8')).replace('%20', '_').replace('%2F', '/')
+			self.urltitle = urllib.parse.quote(self.title).replace('%20', '_').replace('%2F', '/')
 		return result
 
 	def protect(self, restrictions={}, expirations={}, reason=False, cascade=False):
@@ -726,7 +719,7 @@ class Page(object):
 			params['reason'] = reason
 		if cascade:
 			params['cascade'] = ''
-		req = api.APIRequest(self.site, params, write=True)
+		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'protect' in result:
 			self.protection = {}
@@ -754,12 +747,12 @@ class Page(object):
 		else:
 			params['title'] = self.title
 		if reason:
-			params['reason'] = reason.encode('utf-8')
+			params['reason'] = reason
 		if watch:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
-		req = api.APIRequest(self.site, params, write=True)
+		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'delete' in result:
 			self.pageid = 0
@@ -768,7 +761,7 @@ class Page(object):
 			self.templates = ''
 			self.links = ''
 			self.protection = {}
-			self.section = False			
+			self.section = None			
 		return result
 	
 	
