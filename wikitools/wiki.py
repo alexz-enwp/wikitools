@@ -15,19 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import http.cookiejar
+import requests
 import wikitools.api
-import urllib.request, urllib.parse, urllib.error
 import re
 import time
 import os
 import warnings
 from urllib.parse import urlparse
-from urllib.request import HTTPPasswordMgrWithDefaultRealm
-try:
-	import pickle as pickle
-except:
-	import pickle
 
 class WikiError(Exception):
 	"""Base class for errors"""
@@ -54,37 +48,28 @@ VERSION = '2.0'
 class Wiki:
 	"""A Wiki site"""
 
-	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None, preauth=False):
+	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None):
 		"""
 		url - A URL to the site's API, defaults to en.wikipedia
 		httpuser - optional user name for HTTP Auth
         	httppass - password for HTTP Auth, leave out to enter interactively
-		preauth - true to send headers for HTTP Auth on the first request
-		          instead of relying on the negotiation for them
 
 		"""
 		self.apibase = url
-		self.cookies = WikiCookieJar()
+		self.session = requests.Session()
 		self.username = ''
 		urlbits = urlparse(self.apibase)
 		self.domain = '://'.join([urlbits.scheme, urlbits.netloc])
 		if httpuser is not None:
 			if httppass is None:
 				from getpass import getpass
-				self.httppass = getpass("HTTP Auth password for "+httpuser+": ")
-			if preauth:
-				self.httppass = httppass
-				self.auth = httpuser
-			else:
-				self.passman = HTTPPasswordMgrWithDefaultRealm()
-				self.passman.add_password(None, self.domain, httpuser, httppass)
+				httppass = getpass("HTTP Auth password for "+httpuser+": ")
+			self.auth = (httpuser, httppass)
 		else:
-			self.passman = None
 			self.auth = None
 		self.maxlag = 5
 		self.maxwaittime = 120
 		self.useragent = "python-wikitools/%s" % VERSION
-		self.cookiepath = ''
 		self.limit = 500
 		self.siteinfo = {}
 		self.namespaces = {}
@@ -139,28 +124,15 @@ class Wiki:
 			self.newtoken = True
 		return self
 	
-	def login(self, username, password=False, remember=False, force=False, verify=True, domain=None):
+	def login(self, username, password=False, verify=True, domain=None):
 		"""Login to the site
 		
-		remember - saves cookies to a file - the filename will be:
-		hash(username - apibase).cookies
-		the cookies will be saved in the current directory, change cookiepath
-		to use a different location
-		force - forces login over the API even if a cookie file exists 
-		and overwrites an existing cookie file if remember is True
+		username - the user account name on the wiki
+		password - the password for the account - leave empty to enter interactively
 		verify - Checks cookie validity with isLoggedIn()
 		domain - domain name, required for some auth systems like LDAP
 		
 		"""
-		if not force:
-			try:	
-				cookiefile = self.cookiepath + str(hash(username+' - '+self.apibase))+'.cookies'
-				self.cookies.load(self, cookiefile, True, True)
-				self.username = username
-				if not verify or self.isLoggedIn(self.username):
-					return True
-			except:
-				pass
 		if not password:
 			from getpass import getpass
 			password = getpass("Wiki password for "+username+": ")
@@ -207,9 +179,6 @@ class Wiki:
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
 			self.limit = 5000
-		if remember:
-			cookiefile = self.cookiepath + str(hash(self.username+' - '+self.apibase))+'.cookies'
-			self.cookies.save(self, cookiefile, True, True)
 		if self.useragent == "python-wikitools/%s" % VERSION:
 			self.useragent = "python-wikitools/%s (User:%s)" % (VERSION, self.username)
 		return True
@@ -218,16 +187,10 @@ class Wiki:
 		params = { 'action': 'logout' }
 		if self.maxlag < 120:
 			params['maxlag'] = 120
-		cookiefile = self.cookiepath + str(hash(self.username+' - '+self.apibase))+'.cookies'
-		try:
-			os.remove(cookiefile)
-		except:
-			pass
 		req = wikitools.api.APIRequest(self, params, write=True)
 		# action=logout returns absolutely nothing, which json.loads() treats as False
 		# causing APIRequest.query() to get stuck in a loop
-		req.opener.open(req.request)
-		self.cookies = WikiCookieJar()
+		req.wiki.session.post(req.wiki.apibase, params=req.data, headers=req.headers, auth=req.authman)
 		self.username = ''
 		self.maxlag = 5
 		self.useragent = "python-wikitools/%s" % VERSION
@@ -355,51 +318,4 @@ class Wiki:
 		else:
 			user = ' not logged in'
 		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(self.apibase)+user+">"
-		
-		
-
-class CookiesExpired(WikiError):
-	"""Cookies are expired, needs to be an exception so login() will use the API instead"""
-
-class WikiCookieJar(http.cookiejar.FileCookieJar):
-	def save(self, site, filename=None, ignore_discard=False, ignore_expires=False):
-		if not filename:
-			filename = self.filename
-		old_umask = os.umask(0o077)
-		f = open(filename, 'w')
-		f.write('')
-		content = ''
-		for c in self:
-			if not ignore_discard and c.discard:
-				continue
-			if not ignore_expires and c.is_expired:
-				continue
-			cook = pickle.dumps(c, 2)
-			f.write(cook+'|~|')
-		content+=str(int(time.time()))+'|~|' # record the current time so we can test for expiration later
-		content+='site.limit = %d;' % (site.limit) # This eventially might have more stuff in it
-		f.write(content)
-		f.close()
-		os.umask(old_umask)
-	
-	def load(self, site, filename, ignore_discard, ignore_expires):
-		f = open(filename, 'r')
-		cookies = f.read().split('|~|')
-		saved = cookies[len(cookies)-2]
-		if int(time.time()) - int(saved) > 1296000: # 15 days, not sure when the cookies actually expire...
-			f.close()
-			os.remove(filename)
-			raise CookiesExpired
-		sitedata = cookies[len(cookies)-1]
-		del cookies[len(cookies)-2]
-		del cookies[len(cookies)-1]
-		for c in cookies:
-			cook = pickle.loads(c)
-			if not ignore_discard and cook.discard:
-				continue
-			if not ignore_expires and cook.is_expired:
-				continue
-			self.set_cookie(cook)
-		exec(sitedata)
-		f.close()
 	
