@@ -17,7 +17,6 @@
 
 # This module is documented at http://code.google.com/p/python-wikitools/wiki/api
 
-import urllib.request, urllib.parse
 import re
 import time
 import sys
@@ -28,18 +27,7 @@ import copy
 import json
 import requests
 from requests.auth import HTTPDigestAuth
-
-try:
-	from poster.encode import multipart_encode
-	canupload = True
-except:
-	canupload = False
-
-try:
-	import gzip
-	import io
-except:
-	gzip = False
+import io
 
 class APIError(Exception):
 	"""Base class for errors"""
@@ -49,13 +37,11 @@ class APIDisabled(APIError):
 	
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, wiki, data, write=False, multipart=False):
+	def __init__(self, wiki, data, write=False):
 		"""	
 		wiki - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
-		multipart - use multipart data transfer, required for file uploads,
-		requires the poster package
 		
 		maxlag is set by default to 5 but can be changed via the setMaxlag method
 		of the Wiki class
@@ -77,17 +63,11 @@ class APIRequest:
 		if wiki.auth:
 			self.headers['Authorization'] = "Basic {0}".format(
 				base64.encodestring(wiki.auth + ":" + wiki.httppass)).replace('\n','')
-		self.authman = None if wiki.auth is None else HTTPDigest(wiki.auth)
+		self.authman = None if wiki.auth is None else HTTPDigestAuth(wiki.auth)
 		
 
 	def changeParam(self, param, value):
-		"""Change or add a parameter after making the request object
-		
-		Simply changing self.data won't work as it needs to update other things.
-
-		value can either be a normal string value, or a file-like object,
-		which will be uploaded, if setMultipart was called previously.
-		
+		"""Change or add a parameter after making the request object		
 		"""
 		if param == 'format':
 			raise APIError('You can not change the result format')
@@ -119,7 +99,7 @@ for queries requring multiple requests""", FutureWarning)
 			data = self.__longQuery(data)
 		return data
 	
-	def queryGen(self): #FIXME - Do requests stuff
+	def queryGen(self):
 		"""Unlike the old query-continue method that tried to stitch results
 		together, which could work poorly for complex result sets and could
 		use a lot of memory, this yield each set returned by the API and lets
@@ -132,7 +112,7 @@ for queries requring multiple requests""", FutureWarning)
 		while True:
 			data = False
 			while not data:
-				rawdata = self.__getRaw()
+				rawdata = io.BytesIO(self.__getRaw().content)
 				data = self.__parseJSON(rawdata)
 				if not data and type(data) is APIListResult:
 					break
@@ -219,7 +199,7 @@ for queries requring multiple requests""", FutureWarning)
 			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
 				errinfo = exc
-				print(("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep)))
+				warnings.warn(UserWarning, "%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep))
 				time.sleep(self.sleep+0.5)
 				self.sleep+=5
 		return data
@@ -254,8 +234,7 @@ for queries requring multiple requests""", FutureWarning)
 				data.seek(0)
 				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
 					raise APIDisabled("The API is not enabled on this site")
-				print("Invalid JSON, trying request again")
-				# FIXME: Would be nice if this didn't just go forever if its never going to work
+				warnings.warn(UserWarning, "Invalid JSON, trying request again")
 				return False
 		return content
 		
