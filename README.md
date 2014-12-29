@@ -3,12 +3,10 @@ wikitools -- Package for working with MediaWiki wikis
 Requirements
 ------------
 
-  * Python 2.5+. Not compatible with Python 3; not tested on older versions
-  * Bob Ippolito's simplejson module, if using Python < 2.6
-    <http://pypi.python.org/pypi/simplejson>
-  * To upload files or import XML, you need Chris AtLee's poster package
-    <http://pypi.python.org/pypi/poster>
-  * The wiki this is used for should be running at least MediaWiki version 1.13 and have the API enabled.
+  * Python 3+. Tested on 3.4.2
+  * The requests package <http://docs.python-requests.org/en/latest/> is required.
+  * The wiki this is used for should be running at least MediaWiki version 1.13 and
+    have the API enabled.
 
 Installation
 ------------
@@ -23,18 +21,18 @@ Available modules
 -----------------
 
   * api.py - Contains the APIRequest class, for doing queries directly,
-	see API examples below
+    see API examples below
   * wiki.py - Contains the Wiki class, used for logging in to the site,
     storing cookies, and storing basic site information
   * page.py -  Contains the Page class for dealing with individual pages
     on the wiki. Can be used to get page info and text, as well as edit and
-	other actions if enabled on the wiki
+    other actions if enabled on the wiki
   * category.py - Category is a subclass of Page with extra functions for
     working with categories
   * wikifile.py - File is a subclass of Page with extra functions for
     working with files - note that there may be some issues with shared
-	repositories, as the pages for files on shared repos technically don't
-	exist on the local wiki.
+    repositories, as the pages for files on shared repos technically don't
+    exist on the local wiki.
   * user.py - Contains the User class for getting information about and
     blocking/unblocking users
   * pagelist.py - Contains several functions for getting a list of Page
@@ -42,14 +40,14 @@ Available modules
 
 Further documentation
 ---------------------
-  * https://code.google.com/p/python-wikitools/wiki/Documentation
+  * https://github.com/alexz-enwp/wikitools/wiki
 
 Current limitations
 -------------------
 
   * Can only do what the API can do. On a site without the edit-API enabled
     (disabled by default prior to MediaWiki 1.14), you cannot edit/delete/
-	protect pages, only retrieve information about them.
+    protect pages, only retrieve information about them.
   * May have issues with some non-ASCII characters. Most of these bugs
     should be resolved, though full UTF-8 support is still a little flaky
   * Usage on restricted-access (logged-out users can't read) wikis is
