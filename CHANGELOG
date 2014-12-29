@@ -1,12 +1,12 @@
 Changes since 1.2:
-* Implements the new query-continue procedure in the MW API - The current querycontinue 
-  option in APIRequest.query() is deprecated and will be removed in a future release. 
+* Implements the new query-continue procedure in the MW API - The current querycontinue
+  option in APIRequest.query() is deprecated and will be removed in a future release.
   A FutureWarning is issued for invocations of query() where the 'action' API parameter
   == 'query' and querycontinue is True (the default setting). To silence the warning, set
   querycontinue to False if unneeded or use the new queryGen() generator function.
   queryGen does not attempt to stitch together the results into a single object, so it
   requires slightly more effort to use, but the results should be more reliable.
-* wikiFile.File.getHistory is renamed getFileHistory, so as not to conflict with the 
+* wikiFile.File.getHistory is renamed getFileHistory, so as not to conflict with the
   same-named function in Page. getHistory() will still work as previously for now, but
   issues a FutureWarning
 * Prints upload errors
@@ -44,27 +44,27 @@ Changes since 1.0:
 * The Page class now subclasses object
 * maxlag can be ignored entirely by setting it to <0
 * New function: User.isBlocked()
-* The User.blocked attribute now has three possible values - None, False, True - 
-  corresponding to unknown, not blocked, blocked. Previously False could mean 
+* The User.blocked attribute now has three possible values - None, False, True -
+  corresponding to unknown, not blocked, blocked. Previously False could mean
   either unknown or not blocked.
 * Wiki.login() now has a domain argument, used for wikis that have LDAP login
 * File upload support has been added for action=import and action=upload, the poster
   package <http://pypi.python.org/pypi/poster> is required for this
 * Bug in APIRequest.changeParam() fixed
-* New Page.getCategories() function to get a list of categories on a page, also 
+* New Page.getCategories() function to get a list of categories on a page, also
   added a "categories" attribute to Page
 * Cookiejar files are no longer world-readable by setting the umask to 0077 before
   creating the file
-* If the API is disabled, an APIDisabled exception will be raised instead of repeating the 
+* If the API is disabled, an APIDisabled exception will be raised instead of repeating the
   request forever
 * Added File.getHistory() function and File.history attribute to get file upload history
 * Added File.upload() function to upload files and UploadError exception for errors
   during uploading
 * Added an APIListResult class for cases where the API result is only a list such as
   action=opensearch
-* Added a Namespace class to wiki.py. Namespace 'constants' are now added as attributes 
-  to Wiki objects. The attributes use the canonical name, in the same style as MediaWiki - 
-  NS_NAME. Namespace subclasses int, so they function as integers in every way, except 
+* Added a Namespace class to wiki.py. Namespace 'constants' are now added as attributes
+  to Wiki objects. The attributes use the canonical name, in the same style as MediaWiki -
+  NS_NAME. Namespace subclasses int, so they function as integers in every way, except
   the OR operator ( | ) is overridden to produce a list of namespaces for use in an API query
 * Page.__getSection now uses a better, non-hacky way to determine section numbers from section
   names, and now works correctly on pages with transcluded sections
@@ -79,7 +79,7 @@ Changes since 0.1.1:
   included in the results as .response member variable
 * setNamespace() function added to Page class to allow changing the namespace of a Page object
 * Title normalization improved
-* API requests now print the actual exception info when retrying. If not retrying, the 
+* API requests now print the actual exception info when retrying. If not retrying, the
   exception is not caught. The ServerError exception has been removed.
 * Added option to skip MD5 check when editing, as PHP's urldecoding fails in some corner cases
 * Handling of sections in the Page class (particularly section 0) is improved
@@ -89,7 +89,7 @@ Changes since 0.1.1:
 * All modules imported when doing "import wikitools"
 * Category.getAllMembers() can now be filtered by namespace by passing a list of
   namespaces as the "namespaces" parameter
-* File class (subclass of Page) added in wikifile.py (to avoid conflict with builtin file 
+* File class (subclass of Page) added in wikifile.py (to avoid conflict with builtin file
   objects) - includes functions to get file usage and download the file
 * __str__ and __repr__ functions added for most objects to give useful string representations
 * in-code documentation improved
@@ -99,25 +99,25 @@ Changes since 0.1.1:
 List of changes since 0.1 release:
 * Make page existence and setPageInfo() checks more consistent.
 * Use **kwargs in Page.edit() rather than dozen keyword arguments all False by default,
-  this is a breaking change for anything didn't explicitly use the keyword arguments 
+  this is a breaking change for anything didn't explicitly use the keyword arguments
   for some reason. If the first param isn't a keyword, its treated as "text" for partial BC,
-  arguments are now all the same as the API action=edit params, "newtext" and "basetime" 
-  still work for BC 
-* Fix broken User.page 
-* APIRequest now makes a copy() of params rather than using it directly 		
+  arguments are now all the same as the API action=edit params, "newtext" and "basetime"
+  still work for BC
+* Fix broken User.page
+* APIRequest now makes a copy() of params rather than using it directly
 * reduce calls to setPageInfo() by using the title if pageid isn't available
-* Make redirect following less random on calls to setPageInfo in Page - 
+* Make redirect following less random on calls to setPageInfo in Page -
   note that this removes the followRedir param from setPageInfo, replacing it with
-  a followRedir member variable	
+  a followRedir member variable
 * set maxlag directly in the query params for temporary raises for login/siteinfo queries
   rather than using setmaxlag(), which could reset it back to 5 if the user set it to 120
   before logging in
-* fix maxlag bug that changed it to 120 but didn't reset it back to 5		
-* rewrite most of __longQuery and improve resultCombine		
-* add missing module import in api.py	
+* fix maxlag bug that changed it to 120 but didn't reset it back to 5
+* rewrite most of __longQuery and improve resultCombine
+* add missing module import in api.py
 * use pickle for cookie files, add an option to login() to verify the cookies are correct
-  with isLoggedIn(), set to True by default	
-* fix User.isIP check - several non IPs were treated as IP addresses	
-* support reblock option for user blocks		
+  with isLoggedIn(), set to True by default
+* fix User.isIP check - several non IPs were treated as IP addresses
+* support reblock option for user blocks
 * improve namespace guessing/title normalization, include namespace aliases,
   add the namespace prefix to category objects if its not already there		

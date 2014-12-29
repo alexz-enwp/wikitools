@@ -7,7 +7,7 @@ Requirements
   * Bob Ippolito's simplejson module, if using Python < 2.6
     <http://pypi.python.org/pypi/simplejson>
   * To upload files or import XML, you need Chris AtLee's poster package
-    <http://pypi.python.org/pypi/poster>  
+    <http://pypi.python.org/pypi/poster>
   * The wiki this is used for should be running at least MediaWiki version 1.13 and have the API enabled.
 
 Installation
@@ -15,7 +15,7 @@ Installation
 
   * Run "python setup.py install" or copy the wikitools directory
     to an appropriate Python module directory.
-  * An exe installer for Windows is also available (should be run as an 
+  * An exe installer for Windows is also available (should be run as an
     administrator to avoid errors)
   * An RPM for Linux is also available.
 
@@ -32,10 +32,10 @@ Available modules
   * category.py - Category is a subclass of Page with extra functions for
     working with categories
   * wikifile.py - File is a subclass of Page with extra functions for
-    working with files - note that there may be some issues with shared 
+    working with files - note that there may be some issues with shared
 	repositories, as the pages for files on shared repos technically don't
 	exist on the local wiki.
-  * user.py - Contains the User class for getting information about and 
+  * user.py - Contains the User class for getting information about and
     blocking/unblocking users
   * pagelist.py - Contains several functions for getting a list of Page
     objects from lists of titles, pageids, or API query results
@@ -49,12 +49,12 @@ Current limitations
 
   * Can only do what the API can do. On a site without the edit-API enabled
     (disabled by default prior to MediaWiki 1.14), you cannot edit/delete/
-	protect pages, only retrieve information about them. 
+	protect pages, only retrieve information about them.
   * May have issues with some non-ASCII characters. Most of these bugs
     should be resolved, though full UTF-8 support is still a little flaky
   * Usage on restricted-access (logged-out users can't read) wikis is
     mostly untested
-  
+
 Quick start
 -----------
 
@@ -67,7 +67,7 @@ from wikitools import wiki
 from wikitools import api
 
 # create a Wiki object
-site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
+site = wiki.Wiki("http://my.wikisite.org/w/api.php")
 # login - required for read-restricted wikis
 site.login("username", "password")
 # define the params for the query
@@ -91,7 +91,7 @@ The result will look something like:
 ```
 
 For most normal usage, you may not have to do API queries yourself and can just
-use the various classes. For example, to add a template to the top of all the 
+use the various classes. For example, to add a template to the top of all the
 pages in namespace 0 in a category:
 
 ```python
@@ -100,7 +100,7 @@ pages in namespace 0 in a category:
 from wikitools import wiki
 from wikitools import category
 
-site = wiki.Wiki("http://my.wikisite.org/w/api.php") 
+site = wiki.Wiki("http://my.wikisite.org/w/api.php")
 site.login("username", "password")
 # Create object for "Category:Foo"
 cat = category.Category(site, "Foo")
@@ -108,13 +108,13 @@ cat = category.Category(site, "Foo")
 for article in cat.getAllMembersGen(namespaces=[0]):
 	# edit each page
 	article.edit(prependtext="{{template}}\n")
-``` 
+```
 
 See the MediaWiki API documentation at <http://www.mediawiki.org/wiki/API>
 for more information about using the MediaWiki API. You can get an example of
 what query results will look like by doing the queries in your web browser using
 the "jsonfm" format option
- 
+
 Licensed under the GNU General Public License, version 3. A copy of the
 license is included with this release.
 
