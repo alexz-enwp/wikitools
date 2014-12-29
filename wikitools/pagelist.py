@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
- 
+
 # wikitools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
- 
+
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -23,11 +23,11 @@ import math
 
 def listFromQuery(site, queryresult):
 	"""Generate a list of pages from an API query result
-	
+
 	queryresult is the list of pages from a list or generator query
 	e.g. - for a list=categorymembers query, use result['query']['categorymembers']
 	for a generator query, use result['query']['pages']
-	
+
 	"""
 	ret = []
 	if isinstance(queryresult, list):
@@ -59,9 +59,9 @@ def listFromQuery(site, queryresult):
 
 def listFromTitles(site, titles, check=True, followRedir=False):
 	"""Create a list of page objects from a list of titles
-	
+
 	check and followRedir have the same meaning as in page.Page
-	
+
 	"""
 	ret = []
 	if not check:
@@ -97,11 +97,11 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 				ret.append(item)
 	return ret
 
-def listFromPageids(site, pageids, check=True, followRedir=False):			
+def listFromPageids(site, pageids, check=True, followRedir=False):
 	"""Create a list of page objects from a list of pageids
-	
+
 	check and followRedir have the same meaning as in page.Page
-	
+
 	"""
 	ret = []
 	if not check:
@@ -139,7 +139,7 @@ def listFromPageids(site, pageids, check=True, followRedir=False):
 			item = makePage(key, res, site)
 			ret.append(item)
 	return ret
-	
+
 def makePage(key, result, site):
 	title=False
 	if 'title' in result:

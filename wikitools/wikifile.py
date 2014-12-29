@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
- 
+
 # wikitools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
- 
+
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -23,14 +23,14 @@ import warnings
 
 class FileDimensionError(wiki.WikiError):
 	"""Invalid dimensions"""
-	
+
 class UploadError(wiki.WikiError):
 	"""Error during uploading"""
 
 class File(page.Page):
 	"""A file on the wiki"""
 	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
-		"""	
+		"""
 		wiki - A wiki object
 		title - The page title, as a string or unicode object
 		check - Checks for existence, normalizes title, required for most things
@@ -38,7 +38,7 @@ class File(page.Page):
 		section - the section name
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
-		""" 
+		"""
 		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber, pageid)
 		if self.namespace != 6:
 			self.setNamespace(6, check)
@@ -48,7 +48,7 @@ class File(page.Page):
 	def getHistory(self, force=False):
 		warnings.warn("""File.getHistory has been renamed to File.getFileHistory""", FutureWarning)
 		return self.getFileHistory(force)
-		
+
 	def getFileHistory(self, force=False):
 		if self.filehistory and not force:
 			return self.filehistory
@@ -62,7 +62,7 @@ class File(page.Page):
 		if self.pageid > 0:
 			params['pageids'] = self.pageid
 		else:
-			params['titles'] = self.title	
+			params['titles'] = self.title
 		req = api.APIRequest(self.site, params)
 		self.filehistory = []
 		for data in req.queryGen():
@@ -70,15 +70,15 @@ class File(page.Page):
 			for item in data['query']['pages'][pid]['imageinfo']:
 				self.filehistory.append(item)
 		return self.filehistory
-			
+
 	def getUsage(self, titleonly=False, force=False, namespaces=False):
 		"""Gets a list of pages that use the file
-		
+
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
 		force - reload the list even if it was generated before
 		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
-		
+
 		"""
 		if self.usage and not reload:
 			if titleonly:
@@ -102,15 +102,15 @@ class File(page.Page):
 			if namespaces is False:
 				self.usage = usage
 			return usage
-	
+
 	def getUsageGen(self, titleonly=False, force=False, namespaces=False):
 		"""Generator function for pages that use the file
-		
+
 		titleonly - set to True to return strings,
 		else it will return Page objects
 		force - reload the list even if it was generated before
 		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
-		
+
 		"""
 		if self.usage and not reload:
 			for title in self.usage:
@@ -129,7 +129,7 @@ class File(page.Page):
 					yield title.title
 				else:
 					yield title
-				
+
 	def __getUsageInternal(self, namespaces=False):
 		params = {'action':'query',
 			'list':'imageusage',
@@ -146,22 +146,22 @@ class File(page.Page):
 			try:
 				params['iucontinue'] = data['query-continue']['imageusage']['iucontinue']
 			except:
-				break 
-		
+				break
+
 	def __extractToList(self, json, stuff):
 		list = []
 		if stuff in json['query']:
 			for item in json['query'][stuff]:
 				list.append(item['title'])
 		return list
-	
+
 	def download(self, width=False, height=False, location=False):
 		"""Download the image to a local file
-		
+
 		width/height - set width OR height of the downloaded image
 		location - set the filename to save to. If not set, the page title
 		minus the namespace prefix will be used and saved to the current directory
-		
+
 		"""
 		if self.pageid == 0:
 			self.setPageInfo()
@@ -199,17 +199,17 @@ class File(page.Page):
 		f.write(data.read())
 		f.close()
 		return location
-		
+
 	def upload(self, fileobj=None, comment='', url=None, ignorewarnings=False, watch=False):
 		"""Upload a file, requires the "poster" module
-		
+
 		fileobj - A file object opened for reading
-		comment - The log comment, used as the inital page content if the file 
+		comment - The log comment, used as the inital page content if the file
 		doesn't already exist on the wiki
 		url - A URL to upload the file from, if allowed on the wiki
 		ignorewarnings - Ignore warnings about duplicate files, etc.
 		watch - Add the page to your watchlist
-		
+
 		"""
 		if not api.canupload and fileobj:
 			raise UploadError("The poster module is required for file uploading")
@@ -253,5 +253,5 @@ class File(page.Page):
 					else:
 						print 'Warning: ' + warning + ' ' + res['upload']['warnings'][warning]
 		return res
-		
+
 			

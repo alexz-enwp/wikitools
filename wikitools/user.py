@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
- 
+
 # wikitools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
- 
+
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -28,7 +28,7 @@ class User:
 		wiki - A wiki object
 		name - The username, as a string
 		check - Checks for existence, normalizes name
-		"""	
+		"""
 		self.site = site
 		self.name = name.strip()
 		if not isinstance(self.name, unicode):
@@ -43,7 +43,7 @@ class User:
 		self.isIP = False
 		self.IPcheck()
 		self.page = page.Page(self.site, ':'.join([self.site.namespaces[2]['*'], self.name]), check=check, followRedir=False)
-	
+
 	def IPcheck(self):
 		try: #IPv4 check
                         s = socket.inet_aton(self.name.replace(' ', '_'))
@@ -89,7 +89,7 @@ class User:
 		return ip;
 
 	def setUserInfo(self):
-		"""Sets basic user info"""		
+		"""Sets basic user info"""
 		params = {
 			'action': 'query',
 			'list': 'users',
@@ -112,11 +112,11 @@ class User:
 		else:
 			self.blocked = False
 		return self
-		
+
 	def getTalkPage(self, check=True, followRedir=False):
 		"""Convenience function to get an object for the user's talk page"""
 		return page.Page(self.site, ':'.join([self.site.namespaces[3]['*'], self.name]), check=check, followRedir=False)
-		
+
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""
 		if self.blocked is not None and not force:
@@ -132,11 +132,11 @@ class User:
 			self.blocked = True
 		else:
 			self.blocked = False
-		return self.blocked		
-			
+		return self.blocked
+
 	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
 		"""Block the user
-		
+
 		Params are the same as the API
 		reason - block reason
 		expiry - block expiration
@@ -147,7 +147,7 @@ class User:
 		hidename - hide the username from the log (requires hideuser right)
 		allowusertalk - allow the user to edit their talk page
 		reblock - overwrite existing block
-		
+
 		"""
 		token = self.site.getToken('csrf')
 		params = {'action':'block',
@@ -177,12 +177,12 @@ class User:
 		if 'block' in res:
 			self.blocked = True
 		return res
-		
+
 	def unblock(self, reason=False):
 		"""Unblock the user
-		
+
 		reason - reason for the log
-		
+
 		"""
 		token = self.site.getToken('csrf')
 		params = {
@@ -197,10 +197,10 @@ class User:
 		if 'unblock' in res:
 			self.blocked = False
 		return res
-	
+
 	def __hash__(self):
 		return int(self.name) ^ hash(self.site.apibase)
-	
+
 	def __eq__(self, other):
 		if not isinstance(other, User):
 			return False
@@ -213,10 +213,10 @@ class User:
 		if self.name == other.name and self.site == other.site:
 			return False
 		return True
-	
+
 	def __str__(self):
 		return self.__class__.__name__ + ' ' + repr(self.name) + " on " + repr(self.site.domain)
-	
+
 	def __repr__(self):
 		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(self.name)+" on "+repr(self.site.apibase)+">"
 		
