@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
- 
+
 # wikitools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
- 
+
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -24,10 +24,10 @@ from hashlib import md5
 
 class BadTitle(wikitools.wiki.WikiError):
 	"""Invalid title"""
-	
+
 class NoPage(wikitools.wiki.WikiError):
 	"""Non-existent page"""
-	
+
 class BadNamespace(wikitools.wiki.WikiError):
 	"""Invalid namespace number"""
 
@@ -57,13 +57,13 @@ def namespaceDetect(title, site):
 				for ns in site.NSaliases:
 					if nsprefix == ns.lower():
 						return int(site.NSaliases[ns])
-	return 0	
-	
+	return 0
+
 class Page(object):
 	""" A page on the wiki"""
 
 	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None, namespace=None):
-		"""	
+		"""
 		wiki - A wiki object
 		title - The page title, as a string or unicode object
 		check - Checks for existence, normalizes title, required for most things
@@ -72,7 +72,7 @@ class Page(object):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		namespace - use to set the namespace prefix *if its not already in the title*
-		""" 
+		"""
 		# Initialize instance vars from function args
 		if not title and not pageid:
 			raise wikitools.wiki.WikiError("No title or pageid given")
@@ -82,9 +82,9 @@ class Page(object):
 		else:
 			self.pageid = 0
 		self.followRedir = followRedir
-		if type(title) == bytes: 
-			self.title = title.decode('utf-8') 
-		else: 
+		if type(title) == bytes:
+			self.title = title.decode('utf-8')
+		else:
 			self.title = title
 		if '#' in self.title and section is None:
 			self.title, section = self.title.split('#', 1)
@@ -105,7 +105,7 @@ class Page(object):
 				raise BadNamespace(namespace)
 			if self.title:
 				self.unprefixedtitle = self.title
-				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title))		
+				self.title = ':'.join((self.site.namespaces[self.namespace]['*'], self.title))
 		# Setting page info with API, should set:
 		# pageid, exists, title, unprefixedtitle, namespace
 		if check:
@@ -152,20 +152,20 @@ class Page(object):
 			self.title = response['query']['pages'][str(self.pageid)]['title']
 			self.namespace = int(response['query']['pages'][str(self.pageid)]['ns'])
 			if self.namespace is not 0:
-				self.unprefixedtitle = self.title.split(':', 1)[1]	
+				self.unprefixedtitle = self.title.split(':', 1)[1]
 			else:
 				self.unprefixedtitle = self.title
 		if self.pageid < 0:
 			self.pageid = 0
 		return self
-		
+
 	def setNamespace(self, newns, recheck=True):
 		"""Change the namespace number of a page object
-		
+
 		Updates the title with the new prefix
 		newns - integer namespace number
 		recheck - redo pageinfo checks
-		
+
 		"""
 		if not newns in list(self.site.namespaces.keys()):
 			raise BadNamespace
@@ -200,13 +200,13 @@ class Page(object):
 		self.templates = []
 		self.links = []
 		return self.namespace
-		
+
 	def setSection(self, section=None, number=None):
 		"""Set a section for the page
-		
+
 		section - the section name
 		number - the section number
-		
+
 		"""
 		if section is None and number is None:
 			self.section = None
@@ -219,7 +219,7 @@ class Page(object):
 			self.section = self.__getSection(section)
 		self.wikitext = ''
 		return self.section
-	
+
 	def __getSection(self, section):
 		if not self.title:
 			self.setPageInfo()
@@ -233,18 +233,18 @@ class Page(object):
 		response = req.query()
 		for item in response['parse']['sections']:
 			if section == item['line'] or section == item['anchor']:
-				if item['index'].startswith('T'): # TODO: It would be cool if it set the page title to the template in this case 
+				if item['index'].startswith('T'): # TODO: It would be cool if it set the page title to the template in this case
 					continue
 				number = item['index']
 				break
 		return int(number)
-		
+
 	def canHaveSubpages(self):
 		"""Is the page in a namespace that allows subpages?"""
 		if not self.title:
 			self.setPageInfo()
 		return 'subpages' in self.site.namespaces[self.namespace]
-		
+
 	def isRedir(self):
 		"""Is the page a redirect?"""
 		params = {'action':'query',
@@ -268,21 +268,21 @@ class Page(object):
 			return True
 		else:
 			return False
-	
+
 	def isTalk(self):
 		"""Is the page a discussion page?"""
 		if not self.title:
 			self.setPageInfo()
 		return (self.namespace%2==1 and self.namespace >= 0)
-		
+
 	def toggleTalk(self, check=True, followRedir=True):
 		"""Switch to and from the talk namespaces
-		
+
 		Returns a new page object that's either the talk or non-talk
 		version of the current page
-		
+
 		check and followRedir - same meaning as Page constructor
-		
+
 		"""
 		if not self.title:
 			self.setPageInfo()
@@ -302,16 +302,16 @@ class Page(object):
 			newname = newns+':'+pagename
 		else:
 			newname = pagename
-		return Page(self.site, newname, check, followRedir)						
-			
+		return Page(self.site, newname, check, followRedir)
+
 	def getWikiText(self, expandtemplates=False, force=False):
 		"""Gets the Wikitext of the page
-		
+
 		expandtemplates - expand the templates to wikitext instead of transclusions
 		force - load the text even if we already loaded it before
-		
+
 		"""
-	
+
 		if self.wikitext and not force:
 			return self.wikitext
 		if self.pageid == 0 and not self.title:
@@ -327,7 +327,7 @@ class Page(object):
 		if self.pageid:
 			params['pageids'] = self.pageid
 		else:
-			params['titles'] = self.title		
+			params['titles'] = self.title
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
 		if self.section is not None:
@@ -342,12 +342,12 @@ class Page(object):
 		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*']
 		self.lastedittime = response['query']['pages'][str(self.pageid)]['revisions'][0]['timestamp']
 		return self.wikitext
-	
+
 	def getLinks(self, force=False):
 		"""Gets a list of all the internal links *on* the page
-		
+
 		force - load the list even if we already loaded it before
-		
+
 		"""
 		if self.links and not force:
 			return self.links
@@ -363,13 +363,13 @@ class Page(object):
 		if self.pageid > 0:
 			params['pageids'] = self.pageid
 		else:
-			params['titles'] = self.title	
+			params['titles'] = self.title
 		req = wikitools.api.APIRequest(self.site, params)
 		self.links = []
 		for data in req.queryGen():
 			self.links.extend(self.__extractToList(data, 'links'))
 		return self.links
-		
+
 	def getProtection(self, force=False):
 		"""Returns the current protection status of the page"""
 		if self.protection and not force:
@@ -388,23 +388,23 @@ class Page(object):
 		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
 		for pr in list(response['query'].values())[0].values()[0]['protection']:
-			if pr['level']: 
+			if pr['level']:
 				if pr['expiry'] == 'infinity':
 					expiry = 'infinity'
 				else:
 					expiry = datetime.datetime.strptime(pr['expiry'],'%Y-%m-%dT%H:%M:%SZ')
 				self.protection[pr['type']] = {
-					'expiry': expiry, 
+					'expiry': expiry,
 					'level': pr['level']
 					}
 		return self.protection
-	
+
 	def getTemplates(self, force=False):
 		"""Gets all list of all the templates on the page
-		
+
 		force - load the list even if we already loaded it before
-		
-		"""	
+
+		"""
 		if self.templates and not force:
 			return self.templates
 		if self.pageid == 0 and not self.title:
@@ -419,19 +419,19 @@ class Page(object):
 		if self.pageid:
 			params['pageids'] = self.pageid
 		else:
-			params['titles'] = self.title	
+			params['titles'] = self.title
 		req = wikitools.api.APIRequest(self.site, params)
 		self.templates = []
 		for data in req.queryGen():
 			self.templates.extend(self.__extractToList(data, 'templates'))
 		return self.templates
-	
+
 	def getCategories(self, force=False):
 		"""Gets all list of all the categories on the page
-		
+
 		force - load the list even if we already loaded it before
-		
-		"""	
+
+		"""
 		if self.categories and not force:
 			return self.categories
 		if self.pageid == 0 and not self.title:
@@ -446,22 +446,22 @@ class Page(object):
 		if self.pageid:
 			params['pageids'] = self.pageid
 		else:
-			params['titles'] = self.title	
+			params['titles'] = self.title
 		req = wikitools.api.APIRequest(self.site, params)
 		self.categories = []
 		for data in req.queryGen():
 			self.categories.extend(self.__extractToList(data, 'categories'))
 		return self.categories
-		
+
 	def getHistory(self, direction='older', content=True, limit='all'):
 		"""Get the history of a page
-		
+
 		direction - 2 options: 'older' (default) - start with the current revision and get older ones
 			'newer' - start with the oldest revision and get newer ones
 		content - If False, get only metadata (timestamp, edit summary, user, etc)
 			If True (default), also get the revision text
-		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned 
-		
+		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned
+
 		The data is returned in essentially the same format as the API, a list of dicts that look like:
 		{u'*': u"Page content", # Only returned when content=True
 		 u'comment': u'Edit summary',
@@ -474,8 +474,8 @@ class Page(object):
 		 u'timestamp': u'2002-08-05T14:11:27Z', # timestamp of edit
 		 u'user': u'Username',
 		 u'userid': 48 # user id
-		}		
-		
+		}
+
 		Note that unlike other get* functions, the data is not cached
 		"""
 		max = limit
@@ -493,13 +493,13 @@ class Page(object):
 			if max - len(history) < self.site.limit:
 				limit = max - len(history)
 		return history
-		
+
 	def getHistoryGen(self, direction='older', content=True, limit='all'):
 		"""Generator function for page history
-		
+
 		The interface is the same as getHistory, but it will only retrieve 1 revision at a time.
 		This will be slower and have much higher network overhead, but does not require storing
-		the entire page history in memory	
+		the entire page history in memory
 		"""
 		max = limit
 		count = 0
@@ -510,9 +510,9 @@ class Page(object):
 			count += 1
 			if count == max or rvc is None:
 				break
-	
+
 	def __getHistoryInternal(self, direction, content, limit, rvcontinue):
-	
+
 		if self.pageid == 0 and not self.title:
 			self.setPageInfo()
 		if not self.exists:
@@ -530,7 +530,7 @@ class Page(object):
 		if self.pageid:
 			params['pageids'] = self.pageid
 		else:
-			params['titles'] = self.title	
+			params['titles'] = self.title
 
 		if content:
 			params['rvprop']+='|content'
@@ -547,7 +547,7 @@ class Page(object):
 		if 'continue' in response:
 			rvc = response['continue']
 		return (revs, rvc)
-	
+
 	def __extractToList(self, json, stuff):
 		list = []
 		if self.pageid == 0:
@@ -556,41 +556,41 @@ class Page(object):
 			for item in json['query']['pages'][str(self.pageid)][stuff]:
 				list.append(item['title'])
 		return list
-	
+
 	def edit(self, *args, **kwargs):
 		"""Edit the page
-		
+
 		Arguments are a subset of the API's action=edit arguments, valid arguments
 		are defined in the validargs set
 		To skip the MD5 check, set "skipmd5" keyword argument to True
 		http://www.mediawiki.org/wiki/API:Edit_-_Create%26Edit_pages#Parameters
-		
+
 		For backwards compatibility:
 		'newtext' is equivalent to  'text'
 		'basetime' is equivalent to 'basetimestamp'
-		
+
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
-			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'watchlist', 'prependtext', 'appendtext', 
-			'section', 'captchaword', 'captchaid'])			
+			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'watchlist', 'prependtext', 'appendtext',
+			'section', 'captchaword', 'captchaid'])
 		# For backwards compatibility
 		if 'newtext' in kwargs:
 			kwargs['text'] = kwargs['newtext']
 			del kwargs['newtext']
 		if 'basetime' in kwargs:
 			kwargs['basetimestamp'] = kwargs['basetime']
-			del kwargs['basetime']		
+			del kwargs['basetime']
 		if len(args) and 'text' not in kwargs:
 			kwargs['text'] = args[0]
 		skipmd5 = False
 		if 'skipmd5' in kwargs and kwargs['skipmd5']:
 			skipmd5 = True
-		invalid = set(kwargs.keys()).difference(validargs)		
+		invalid = set(kwargs.keys()).difference(validargs)
 		if invalid:
 			for arg in invalid:
 				del kwargs[arg]
 		if not self.title:
-			self.setPageInfo()	
+			self.setPageInfo()
 		if not 'section' in kwargs and self.section is not False:
 			kwargs['section'] = self.section
 		if not 'text' in kwargs and not 'prependtext' in kwargs and not 'appendtext' in kwargs:
@@ -624,10 +624,10 @@ class Page(object):
 			self.templates = []
 			self.exists = True
 		return result
-		
+
 	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):
 		"""Move the page
-		
+
 		Params are the same as the API:
 		mvto - page title to move to, the only required param
 		reason - summary for the log
@@ -635,7 +635,7 @@ class Page(object):
 		noredirect - don't create a redirect at the previous title
 		watch - add the page to your watchlist
 		unwatch - remove the page from your watchlist
-		
+
 		"""
 		if not self.title and self.pageid == 0:
 			self.setPageInfo()
@@ -669,21 +669,21 @@ class Page(object):
 			if self.namespace is not 0:
 				self.unprefixedtitle = self.title.split(':', 1)[1]
 			else:
-				self.unprefixedtitle = self.title			
+				self.unprefixedtitle = self.title
 			self.urltitle = urllib.parse.quote(self.title).replace('%20', '_').replace('%2F', '/')
 		return result
 
 	def protect(self, restrictions={}, expirations={}, reason=False, cascade=False):
 		"""Protect a page
-		
+
 		Restrictions and expirations are dictionaries of
 		protection level/expiry settings, e.g., {'edit':'sysop'} and
-		{'move':'3 days'}. expirations can also be a string to set 
+		{'move':'3 days'}. expirations can also be a string to set
 		all levels to the same expiration
-		
+
 		reason - summary for log
 		cascade - apply protection to all pages transcluded on the page
-		
+
 		"""
 		if not self.title:
 			self.setPageInfo()
@@ -724,14 +724,14 @@ class Page(object):
 		if 'protect' in result:
 			self.protection = {}
 		return result
-	
+
 	def delete(self, reason=False, watch=False, unwatch=False):
 		"""Delete the page
-		
+
 		reason - summary for log
 		watch - add the page to your watchlist
 		unwatch - remove the page from your watchlist
-		
+
 		"""
 		if not self.title and self.pageid == 0:
 			self.setPageInfo()
@@ -761,38 +761,38 @@ class Page(object):
 			self.templates = ''
 			self.links = ''
 			self.protection = {}
-			self.section = None			
+			self.section = None
 		return result
-	
-	
+
+
 	def __hash__(self):
 		return int(self.pageid) ^ hash(self.site.apibase)
-	
+
 	def __str__(self):
 		if self.title:
 			title = self.title
 		else:
 			title = 'pageid: '+self.pageid
 		return self.__class__.__name__ +' '+repr(title) + " from " + repr(self.site.domain)
-	
+
 	def __repr__(self):
 		if self.title:
 			title = self.title
 		else:
 			title = 'pageid: '+self.pageid
 		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(title)+" using "+repr(self.site.apibase)+">"
-	
+
 	def __eq__(self, other):
 		if not isinstance(other, Page):
 			return False
-		if self.title:			
+		if self.title:
 			if self.title == other.title and self.site == other.site:
 				return True
 		else:
 			if self.pageid == other.pageid and self.site == other.site:
 				return True
 		return False
-		
+
 	def __ne__(self, other):
 		if not isinstance(other, Page):
 			return True

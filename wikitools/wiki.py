@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
- 
+
 # wikitools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
- 
+
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 
 class WikiError(Exception):
 	"""Base class for errors"""
-	
+
 class UserBlocked(WikiError):
 	"""Trying to edit while blocked"""
 
@@ -39,12 +39,12 @@ class Namespace(int):
 	"""
 	def __or__(self, other):
 		return '|'.join([str(self), str(other)])
-	
+
 	def __ror__(self, other):
 		return '|'.join([str(other), str(self)])
 
 VERSION = '2.0'
-		
+
 class Wiki:
 	"""A Wiki site"""
 
@@ -80,13 +80,13 @@ class Wiki:
 			self.setSiteinfo()
 		except wikitools.api.APIError: # probably read-restricted
 			pass
-	
+
 	def setSiteinfo(self):
 		"""Retrieves basic siteinfo
-		
+
 		Called when constructing,
 		or after login if the first call failed
-		
+
 		"""
 		params = {'action':'query',
 			'meta':'siteinfo|tokens',
@@ -110,7 +110,7 @@ class Wiki:
 					attr = "NS_%s" % (nsdata[ns]['*'].replace(' ', '_').upper())
 			else:
 				attr = "NS_MAIN"
-			setattr(self, attr, Namespace(ns))			
+			setattr(self, attr, Namespace(ns))
 		nsaliasdata = info['query']['namespacealiases']
 		if nsaliasdata:
 			for ns in nsaliasdata:
@@ -123,15 +123,15 @@ class Wiki:
 		if 'tokens' in list(info['query'].keys()):
 			self.newtoken = True
 		return self
-	
+
 	def login(self, username, password=False, verify=True, domain=None):
 		"""Login to the site
-		
+
 		username - the user account name on the wiki
 		password - the password for the account - leave empty to enter interactively
 		verify - Checks cookie validity with isLoggedIn()
 		domain - domain name, required for some auth systems like LDAP
-		
+
 		"""
 		if not password:
 			from getpass import getpass
@@ -184,7 +184,7 @@ class Wiki:
 		if self.useragent == "python-wikitools/%s" % VERSION:
 			self.useragent = "python-wikitools/%s (User:%s)" % (VERSION, self.username)
 			return True
-	
+
 	def logout(self):
 		params = { 'action': 'logout' }
 		if self.maxlag < 120:
@@ -199,14 +199,14 @@ class Wiki:
 		self.limit = 500
 		self.session = requests.Session()
 		return True
-		
+
 	def isLoggedIn(self, username=None):
 		"""Verify that we are a logged in user
-		
+
 		username - specify a username to check against
-		
+
 		"""
-		
+
 		data = {
 			"action" : "query",
 			"meta" : "userinfo",
@@ -221,13 +221,13 @@ class Wiki:
 			return False
 		else:
 			return True
-	
+
 	def setMaxlag(self, maxlag = 5):
 		"""Set the maximum server lag to allow
-		
+
 		If the lag is > the maxlag value, all requests will wait
 		Setting to a negative number will disable maxlag checks
-		
+
 		"""
 		try:
 			int(maxlag)
@@ -235,7 +235,7 @@ class Wiki:
 			raise WikiError("maxlag must be an integer")
 		self.maxlag = int(maxlag)
 		return self.maxlag
-		
+
 	def setUserAgent(self, useragent):
 		"""Function to set a different user-agent"""
 		self.useragent = str(useragent)
@@ -243,29 +243,29 @@ class Wiki:
 
 	def setAssert(self, value):
 		"""Set an assertion value
-		
+
 		This only makes a difference on sites with the AssertEdit extension
 		on others it will be silently ignored
 		This is only checked on edits, so only applied to write queries
-		
+
 		Set to None (the default) to not use anything
 		http://www.mediawiki.org/wiki/Extension:Assert_Edit
-		
+
 		"""
 		valid = ['user', 'bot', 'true', 'false', 'exists', 'test', None]
 		if value not in valid:
 			raise WikiError("Invalid assertion")
 		self.assertval = value
 		return self.assertval
-		
+
 	def getToken(self, type):
 		"""Get a token
-		
+
 		For wikis with MW 1.24 or newer:
 		type (string) - csrf, deleteglobalaccount, patrol, rollback, setglobalaccountstatus, userrights, watch
 
 		For older wiki versions, only csrf (edit, move, etc.) tokens are supported
-		
+
 		"""
 		if self.newtoken:
 			params = {
@@ -294,7 +294,7 @@ class Wiki:
 
 	def __hash__(self):
 		return hash(self.apibase)
-		
+
 	def __eq__(self, other):
 		if not isinstance(other, Wiki):
 			return False
@@ -307,14 +307,14 @@ class Wiki:
 		if self.apibase == other.apibase:
 			return False
 		return True
-		
+
 	def __str__(self):
 		if self.username:
 			user = ' - using User:'+self.username
 		else:
 			user = ' - not logged in'
 		return self.domain + user
-	
+
 	def __repr__(self):
 		if self.username:
 			user = ' User:'+self.username

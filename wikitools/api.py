@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
- 
+
 # wikitools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
- 
+
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -34,15 +34,15 @@ class APIError(Exception):
 
 class APIDisabled(APIError):
 	"""API not enabled"""
-	
+
 class APIRequest:
 	"""A request to the site's API"""
 	def __init__(self, wiki, data, write=False):
-		"""	
+		"""
 		wiki - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
-		
+
 		maxlag is set by default to 5 but can be changed via the setMaxlag method
 		of the Wiki class
 		format is always set to json
@@ -64,22 +64,22 @@ class APIRequest:
 			self.headers['Authorization'] = "Basic {0}".format(
 				base64.encodestring(wiki.auth + ":" + wiki.httppass)).replace('\n','')
 		self.authman = None if wiki.auth is None else HTTPDigestAuth(wiki.auth)
-		
+
 
 	def changeParam(self, param, value):
-		"""Change or add a parameter after making the request object		
+		"""Change or add a parameter after making the request object
 		"""
 		if param == 'format':
 			raise APIError('You can not change the result format')
 		self.data[param] = value
-	
+
 	def query(self, querycontinue=True):
 		"""Actually do the query here and return usable stuff
-		
+
 		querycontinue - look for query-continue in the results and continue querying
 		until there is no more data to retrieve (DEPRECATED: use queryGen as a more
 		reliable and efficient alternative)
-		
+
 		"""
 		if querycontinue and self.data['action'] == 'query':
 			warnings.warn("""The querycontinue option is deprecated and will be removed
@@ -98,14 +98,14 @@ for queries requring multiple requests""", FutureWarning)
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
 		return data
-	
+
 	def queryGen(self):
 		"""Unlike the old query-continue method that tried to stitch results
 		together, which could work poorly for complex result sets and could
 		use a lot of memory, this yield each set returned by the API and lets
-		the user process the data. 
+		the user process the data.
 		Loosely based on the recommended implementation on mediawiki.org
-		
+
 		"""
 		reqcopy = copy.deepcopy(self.request)
 		self.changeParam('continue', '')
@@ -121,7 +121,7 @@ for queries requring multiple requests""", FutureWarning)
 					raise wikitools.wiki.UserBlocked(data['error']['info'])
 				raise APIError(data['error']['code'], data['error']['info'])
 			yield data
-			if 'continue' not in data: 
+			if 'continue' not in data:
 				break
 			else:
 				self.request = copy.deepcopy(reqcopy)
@@ -172,7 +172,7 @@ for queries requring multiple requests""", FutureWarning)
 			if len(key2) >= 11 and key2.startswith('g'):
 				self._generator = key2
 				for ckey in self._continues:
-					params.pop(ckey, None)		
+					params.pop(ckey, None)
 			else:
 				self._continues.add(key2)
 			params[key2] = cont
@@ -237,19 +237,19 @@ for queries requring multiple requests""", FutureWarning)
 				warnings.warn(UserWarning, "Invalid JSON, trying request again")
 				return False
 		return content
-		
+
 class APIResult(dict):
 	response = []
-	
+
 class APIListResult(list):
 	response = []
-		
+
 def resultCombine(type, old, new):
 	"""Experimental-ish result-combiner thing
-	
+
 	If the result isn't something from action=query,
 	this will just explode, but that shouldn't happen hopefully?
-	
+
 	"""
 	ret = old
 	if type in new['query']: # Basic list, easy
@@ -263,7 +263,7 @@ def resultCombine(type, old, new):
 					continue
 				elif type in new['query']['pages'][key] and not type in ret['query']['pages'][key]: # if only the new one does, just add it to the return
 					ret['query']['pages'][key][type] = new['query']['pages'][key][type]
-					continue					
+					continue
 				else: # Need to check for possible duplicates for some, this is faster than just iterating over new and checking for dups in ret
 					retset = set([tuple(entry.items()) for entry in ret['query']['pages'][key][type]])
 					newset = set([tuple(entry.items()) for entry in new['query']['pages'][key][type]])
