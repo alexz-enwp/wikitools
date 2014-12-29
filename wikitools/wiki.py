@@ -116,10 +116,10 @@ class Wiki:
 			for ns in nsaliasdata:
 				self.NSaliases[ns['*']] = ns['id']
 		if not 'writeapi' in sidata:
-			warnings.warn(UserWarning, "WARNING: Write-API not enabled, you will not be able to edit")
+			warnings.warn("WARNING: Write-API not enabled, you will not be able to edit", UserWarning)
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
 		if not int(version.group(1)) >= 13: # Will this even work on 13?
-			warnings.warn(UserWarning, "WARNING: Some features may not work on older versions of MediaWiki")
+			warnings.warn("WARNING: Some features may not work on older versions of MediaWiki", UserWarning)
 		if 'tokens' in list(info['query'].keys()):
 			self.newtoken = True
 		return self
@@ -138,10 +138,10 @@ class Wiki:
 			password = getpass("Wiki password for "+username+": ")
 		def loginerror(info):
 			try:
-				warnings.warn(UserWarning, info['login']['result'])
+				warnings.warn(info['login']['result'], UserWarning)
 			except:
-				warnings.warn(info['error']['code'])
-				warnings.warn(info['error']['info'])
+				warnings.warn(info['error']['code'], UserWarning)
+				warnings.warn(info['error']['info'], UserWarning)
 			return False
 		data = {
 			"action" : "login",

@@ -199,7 +199,7 @@ for queries requring multiple requests""", FutureWarning)
 			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
 				errinfo = exc
-				warnings.warn(UserWarning, "%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep))
+				warnings.warn("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep), UserWarning)
 				time.sleep(self.sleep+0.5)
 				self.sleep+=5
 		return data
@@ -234,7 +234,7 @@ for queries requring multiple requests""", FutureWarning)
 				data.seek(0)
 				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
 					raise APIDisabled("The API is not enabled on this site")
-				warnings.warn(UserWarning, "Invalid JSON, trying request again")
+				warnings.warn("Invalid JSON, trying request again", UserWarning)
 				return False
 		return content
 
