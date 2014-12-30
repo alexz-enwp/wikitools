@@ -194,7 +194,7 @@ for queries requring multiple requests""", FutureWarning)
 					catcherror = None
 				else:
 					catcherror = Exception
-				data = self.response = self.wiki.session.post(self.wiki.apibase, params=self.data,
+				data = self.response = self.wiki.session.post(self.wiki.apibase, data=self.data,
                                     headers=self.headers, auth=self.authman)
 			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
