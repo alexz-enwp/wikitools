@@ -107,7 +107,7 @@ for queries requring multiple requests""", FutureWarning)
 		Loosely based on the recommended implementation on mediawiki.org
 
 		"""
-		reqcopy = copy.deepcopy(self.request)
+		reqcopy = self.data.copy()
 		self.changeParam('continue', '')
 		while True:
 			data = False
@@ -124,7 +124,7 @@ for queries requring multiple requests""", FutureWarning)
 			if 'continue' not in data:
 				break
 			else:
-				self.request = copy.deepcopy(reqcopy)
+				self.data = reqcopy.copy()
 				for param in data['continue']:
 					self.changeParam(param, data['continue'][param])
 
