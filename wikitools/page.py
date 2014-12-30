@@ -64,7 +64,7 @@ class Page(object):
 
 	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None, namespace=None):
 		"""
-		wiki - A wiki object
+		site - A wiki object
 		title - The page title, as a string or unicode object
 		check - Checks for existence, normalizes title, required for most things
 		followRedir - follow redirects (check must be true)

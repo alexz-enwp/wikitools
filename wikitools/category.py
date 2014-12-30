@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wiki
-import page
-import api
+import wikitools.page
+import wikitools.api
 
-class Category(page.Page):
+class Category(wikitools.page.Page):
 	"""A category on the wiki"""
-	def __init__(self, site, title=False, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
+	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None):
 		"""
-		wiki - A wiki object
+		site - A wiki object
 		title - The page title, as a string or unicode object
 		check - Checks for existence, normalizes title, required for most things
 		followRedir - follow redirects (check must be true)
@@ -31,85 +30,74 @@ class Category(page.Page):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		"""
-		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
-		self.members = []
+		wikitools.page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
+		self.info = {}
 		if self.namespace != 14:
 			self.setNamespace(14, check)
 
-	def getAllMembers(self, titleonly=False, reload=False, namespaces=False):
+	def getCategoryInfo(self, force=False):
+		"""Get some basic information about a category
+		Returns a dict with:
+		size - Total number of items in the category
+		pages - Number of ordinary pages
+		files - Number of files
+		subcats - Number of subcategories
+		"""
+		if self.info and not Force:
+			return self.info
+		params = {'action':'query',
+			'prop':'categoryinfo',
+			'titles':self.title
+		}
+		req = wikitools.api.APIRequest(self.site, params)
+		res = req.query(False)
+		key = list(res['query']['pages'].keys())[0]
+		self.info = res['query']['pages'][key]['categoryinfo']
+		return self.info
+
+	def getAllMembers(self, titleonly=False, namespaces=None):
 		"""Gets a list of pages in the category
 
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
-		reload - reload the list even if it was generated before
-		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		namespaces - List of namespaces to restrict to
 
 		"""
-		if self.members and not reload:
+		members = []
+		for member in self.__getMembersInternal(namespaces, self.site.limit):
 			if titleonly:
-				if namespaces is not False:
-					return [p.title for p in self.members if p.namespace in namespaces]
-				else:
-					return [p.title for p in self.members]
-			if namespaces is False:
-				return self.members
+				members.append(member.title)
 			else:
-				return [p for p in self.members if p.namespace in namespaces]
-		else:
-			ret = []
-			members = []
-			for member in self.__getMembersInternal(namespaces):
 				members.append(member)
-				if titleonly:
-					ret.append(member.title)
-			if titleonly:
-				return ret
-			if namespaces is False:
-				self.members = members
-			return members
+		return members
 
-	def getAllMembersGen(self, titleonly=False, reload=False, namespaces=False):
+	def getAllMembersGen(self, titleonly=False, namespaces=None):
 		"""Generator function for pages in the category
 
-		titleonly - set to True to return strings,
-		else it will return Page objects
-		reload - reload the list even if it was generated before
-		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		titleonly - set to True to yield strings,
+		else it will yield Page objects
+		namespaces - List of namespaces to restrict to
 
 		"""
-		if self.members and not reload:
-			for member in self.members:
-				if namespaces is False or member.namespace in namespaces:
-					if titleonly:
-						yield member.title
-					else:
-						yield member
-		else:
-			if namespaces is False:
-				self.members = []
-			for member in self.__getMembersInternal(namespaces):
-				if namespaces is False:
-					self.members.append(member)
-				if titleonly:
-					yield member.title
-				else:
-					yield member
+		for member in self.__getMembersInternal(namespaces, 50):
+			if titleonly:
+				yield member.title
+			else:
+				yield member
 
-	def __getMembersInternal(self, namespaces=False):
+	def __getMembersInternal(self, namespaces, limit):
 		params = {'action':'query',
 			'list':'categorymembers',
 			'cmtitle':self.title,
-			'cmlimit':self.site.limit,
-			'cmprop':'title'
+			'cmlimit':limit,
 		}
-		if namespaces is not False:
+		if namespaces is not None:
 			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
-		while True:
-			req = api.APIRequest(self.site, params)
-			data = req.query(False)
+		req = wikitools.api.APIRequest(self.site, params)
+		data = req.query(False)
+		for data in req.queryGen():
 			for item in data['query']['categorymembers']:
-				yield page.Page(self.site, item['title'], check=False, followRedir=False)
-			try:
-				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
-			except:
-				break 
+				p = wikitools.page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
+				p.exists = True # Non-existent pages can't be in categories
+				yield p
+
