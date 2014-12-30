@@ -94,7 +94,7 @@ class Page(object):
 		self.templates = []
 		self.links = []
 		self.categories = []
-		self.exists = True # If we're not going to check, assume it does
+		self.exists = None # None == not checked
 		self.protection = {}
 		self.namespace = namespace
 		# Things that need to be done before anything else
@@ -123,8 +123,10 @@ class Page(object):
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = None
-		if title:
+		if self.title:
 			self.urltitle = urllib.parse.quote(self.title).replace('%20', '_').replace('%2F', '/')
+		if self.pageid < 0:
+			self.pageid = 0
 
 	def setPageInfo(self):
 		"""Sets basic page info, required for almost everything"""
@@ -192,7 +194,7 @@ class Page(object):
 		else:
 			self.namespace = newns
 		if recheck:
-			self.pageid = False
+			self.pageid = 0
 			self.setPageInfo()
 		else:
 			self.pageid = 0
@@ -247,21 +249,14 @@ class Page(object):
 
 	def isRedir(self):
 		"""Is the page a redirect?"""
-		params = {'action':'query',
-			'redirects':''
-		}
-		if not self.exists:
-			raise NoPage
-		if self.pageid != 0 and self.exists:
-			params['pageids'] = self.pageid
-		elif self.title:
-			params['titles'] = self.title
-		else:
+		if self.exists is None:
 			self.setPageInfo()
-			if self.pageid != 0 and self.exists:
-				params['pageids'] = self.pageid
-			else:
-				raise NoPage
+		if self.exists is False:
+			raise NoPage
+		params = {'action':'query',
+			'redirects':'',
+			'pageids':self.pageid
+		}
 		req = wikitools.api.APIRequest(self.site, params)
 		res = req.query(False)
 		if 'redirects' in res['query']:
@@ -314,31 +309,23 @@ class Page(object):
 
 		if self.wikitext and not force:
 			return self.wikitext
-		if self.pageid == 0 and not self.title:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'revisions',
 			'rvprop': 'content|timestamp',
-			'rvlimit': '1'
+			'rvlimit': '1',
+			'pageids': self.pageid
 		}
-		if self.pageid:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
 		if expandtemplates:
 			params['rvexpandtemplates'] = '1'
 		if self.section is not None:
 			params['rvsection'] = self.section
 		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		if self.pageid == 0:
-			self.pageid = int(list(response['query']['pages'].keys())[0])
-			if self.pageid == -1:
-				self.exists == False
-				raise NoPage
 		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*']
 		self.lastedittime = response['query']['pages'][str(self.pageid)]['revisions'][0]['timestamp']
 		return self.wikitext
@@ -351,19 +338,16 @@ class Page(object):
 		"""
 		if self.links and not force:
 			return self.links
-		if self.pageid == 0 and not self.title:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'links',
 			'pllimit': self.site.limit,
+			'pageids': self.pageid
 		}
-		if self.pageid > 0:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
 		req = wikitools.api.APIRequest(self.site, params)
 		self.links = []
 		for data in req.queryGen():
@@ -374,22 +358,21 @@ class Page(object):
 		"""Returns the current protection status of the page"""
 		if self.protection and not force:
 			return self.protection
-		if self.pageid == 0 and not self.title:
+		if self.exists is None:
 			self.setPageInfo()
 		params = {
 			'action': 'query',
 			'prop': 'info',
 			'inprop': 'protection',
 		}
-		if not self.exists or self.pageid <= 0:
+		if not self.exists:
 			params['titles'] = self.title
 		else:
 			params['pageids'] = self.pageid
 		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		if not self.pageid:
-			self.pageid = list(response['query']['pages'].keys())[0]
-		pdata = response['query']['pages'][str(self.pageid)]['protection']
+		key = list(response['query']['pages'].keys())[0]
+		pdata = response['query']['pages'][key]['protection']
 		for pr in pdata:
 			if pr['level']:
 				if pr['expiry'] == 'infinity':
@@ -412,19 +395,16 @@ class Page(object):
 		"""
 		if self.templates and not force:
 			return self.templates
-		if self.pageid == 0 and not self.title:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'templates',
 			'tllimit': self.site.limit,
+			'pageids': self.pageid
 		}
-		if self.pageid:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
 		req = wikitools.api.APIRequest(self.site, params)
 		self.templates = []
 		for data in req.queryGen():
@@ -439,19 +419,16 @@ class Page(object):
 		"""
 		if self.categories and not force:
 			return self.categories
-		if self.pageid == 0 and not self.title:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		params = {
 			'action': 'query',
 			'prop': 'categories',
 			'cllimit': self.site.limit,
+			'pageids': self.pageid
 		}
-		if self.pageid:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
 		req = wikitools.api.APIRequest(self.site, params)
 		self.categories = []
 		for data in req.queryGen():
@@ -518,9 +495,9 @@ class Page(object):
 
 	def __getHistoryInternal(self, direction, content, limit, rvcontinue):
 
-		if self.pageid == 0 and not self.title:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		if direction != 'newer' and direction != 'older':
 			raise wikitools.wiki.WikiError("direction must be 'newer' or 'older'")
@@ -530,13 +507,9 @@ class Page(object):
 			'rvdir':direction,
 			'rvprop':'ids|flags|timestamp|user|userid|size|sha1|comment',
 			'continue':'',
-			'rvlimit':limit
+			'rvlimit':limit,
+			'pageids':self.pageid
 		}
-		if self.pageid:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
-
 		if content:
 			params['rvprop']+='|content'
 		if rvcontinue:
@@ -544,10 +517,8 @@ class Page(object):
 			params['rvcontinue'] = rvcontinue['rvcontinue']
 		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		id = list(response['query']['pages'].keys())[0]
-		if not self.pageid:
-			self.pageid = int(id)
-		revs = response['query']['pages'][id]['revisions']
+		key = list(response['query']['pages'].keys())[0]
+		revs = response['query']['pages'][key]['revisions']
 		rvc = None
 		if 'continue' in response:
 			rvc = response['continue']
@@ -555,10 +526,9 @@ class Page(object):
 
 	def __extractToList(self, json, stuff):
 		list = []
-		if self.pageid == 0:
-			self.pageid = list(json['query']['pages'].keys())[0]
-		if stuff in json['query']['pages'][str(self.pageid)]:
-			for item in json['query']['pages'][str(self.pageid)][stuff]:
+		key = list(json['query']['pages'].keys())[0]
+		if stuff in json['query']['pages'][key]:
+			for item in json['query']['pages'][key][stuff]:
 				list.append(item['title'])
 		return list
 
@@ -644,20 +614,17 @@ class Page(object):
 		watchlist - Options are "preferences", "watch", "unwatch", or "nochange"
 
 		"""
-		if not self.title and self.pageid == 0:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		token = self.site.getToken('csrf')
 		params = {
 			'action': 'move',
 			'to':mvto,
 			'token':token,
+			'fromid':self.pageid
 		}
-		if self.pageid:
-			params['fromid'] = self.pageid
-		else:
-			params['from'] = self.title
 		if reason:
 			params['reason'] = reason
 		if movetalk:
@@ -689,7 +656,7 @@ class Page(object):
 
 		Restrictions and expirations are dictionaries of
 		protection level/expiry settings, e.g., {'edit':'sysop'} and
-		{'move':'3 days'}. 
+		{'move':'3 days'}.
 
 		reason - summary for log
 		cascade - apply protection to all pages transcluded on the page
@@ -748,19 +715,16 @@ class Page(object):
 		watchlist - Options are "preferences", "watch", "unwatch", or "nochange"
 
 		"""
-		if not self.title and self.pageid == 0:
+		if self.exists is None:
 			self.setPageInfo()
-		if not self.exists:
+		if self.exists is False:
 			raise NoPage
 		token = self.site.getToken('csrf')
 		params = {
 			'action': 'delete',
 			'token':token,
+			'pageid':self.pageid
 		}
-		if self.pageid:
-			params['pageid'] = self.pageid
-		else:
-			params['title'] = self.title
 		if reason:
 			params['reason'] = reason
 		if watch:
