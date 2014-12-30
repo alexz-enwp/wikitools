@@ -673,14 +673,14 @@ class Page(object):
 		token = self.site.getToken('csrf')
 		protections = ''
 		expiry = ''
-		for type in restrictions:
+		for prtype in restrictions:
 			if protections:
 				protections+="|"
-			protections+= type+"="+restrictions[type]
-			if type in expirations:
+			protections+= prtype+"="+restrictions[prtype]
+			if prtype in expirations:
 				if expiry:
 					expiry+="|"
-				expiry+=expirations[type]
+				expiry+=expirations[prtype]
 			else:
 				if expiry:
 					expiry+="|"

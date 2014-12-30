@@ -37,9 +37,9 @@ class APIDisabled(APIError):
 
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, wiki, data, write=False):
+	def __init__(self, site, data, write=False):
 		"""
-		wiki - A Wiki object
+		site - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
 
@@ -51,19 +51,19 @@ class APIRequest:
 		self.data = data.copy()
 		self.data['format'] = "json"
 		self.iswrite = write
-		if wiki.assertval is not None and self.iswrite:
-			self.data['assert'] =  wiki.assertval
-		if not 'maxlag' in self.data and not wiki.maxlag < 0:
-			self.data['maxlag'] = wiki.maxlag
+		if site.assertval is not None and self.iswrite:
+			self.data['assert'] =  site.assertval
+		if not 'maxlag' in self.data and not site.maxlag < 0:
+			self.data['maxlag'] = site.maxlag
 		self.headers = {}
-		self.headers["User-agent"] = wiki.useragent
+		self.headers["User-agent"] = site.useragent
 		self.headers['Accept-Encoding'] = 'gzip'
-		self.wiki = wiki
+		self.site = site
 		self.response = None
-		if wiki.auth:
+		if site.auth:
 			self.headers['Authorization'] = "Basic {0}".format(
-				base64.encodestring(wiki.auth + ":" + wiki.httppass)).replace('\n','')
-		self.authman = None if wiki.auth is None else HTTPDigestAuth(wiki.auth)
+				base64.encodestring(site.auth[0] + ":" + site.auth[1])).replace('\n','')
+		self.authman = None if site.auth is None else HTTPDigestAuth(site.auth)
 
 
 	def changeParam(self, param, value):
@@ -176,7 +176,7 @@ for queries requring multiple requests""", FutureWarning)
 			else:
 				self._continues.add(key2)
 			params[key2] = cont
-			req = APIRequest(self.wiki, params)
+			req = APIRequest(self.site, params)
 			res = req.query(False)
 			for type in possiblecontinues:
 				total = resultCombine(type, total, res)
@@ -190,11 +190,11 @@ for queries requring multiple requests""", FutureWarning)
 		data = False
 		while not data:
 			try:
-				if self.sleep >= self.wiki.maxwaittime or self.iswrite:
+				if self.sleep >= self.site.maxwaittime or self.iswrite:
 					catcherror = None
 				else:
 					catcherror = Exception
-				data = self.response = self.wiki.session.post(self.wiki.apibase, data=self.data,
+				data = self.response = self.site.session.post(self.site.apibase, data=self.data,
                                     headers=self.headers, auth=self.authman)
 			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
@@ -224,8 +224,8 @@ for queries requring multiple requests""", FutureWarning)
 					error = content['error']['code']
 					if error == "maxlag":
 						lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
-						if lagtime > self.wiki.maxwaittime:
-							lagtime = self.wiki.maxwaittime
+						if lagtime > self.site.maxwaittime:
+							lagtime = self.site.maxwaittime
 						print(("Server lag, sleeping for "+str(lagtime)+" seconds"))
 						maxlag = True
 						time.sleep(int(lagtime)+0.5)

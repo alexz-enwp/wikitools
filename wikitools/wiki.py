@@ -258,11 +258,11 @@ class Wiki:
 		self.assertval = value
 		return self.assertval
 
-	def getToken(self, type):
+	def getToken(self, tokentype):
 		"""Get a token
 
 		For wikis with MW 1.24 or newer:
-		type (string) - csrf, deleteglobalaccount, patrol, rollback, setglobalaccountstatus, userrights, watch
+		tokentype (string) - csrf, deleteglobalaccount, patrol, rollback, setglobalaccountstatus, userrights, watch
 
 		For older wiki versions, only csrf (edit, move, etc.) tokens are supported
 
@@ -271,13 +271,13 @@ class Wiki:
 			params = {
 				'action':'query',
 				'meta':'tokens',
-				'type':type,
+				'type':tokentype,
 			}
 			req = wikitools.api.APIRequest(self, params)
 			response = req.query(False)
-			token = response['query']['tokens'][type+'token']
+			token = response['query']['tokens'][tokentype+'token']
 		else:
-			if type not in ['edit', 'delete', 'protect', 'move', 'block', 'unblock', 'email', 'csrf']:
+			if tokentype not in ['edit', 'delete', 'protect', 'move', 'block', 'unblock', 'email', 'csrf']:
 				raise WikiError('Token type unavailable')
 			params = {
 				'action':'query',
