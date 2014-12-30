@@ -237,7 +237,7 @@ class Page(object):
 					continue
 				number = item['index']
 				break
-		return int(number)
+		return int(number) if number is not None else None
 
 	def canHaveSubpages(self):
 		"""Is the page in a namespace that allows subpages?"""
@@ -384,18 +384,23 @@ class Page(object):
 		if not self.exists or self.pageid <= 0:
 			params['titles'] = self.title
 		else:
-			params['titles'] = self.title
+			params['pageids'] = self.pageid
 		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
-		for pr in list(response['query'].values())[0].values()[0]['protection']:
+		if not self.pageid:
+			self.pageid = list(response['query']['pages'].keys())[0]
+		pdata = response['query']['pages'][str(self.pageid)]['protection']
+		for pr in pdata:
 			if pr['level']:
 				if pr['expiry'] == 'infinity':
 					expiry = 'infinity'
 				else:
 					expiry = datetime.datetime.strptime(pr['expiry'],'%Y-%m-%dT%H:%M:%SZ')
+				cascade = True if 'cascade' in pr else False
 				self.protection[pr['type']] = {
 					'expiry': expiry,
-					'level': pr['level']
+					'level': pr['level'],
+					'cascading': cascade
 					}
 		return self.protection
 
@@ -463,17 +468,17 @@ class Page(object):
 		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned
 
 		The data is returned in essentially the same format as the API, a list of dicts that look like:
-		{u'*': u"Page content", # Only returned when content=True
-		 u'comment': u'Edit summary',
-		 u'contentformat': u'text/x-wiki', # Only returned when content=True
-		 u'contentmodel': u'wikitext', # Only returned when content=True
-		 u'parentid': 139946, # id of previous revision
-		 u'revid': 139871, # revision id
-		 u'sha1': u'0a5cec3ca3e084e767f00c9a5645c17ac27b2757', # sha1 hash of page content
-		 u'size': 129, # size of page in bytes
-		 u'timestamp': u'2002-08-05T14:11:27Z', # timestamp of edit
-		 u'user': u'Username',
-		 u'userid': 48 # user id
+		{'*': 'Page content', # Only returned when content=True
+		 'comment': 'Edit summary',
+		 'contentformat': 'text/x-wiki', # Only returned when content=True
+		 'contentmodel': 'wikitext', # Only returned when content=True
+		 'parentid': 1083209, # ID of previous revision
+		 'revid': 1083211, # Revision ID
+		 'sha1': '315748b8e6fb6343efed3c17b56edc2da1d9e8b5', # SHA1 hash of wikitext
+		 'size': 157, # Size, in bytes
+		 'timestamp': '2014-07-30T19:26:53Z', # Timestamp of edit
+		 'user': 'Example', # Username of editor
+		 'userid': 587508 # User ID of editor
 		}
 
 		Note that unlike other get* functions, the data is not cached
@@ -572,7 +577,7 @@ class Page(object):
 		"""
 		validargs = set(['text', 'summary', 'minor', 'notminor', 'bot', 'basetimestamp', 'starttimestamp',
 			'recreate', 'createonly', 'nocreate', 'watch', 'unwatch', 'watchlist', 'prependtext', 'appendtext',
-			'section', 'captchaword', 'captchaid'])
+			'section', 'sectiontitle', 'captchaword', 'captchaid', 'contentformat', 'contentmodel'])
 		# For backwards compatibility
 		if 'newtext' in kwargs:
 			kwargs['text'] = kwargs['newtext']
@@ -625,7 +630,7 @@ class Page(object):
 			self.exists = True
 		return result
 
-	def move(self, mvto, reason=False, movetalk=False, noredirect=False, watch=False, unwatch=False):
+	def move(self, mvto, reason='', movetalk=False, noredirect=False, movesubpages=True, watch=False, unwatch=False, watchlist='preferences'):
 		"""Move the page
 
 		Params are the same as the API:
@@ -633,8 +638,10 @@ class Page(object):
 		reason - summary for the log
 		movetalk - move the corresponding talk page
 		noredirect - don't create a redirect at the previous title
-		watch - add the page to your watchlist
-		unwatch - remove the page from your watchlist
+		movesubpages - Move all subpages of the title
+		watch - add the page to your watchlist (DEPRECATED, use watchlist)
+		unwatch - remove the page from your watchlist (DEPRECATED, use watchlist)
+		watchlist - Options are "preferences", "watch", "unwatch", or "nochange"
 
 		"""
 		if not self.title and self.pageid == 0:
@@ -657,10 +664,14 @@ class Page(object):
 			params['movetalk'] = '1'
 		if noredirect:
 			params['noredirect'] = '1'
+		if movesubpages:
+			params['movesubpages'] = '1'
 		if watch:
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
+		if watchlist:
+			params['watchlist'] = watchlist
 		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'move' in result:
@@ -673,16 +684,17 @@ class Page(object):
 			self.urltitle = urllib.parse.quote(self.title).replace('%20', '_').replace('%2F', '/')
 		return result
 
-	def protect(self, restrictions={}, expirations={}, reason=False, cascade=False):
+	def protect(self, restrictions={}, expirations={}, reason='', cascade=False, watch=False, watchlist='preferences'):
 		"""Protect a page
 
 		Restrictions and expirations are dictionaries of
 		protection level/expiry settings, e.g., {'edit':'sysop'} and
-		{'move':'3 days'}. expirations can also be a string to set
-		all levels to the same expiration
+		{'move':'3 days'}. 
 
 		reason - summary for log
 		cascade - apply protection to all pages transcluded on the page
+		watch - add the page to your watchlist (DEPRECATED, use watchlist)
+		watchlist - Options are "preferences", "watch", "unwatch", or "nochange"
 
 		"""
 		if not self.title:
@@ -694,17 +706,15 @@ class Page(object):
 		token = self.site.getToken('csrf')
 		protections = ''
 		expiry = ''
-		if isinstance(expirations, str):
-			expiry = expirations
 		for type in restrictions:
 			if protections:
 				protections+="|"
 			protections+= type+"="+restrictions[type]
-			if isinstance(expirations, dict) and type in expirations:
+			if type in expirations:
 				if expiry:
 					expiry+="|"
 				expiry+=expirations[type]
-			elif isinstance(expirations, dict):
+			else:
 				if expiry:
 					expiry+="|"
 				expiry+='indefinite'
@@ -719,18 +729,23 @@ class Page(object):
 			params['reason'] = reason
 		if cascade:
 			params['cascade'] = ''
+		if watch:
+			params['watch'] = '1'
+		if watchlist:
+			params['watchlist'] = watchlist
 		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'protect' in result:
 			self.protection = {}
 		return result
 
-	def delete(self, reason=False, watch=False, unwatch=False):
+	def delete(self, reason='', watch=False, unwatch=False, watchlist='preferences'):
 		"""Delete the page
 
 		reason - summary for log
-		watch - add the page to your watchlist
-		unwatch - remove the page from your watchlist
+		watch - add the page to your watchlist (DEPRECATED, use watchlist)
+		unwatch - remove the page from your watchlist (DEPRECATED, use watchlist)
+		watchlist - Options are "preferences", "watch", "unwatch", or "nochange"
 
 		"""
 		if not self.title and self.pageid == 0:
@@ -752,6 +767,8 @@ class Page(object):
 			params['watch'] = '1'
 		if unwatch:
 			params['unwatch'] = '1'
+		if watchlist:
+			params['watchlist'] = watchlist
 		req = wikitools.api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'delete' in result:
