@@ -5,8 +5,8 @@ Requirements
 
   * Python 3+. Tested on 3.4.2
   * The requests package <http://docs.python-requests.org/en/latest/> is required.
-  * The wiki this is used for should be running at least MediaWiki version 1.13 and
-    have the API enabled.
+  * Basic functionality should be possible in wikis as old as 1.13, but at least
+    MediaWiki 1.21 is recommended.
 
 Installation
 ------------
