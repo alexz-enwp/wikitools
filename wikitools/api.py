@@ -196,7 +196,6 @@ for queries requring multiple requests""", FutureWarning)
 					catcherror = None
 				else:
 					catcherror = Exception
-				print(self.file)
 				data = self.response = self.site.session.post(self.site.apibase, data=self.data,
                                     headers=self.headers, auth=self.authman, files=self.file)
 			except catcherror as exc:
