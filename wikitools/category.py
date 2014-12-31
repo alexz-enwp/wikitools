@@ -62,6 +62,7 @@ class Category(wikitools.page.Page):
 		else it will be a list of Page objects
 		namespaces - List of namespaces to restrict to
 
+		Any changes to getAllMembers functions should also be made to getUsage in category
 		"""
 		members = []
 		for member in self.__getMembersInternal(namespaces, self.site.limit):

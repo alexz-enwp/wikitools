@@ -459,10 +459,11 @@ class Page(object):
 		}
 
 		Note that unlike other get* functions, the data is not cached
+		Any changes to getHistory functions should also be made to getFileHistory in wikifile
 		"""
-		max = limit
+		maximum = limit
 		if limit == 'all':
-			max = float("inf")
+			maximum = float("inf")
 		if limit == 'all' or limit > self.site.limit:
 			limit = self.site.limit
 		history = []
@@ -470,10 +471,10 @@ class Page(object):
 		while True:
 			revs, rvc = self.__getHistoryInternal(direction, content, limit, rvc)
 			history = history+revs
-			if len(history) == max or rvc is None:
+			if len(history) == maximum or rvc is None:
 				break
-			if max - len(history) < self.site.limit:
-				limit = max - len(history)
+			if maximum - len(history) < self.site.limit:
+				limit = maximum - len(history)
 		return history
 
 	def getHistoryGen(self, direction='older', content=True, limit='all'):
@@ -483,14 +484,14 @@ class Page(object):
 		This will be slower and have much higher network overhead, but does not require storing
 		the entire page history in memory
 		"""
-		max = limit
+		maximum = limit
 		count = 0
 		rvc = None
 		while True:
 			revs, rvc = self.__getHistoryInternal(direction, content, 1, rvc)
 			yield revs[0]
 			count += 1
-			if count == max or rvc is None:
+			if count == maximum or rvc is None:
 				break
 
 	def __getHistoryInternal(self, direction, content, limit, rvcontinue):
