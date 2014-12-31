@@ -15,23 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wiki
-import page
-import api
-import urllib2
-import warnings
+import wikitools.wiki
+import wikitools.page
+import wikitools.api
+import urllib.request
+import base64
+import io
 
-class FileDimensionError(wiki.WikiError):
+class FileDimensionError(wikitools.wiki.WikiError):
 	"""Invalid dimensions"""
 
-class UploadError(wiki.WikiError):
+class UploadError(wikitools.wiki.WikiError):
 	"""Error during uploading"""
 
-class File(page.Page):
+class File(wikitools.page.Page):
 	"""A file on the wiki"""
-	def __init__(self, wiki, title, check=True, followRedir=False, section=False, sectionnumber=False, pageid=False):
+	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None):
 		"""
-		wiki - A wiki object
+		site - A wiki object
 		title - The page title, as a string or unicode object
 		check - Checks for existence, normalizes title, required for most things
 		followRedir - follow redirects (check must be true)
@@ -39,21 +40,14 @@ class File(page.Page):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		"""
-		page.Page.__init__(self, wiki, title, check, followRedir, section, sectionnumber, pageid)
+		wikitools.page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 		if self.namespace != 6:
 			self.setNamespace(6, check)
-		self.usage = []
 		self.filehistory = []
-
-	def getHistory(self, force=False):
-		warnings.warn("""File.getHistory has been renamed to File.getFileHistory""", FutureWarning)
-		return self.getFileHistory(force)
 
 	def getFileHistory(self, force=False):
 		if self.filehistory and not force:
 			return self.filehistory
-		if self.pageid == 0 and not self.title:
-			self.setPageInfo()
 		params = {
 			'action': 'query',
 			'prop': 'imageinfo',
@@ -63,97 +57,59 @@ class File(page.Page):
 			params['pageids'] = self.pageid
 		else:
 			params['titles'] = self.title
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		self.filehistory = []
 		for data in req.queryGen():
-			pid = data['query']['pages'].keys()[0]
+			pid = list(data['query']['pages'].keys())[0]
 			for item in data['query']['pages'][pid]['imageinfo']:
 				self.filehistory.append(item)
 		return self.filehistory
 
-	def getUsage(self, titleonly=False, force=False, namespaces=False):
+	def getUsage(self, titleonly=False, namespaces=None):
 		"""Gets a list of pages that use the file
 
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
-		force - reload the list even if it was generated before
-		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		namespaces - List of namespaces to restrict to
 
 		"""
-		if self.usage and not reload:
+		usage = []
+		for title in self.__getUsageInternal(namespaces):
 			if titleonly:
-				if namespaces is not False:
-					return [p.title for p in self.usage if p.namespace in namespaces]
-				else:
-					return [p.title for p in self.usage]
-			if namespaces is False:
-				return self.usage
+				usage.append(title.title)
 			else:
-				return [p for p in self.usage if p.namespace in namespaces]
-		else:
-			ret = []
-			usage = []
-			for title in self.__getUsageInternal(namespaces):
 				usage.append(title)
-				if titleonly:
-					ret.append(title.title)
-			if titleonly:
-				return ret
-			if namespaces is False:
-				self.usage = usage
-			return usage
+		return usage
 
-	def getUsageGen(self, titleonly=False, force=False, namespaces=False):
+	def getUsageGen(self, titleonly=False, namespaces=None):
 		"""Generator function for pages that use the file
 
 		titleonly - set to True to return strings,
 		else it will return Page objects
-		force - reload the list even if it was generated before
-		namespaces - List of namespaces to restrict to (queries with this option will not be cached)
+		namespaces - List of namespaces to restrict to
 
 		"""
-		if self.usage and not reload:
-			for title in self.usage:
-				if namespaces is False or title.namespace in namespaces:
-					if titleonly:
-						yield title.title
-					else:
-						yield title
-		else:
-			if namespaces is False:
-				self.usage = []
-			for title in self.__getUsageInternal():
-				if namespaces is False:
-					self.usage.append(title)
-				if titleonly:
-					yield title.title
-				else:
-					yield title
+		for title in self.__getUsageInternal():
+			if titleonly:
+				yield title.title
+			else:
+				yield title
 
-	def __getUsageInternal(self, namespaces=False):
+	def __getUsageInternal(self, namespaces, limit):
 		params = {'action':'query',
 			'list':'imageusage',
 			'iutitle':self.title,
-			'iulimit':self.site.limit,
+			'iulimit':limit,
 		}
-		if namespaces is not False:
+		if namespaces is not None:
 			params['iunamespace'] = '|'.join([str(ns) for ns in namespaces])
-		while True:
-			req = api.APIRequest(self.site, params)
-			data = req.query(False)
-			for item in data['query']['imageusage']:
-				yield page.Page(self.site, item['title'], check=False, followRedir=False)
-			try:
-				params['iucontinue'] = data['query-continue']['imageusage']['iucontinue']
-			except:
-				break
 
-	def __extractToList(self, json, stuff):
-		list = []
-		if stuff in json['query']:
-			for item in json['query'][stuff]:
-				list.append(item['title'])
-		return list
+		req = wikitools.api.APIRequest(self.site, params)
+		for data in req.queryGen():
+			for item in data['query']['imageusage']:
+				p = wikitools.page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
+				p.exists = True # Non-existent pages can't have images
+				yield p
 
 	def download(self, width=False, height=False, location=False):
 		"""Download the image to a local file
@@ -185,42 +141,46 @@ class File(page.Page):
 				params['titles'] = self.title
 			else:
 				params['pageids'] = self.pageid
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		res = req.query(False)
-		key = res['query']['pages'].keys()[0]
+		key = list(res['query']['pages'].keys())[0]
 		url = res['query']['pages'][key]['imageinfo'][0]['url']
 		if not location:
 			location = self.title.split(':', 1)[1]
-		opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.site.cookies))
-		headers = { "User-agent": self.site.useragent }
-		request = urllib2.Request(url, None, headers)
-		data = opener.open(request)
+
+		headers = { "User-agent": self.site.useragent,
+			'Accept-Encoding': 'gzip'
+		}
+		if self.site.auth:
+			headers['Authorization'] = "Basic {0}".format(
+				base64.encodestring(self.site.auth[0] + ":" + self.site.auth[1])).replace('\n','')
+		authman = None if self.site.auth is None else HTTPDigestAuth(self.site.auth)
+		data = self.site.session.get(url, headers=headers, auth=authman)
 		f = open(location, 'wb', 0)
-		f.write(data.read())
+		f.write(data.content)
 		f.close()
 		return location
 
-	def upload(self, fileobj=None, comment='', url=None, ignorewarnings=False, watch=False):
-		"""Upload a file, requires the "poster" module
+	def upload(self, fileobj=None, comment='', url=None, ignorewarnings=False, watch=False, watchlist='preferences'):
+		"""Upload a file
 
 		fileobj - A file object opened for reading
 		comment - The log comment, used as the inital page content if the file
 		doesn't already exist on the wiki
 		url - A URL to upload the file from, if allowed on the wiki
 		ignorewarnings - Ignore warnings about duplicate files, etc.
-		watch - Add the page to your watchlist
+		watch - Add the page to your watchlist (DEPRECATED, use watchlist)
+		watchlist - Options are "preferences", "watch", "unwatch", or "nochange"
 
 		"""
-		if not api.canupload and fileobj:
-			raise UploadError("The poster module is required for file uploading")
 		if not fileobj and not url:
 			raise UploadError("Must give either a file object or a URL")
 		if fileobj and url:
 			raise UploadError("Cannot give a file and a URL")
 		if fileobj:
-			if not isinstance(fileobj, file):
+			if not isinstance(fileobj, io.IOBase):
 				raise UploadError('If uploading from a file, a file object must be passed')
-			if fileobj.mode not in ['r', 'rb', 'r+']:
+			if 'r' not in fileobj.mode:
 				raise UploadError('File must be readable')
 			fileobj.seek(0)
 		params = {'action':'upload',
@@ -230,13 +190,13 @@ class File(page.Page):
 		}
 		if url:
 			params['url'] = url
-		else:
-			params['file'] = fileobj
 		if ignorewarnings:
 			params['ignorewarnings'] = ''
 		if watch:
 			params['watch'] = ''
-		req = api.APIRequest(self.site, params, write=True, multipart=bool(fileobj))
+		if watchlist:
+			params['watchlist'] = watchlist
+		req = wikitools.api.APIRequest(self.site, params, write=True, file=fileobj)
 		res = req.query()
 		if 'upload' in res:
 			if res['upload']['result'] == 'Success':
@@ -245,13 +205,13 @@ class File(page.Page):
 				self.templates = []
 				self.exists = True
 			elif res['upload']['result'] == 'Warning':
-				for warning in res['upload']['warnings'].keys():
+				for warning in list(res['upload']['warnings'].keys()):
 					if warning == 'duplicate':
-						print 'File is a duplicate of ' + res['upload']['warnings']['duplicate'][0]
+						print('File is a duplicate of ' + res['upload']['warnings']['duplicate'][0])
 					elif warning == 'page-exists' or warning == 'exists':
-						print 'Page already exists: ' + res['upload']['warnings'][warning]
+						print('Page already exists: ' + res['upload']['warnings'][warning])
 					else:
-						print 'Warning: ' + warning + ' ' + res['upload']['warnings'][warning]
+						print('Warning: ' + warning + ' ' + res['upload']['warnings'][warning])
 		return res
 
 			
