@@ -25,9 +25,7 @@ import base64
 import warnings
 import copy
 import json
-import requests
 from requests.auth import HTTPDigestAuth
-import io
 
 class APIError(Exception):
 	"""Base class for errors"""
@@ -87,7 +85,7 @@ in a future release, use the new queryGen function instead
 for queries requring multiple requests""", FutureWarning)
 		data = False
 		while not data:
-			rawdata = io.BytesIO(self.__getRaw().content)
+			rawdata = self.__getRaw().text
 			data = self.__parseJSON(rawdata)
 			if not data and type(data) is APIListResult:
 				break
@@ -112,7 +110,7 @@ for queries requring multiple requests""", FutureWarning)
 		while True:
 			data = False
 			while not data:
-				rawdata = io.BytesIO(self.__getRaw().content)
+				rawdata = self.__getRaw().text
 				data = self.__parseJSON(rawdata)
 				if not data and type(data) is APIListResult:
 					break
@@ -210,7 +208,7 @@ for queries requring multiple requests""", FutureWarning)
 		while maxlag:
 			try:
 				maxlag = False
-				parsed = json.loads(data.read().decode('utf-8'))
+				parsed = json.loads(data)
 				content = None
 				if isinstance(parsed, dict):
 					content = APIResult(parsed)
