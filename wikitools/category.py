@@ -94,7 +94,6 @@ class Category(wikitools.page.Page):
 		if namespaces is not None:
 			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
 		req = wikitools.api.APIRequest(self.site, params)
-		data = req.query(False)
 		for data in req.queryGen():
 			for item in data['query']['categorymembers']:
 				p = wikitools.page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
