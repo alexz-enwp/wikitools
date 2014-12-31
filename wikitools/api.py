@@ -35,11 +35,12 @@ class APIDisabled(APIError):
 
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, site, data, write=False):
+	def __init__(self, site, data, write=False, file=None):
 		"""
 		site - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
+		file - A file object for uploads
 
 		maxlag is set by default to 5 but can be changed via the setMaxlag method
 		of the Wiki class
@@ -47,6 +48,9 @@ class APIRequest:
 		"""
 		self.sleep = 5
 		self.data = data.copy()
+		self.file = None
+		if file is not None:
+			self.file = {'file':file}
 		self.data['format'] = "json"
 		self.iswrite = write
 		if site.assertval is not None and self.iswrite:
@@ -192,8 +196,9 @@ for queries requring multiple requests""", FutureWarning)
 					catcherror = None
 				else:
 					catcherror = Exception
+				print(self.file)
 				data = self.response = self.site.session.post(self.site.apibase, data=self.data,
-                                    headers=self.headers, auth=self.authman)
+                                    headers=self.headers, auth=self.authman, files=self.file)
 			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
 				errinfo = exc
