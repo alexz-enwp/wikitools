@@ -21,6 +21,7 @@ import wikitools.api
 import urllib.request
 import base64
 import io
+import os.path
 
 class FileDimensionError(wikitools.wiki.WikiError):
 	"""Invalid dimensions"""
@@ -43,27 +44,94 @@ class File(wikitools.page.Page):
 		wikitools.page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 		if self.namespace != 6:
 			self.setNamespace(6, check)
-		self.filehistory = []
 
-	def getFileHistory(self, force=False):
-		if self.filehistory and not force:
-			return self.filehistory
+	def getFileHistory(self, exif=True, limit='all'):
+		"""Get the file upload history
+
+		exif - If False, get only basic information (timestamp, upload summary, user, etc)
+			If True (default), also get the EXIF metadata
+		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned
+
+		The data is returned as a list of dicts like:
+		{'bitdepth': '8',
+		  'comment': 'Upload summary',
+		  'descriptionurl': 'https://commons.wikimedia.org/wiki/File:Filename.jpg',
+		  'height': 259,
+		  'mediatype': 'BITMAP',
+		  'metadata': [{'name': 'Orientation', 'value': 1}, # EXIF data, only included if exif=True
+			       {'name': 'XResolution', 'value': '2000000/10000'},
+			       {'name': 'YResolution', 'value': '2000000/10000'},
+				# Actual metadata included will vary depending on the file
+			       {'name': 'MEDIAWIKI_EXIF_VERSION', 'value': 1}],
+		  'mime': 'image/jpeg',
+		  'sha1': 'c858353eed661f22be5d5e44b82c3e18388a25f9',
+		  'size': 50786,
+		  'timestamp': '2009-01-19T06:19:25Z',
+		  'url': 'https://upload.wikimedia.org/wikipedia/commons/3/31/Filename.jpg',
+		  'user': 'Username',
+		  'userid': '141409',
+		  'width': 555}
+
+		Any changes to getFileHistory functions should also be made to getHistory in page
+		"""
+		maximum = limit
+		if limit == 'all':
+			maximum = float("inf")
+		if limit == 'all' or limit > self.site.limit:
+			limit = self.site.limit
+		history = []
+		rvc = None
+		while True:
+			revs, rvc = self.__getFileHistoryInternal(exif, limit, rvc)
+			history = history+revs
+			if len(history) == maximum or rvc is None:
+				break
+			if maximum - len(history) < self.site.limit:
+				limit = maximum - len(history)
+		return history
+
+	def getFileHistoryGen(self, exif=True, limit='all'):
+		"""Generator function for filr history
+
+		The interface is the same as getFileHistory, but it will only retrieve 1 revision at a time.
+		This will be slower and have much higher network overhead, but does not require storing
+		the entire history in memory
+		"""
+		maximum = limit
+		count = 0
+		rvc = None
+		while True:
+			revs, rvc = self.__getFileHistoryInternal(exif, 1, rvc)
+			yield revs[0]
+			count += 1
+			if count == maximum or rvc is None:
+				break
+
+	def __getFileHistoryInternal(self, exif, limit, iicontinue):
+		if not self.title:
+			self.setPageInfo()
 		params = {
-			'action': 'query',
-			'prop': 'imageinfo',
-			'iilimit': self.site.limit,
+			'action':'query',
+			'prop':'imageinfo',
+			'iiprop':'timestamp|user|userid|comment|url|size|dimensions|sha1|mime|mediatype|bitdepth',
+			'continue':'',
+			'iilimit':limit,
+			'titles':self.title
 		}
-		if self.pageid > 0:
-			params['pageids'] = self.pageid
-		else:
-			params['titles'] = self.title
+		if exif:
+			params['iiprop']+='|metadata'
+			params['iimetadataversion'] = 'latest'
+		if iicontinue:
+			params['continue'] = iicontinue['continue']
+			params['iistart'] = iicontinue['iistart']
 		req = wikitools.api.APIRequest(self.site, params)
-		self.filehistory = []
-		for data in req.queryGen():
-			pid = list(data['query']['pages'].keys())[0]
-			for item in data['query']['pages'][pid]['imageinfo']:
-				self.filehistory.append(item)
-		return self.filehistory
+		response = req.query(False)
+		key = list(response['query']['pages'].keys())[0]
+		revs = response['query']['pages'][key]['imageinfo']
+		rvc = None
+		if 'continue' in response:
+			rvc = response['continue']
+		return (revs, rvc)
 
 	def getUsage(self, titleonly=False, namespaces=None):
 		"""Gets a list of pages that use the file
@@ -72,9 +140,10 @@ class File(wikitools.page.Page):
 		else it will be a list of Page objects
 		namespaces - List of namespaces to restrict to
 
+		Any changes to getUsage functions should also be made to getAllMembers in category
 		"""
 		usage = []
-		for title in self.__getUsageInternal(namespaces):
+		for title in self.__getUsageInternal(namespaces, self.site.limit):
 			if titleonly:
 				usage.append(title.title)
 			else:
@@ -89,7 +158,7 @@ class File(wikitools.page.Page):
 		namespaces - List of namespaces to restrict to
 
 		"""
-		for title in self.__getUsageInternal():
+		for title in self.__getUsageInternal(namespaces, 50):
 			if titleonly:
 				yield title.title
 			else:
@@ -115,7 +184,7 @@ class File(wikitools.page.Page):
 		"""Download the image to a local file
 
 		width/height - set width OR height of the downloaded image
-		location - set the filename to save to. If not set, the page title
+		location - set the path and/or filename to save to. If not set, the page title
 		minus the namespace prefix will be used and saved to the current directory
 
 		"""
@@ -145,6 +214,11 @@ class File(wikitools.page.Page):
 		res = req.query(False)
 		key = list(res['query']['pages'].keys())[0]
 		url = res['query']['pages'][key]['imageinfo'][0]['url']
+		if location:
+			location = os.path.expanduser(os.path.expandvars(location))
+			if os.path.isdir(location):
+				location += '/'+self.title.split(':', 1)[1]
+			location = os.path.normpath(location)
 		if not location:
 			location = self.title.split(':', 1)[1]
 
@@ -155,17 +229,20 @@ class File(wikitools.page.Page):
 			headers['Authorization'] = "Basic {0}".format(
 				base64.encodestring(self.site.auth[0] + ":" + self.site.auth[1])).replace('\n','')
 		authman = None if self.site.auth is None else HTTPDigestAuth(self.site.auth)
-		data = self.site.session.get(url, headers=headers, auth=authman)
-		f = open(location, 'wb', 0)
-		f.write(data.content)
-		f.close()
+		with open(location, 'wb') as handle:
+			response = self.site.session.get(url, headers=headers, auth=authman, stream=True)
+			for block in response.iter_content(1024):
+				if not block:
+				            break
+				handle.write(block)
 		return location
 
-	def upload(self, fileobj=None, comment='', url=None, ignorewarnings=False, watch=False, watchlist='preferences'):
+	def upload(self, fileobj=None, comment='', text='', url=None, ignorewarnings=False, watch=False, watchlist='preferences'):
 		"""Upload a file
 
 		fileobj - A file object opened for reading
-		comment - The log comment, used as the inital page content if the file
+		comment - The log comment
+		text - Initial page text for new files, comment will be used if not specified
 		doesn't already exist on the wiki
 		url - A URL to upload the file from, if allowed on the wiki
 		ignorewarnings - Ignore warnings about duplicate files, etc.
@@ -196,6 +273,8 @@ class File(wikitools.page.Page):
 			params['watch'] = ''
 		if watchlist:
 			params['watchlist'] = watchlist
+		if text:
+			params['text'] = text
 		req = wikitools.api.APIRequest(self.site, params, write=True, file=fileobj)
 		res = req.query()
 		if 'upload' in res:
