@@ -525,12 +525,12 @@ class Page(object):
 		return (revs, rvc)
 
 	def __extractToList(self, json, stuff):
-		list = []
+		datalist = []
 		key = list(json['query']['pages'].keys())[0]
 		if stuff in json['query']['pages'][key]:
 			for item in json['query']['pages'][key][stuff]:
-				list.append(item['title'])
-		return list
+				datalist.append(item['title'])
+		return datalist
 
 	def edit(self, *args, **kwargs):
 		"""Edit the page
