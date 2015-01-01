@@ -30,7 +30,7 @@ class User:
 		self.site = site
 		self.name = name.strip()
 		self.exists = None
-		self.blocked = None # So we can tell the difference between blocked/not blocked/haven't checked
+		self.blocked = None
 		self.editcount = 0
 		self.groups = []
 		self.id = 0
@@ -42,7 +42,7 @@ class User:
 			self.name = ip.compressed
 		except ValueError:
 			self.isIP = False
-		self.page = wikitools.page.Page(self.site, ':'.join([self.site.namespaces[2]['*'], self.name]), check=check, followRedir=False)
+		self.page = wikitools.page.Page(self.site, title=self.name, namespace=2, check=check, followRedir=False)
 
 	def setUserInfo(self):
 		"""Sets basic user info"""
@@ -90,7 +90,7 @@ class User:
 			self.blocked = False
 		return self.blocked
 
-	def block(self, reason=False, expiry=False, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
+	def block(self, reason='', expiry=None, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
 		"""Block the user
 
 		Params are the same as the API
@@ -155,7 +155,7 @@ class User:
 		return res
 
 	def __hash__(self):
-		return int(self.name) ^ hash(self.site.apibase)
+		return hash(self.name) ^ hash(self.site.apibase)
 
 	def __eq__(self, other):
 		if not isinstance(other, User):

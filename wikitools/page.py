@@ -748,7 +748,7 @@ class Page(object):
 
 
 	def __hash__(self):
-		return int(self.pageid) ^ hash(self.site.apibase)
+		return hash(self.title) ^ hash(self.site.apibase)
 
 	def __str__(self):
 		if self.title:
