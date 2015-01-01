@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wiki
-import page
-import api
-import socket
-import re
+import wikitools.page
+import wikitools.api
+import ipaddress
 
 class User:
 	"""A user on the wiki"""
@@ -31,62 +29,20 @@ class User:
 		"""
 		self.site = site
 		self.name = name.strip()
-		if not isinstance(self.name, unicode):
-			self.name = unicode(self.name, 'utf8')
-		self.exists = True # If we're not going to check, assume it does
+		self.exists = None
 		self.blocked = None # So we can tell the difference between blocked/not blocked/haven't checked
-		self.editcount = -1
+		self.editcount = 0
 		self.groups = []
 		self.id = 0
 		if check:
 			self.setUserInfo()
 		self.isIP = False
-		self.IPcheck()
-		self.page = page.Page(self.site, ':'.join([self.site.namespaces[2]['*'], self.name]), check=check, followRedir=False)
-
-	def IPcheck(self):
-		try: #IPv4 check
-                        s = socket.inet_aton(self.name.replace(' ', '_'))
-                        if socket.inet_ntoa(s) == self.name:
-                                self.isIP = True
-                                self.exists = False
-				return
-                except:
-                        pass
 		try:
-			s = socket.inet_pton(socket.AF_INET6, self.name.replace(' ', '_'))
-			if self.IPnorm(socket.inet_ntop(socket.AF_INET6, s)) == self.IPnorm(self.name):
-				self.isIP = True
-				self.exists = False
-				self.name = self.IPnorm(self.name)
-				return
-		except:
-			pass
-
-	def IPnorm(self, ip):
-		"""This is basically a port of MediaWiki's IP::sanitizeIP but assuming no CIDR ranges"""
-		ip = ip.upper()
-		# Expand zero abbreviations
-		abbrevPos = ip.find('::')
-		if abbrevPos != -1:
-			addressEnd = len(ip) - 1
-			# If the '::' is at the beginning...
-			if abbrevPos == 0:
-				repeat = '0:'
-				extra = '0' if ip == '::' else ''
-				pad = 9
-			elif abbrevPos == addressEnd - 1:
-				repeat = ':0'
-				extra = ''
-				pad = 9
-			else:
-				repeat = ':0'
-				extra = ':'
-				pad = 8
-			ip = ip.replace( '::', repeat*(pad-ip.count(':'))+extra)
-		# Remove leading zereos from each bloc as needed
-		ip = re.sub('/(^|:)0+(([0-9A-Fa-f]{1,4}))/', '\1\2', ip)
-		return ip;
+			ip = ipaddress.ip_address(self.name)
+			self.name = ip.compressed
+		except ValueError:
+			self.isIP = False
+		self.page = wikitools.page.Page(self.site, ':'.join([self.site.namespaces[2]['*'], self.name]), check=check, followRedir=False)
 
 	def setUserInfo(self):
 		"""Sets basic user info"""
@@ -96,7 +52,7 @@ class User:
 			'ususers':self.name,
 			'usprop':'blockinfo|groups|editcount'
 		}
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		response = req.query(False)
 		user = response['query']['users'][0]
 		self.name = user['name']
@@ -115,7 +71,7 @@ class User:
 
 	def getTalkPage(self, check=True, followRedir=False):
 		"""Convenience function to get an object for the user's talk page"""
-		return page.Page(self.site, ':'.join([self.site.namespaces[3]['*'], self.name]), check=check, followRedir=False)
+		return self.page.toggleTalk(check, followRedir)
 
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""
@@ -126,7 +82,7 @@ class User:
 			'bkusers':self.name,
 			'bkprop':'id'
 		}
-		req = api.APIRequest(self.site, params)
+		req = wikitools.api.APIRequest(self.site, params)
 		res = req.query(False)
 		if len(res['query']['blocks']) > 0:
 			self.blocked = True
@@ -172,7 +128,7 @@ class User:
 			params['allowusertalk'] = ''
 		if reblock:
 			params['reblock'] = ''
-		req = api.APIRequest(self.site, params, write=False)
+		req = wikitools.api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'block' in res:
 			self.blocked = True
@@ -192,7 +148,7 @@ class User:
 		}
 		if reason:
 			params['reason'] = reason
-		req = api.APIRequest(self.site, params, write=False)
+		req = wikitools.api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'unblock' in res:
 			self.blocked = False

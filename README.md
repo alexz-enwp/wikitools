@@ -3,7 +3,7 @@ wikitools -- Package for working with MediaWiki wikis
 Requirements
 ------------
 
-  * Python 3+. Tested on 3.4.2
+  * Python 3.3+. Tested on 3.4.2
   * The requests package <http://docs.python-requests.org/en/latest/> is required.
   * Basic functionality should be possible in wikis as old as 1.13, but at least
     MediaWiki 1.21 is recommended.
