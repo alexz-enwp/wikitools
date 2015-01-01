@@ -48,8 +48,6 @@ Current limitations
   * Can only do what the API can do. On a site without the edit-API enabled
     (disabled by default prior to MediaWiki 1.14), you cannot edit/delete/
     protect pages, only retrieve information about them.
-  * May have issues with some non-ASCII characters. Most of these bugs
-    should be resolved, though full UTF-8 support is still a little flaky
   * Usage on restricted-access (logged-out users can't read) wikis is
     mostly untested
 
