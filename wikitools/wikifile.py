@@ -222,15 +222,9 @@ class File(wikitools.page.Page):
 		if not location:
 			location = self.title.split(':', 1)[1]
 
-		headers = { "User-agent": self.site.useragent,
-			'Accept-Encoding': 'gzip'
-		}
-		if self.site.auth:
-			headers['Authorization'] = "Basic {0}".format(
-				base64.encodestring(self.site.auth[0] + ":" + self.site.auth[1])).replace('\n','')
-		authman = None if self.site.auth is None else HTTPDigestAuth(self.site.auth)
+		headers = { "User-agent": self.site.useragent }
 		with open(location, 'wb') as handle:
-			response = self.site.session.get(url, headers=headers, auth=authman, stream=True)
+			response = self.site.session.get(url, headers=headers, auth=self.site.authman, stream=True)
 			for block in response.iter_content(1024):
 				if not block:
 				            break

@@ -59,14 +59,8 @@ class APIRequest:
 			self.data['maxlag'] = site.maxlag
 		self.headers = {}
 		self.headers["User-agent"] = site.useragent
-		self.headers['Accept-Encoding'] = 'gzip'
 		self.site = site
 		self.response = None
-		if site.auth:
-			self.headers['Authorization'] = "Basic {0}".format(
-				base64.encodestring(site.auth[0] + ":" + site.auth[1])).replace('\n','')
-		self.authman = None if site.auth is None else HTTPDigestAuth(site.auth)
-
 
 	def changeParam(self, param, value):
 		"""Change or add a parameter after making the request object
@@ -197,7 +191,7 @@ for queries requring multiple requests""", FutureWarning)
 				else:
 					catcherror = Exception
 				data = self.response = self.site.session.post(self.site.apibase, data=self.data,
-                                    headers=self.headers, auth=self.authman, files=self.file)
+					headers=self.headers, auth=self.site.auth, files=self.file)
 			except catcherror as exc:
 				errname = sys.exc_info()[0].__name__
 				errinfo = exc

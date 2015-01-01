@@ -48,12 +48,14 @@ VERSION = '2.0'
 class Wiki:
 	"""A Wiki site"""
 
-	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None):
+	def __init__(self, url="https://en.wikipedia.org/w/api.php", httpuser=None, httppass=None, authman=None):
 		"""
 		url - A URL to the site's API, defaults to en.wikipedia
-		httpuser - optional user name for HTTP Auth
-        	httppass - password for HTTP Auth, leave out to enter interactively
-
+		httpuser - optional user name for HTTP Basic Auth
+		httppass - password for HTTP Basic Auth, leave out to enter interactively
+		authman - If using something other than HTTP Basic Auth, a requests Auth object
+		such as requests.auth.HTTPDigestAuth('user', 'pass') for Digest Auth
+		See <http://docs.python-requests.org/en/latest/user/authentication/>
 		"""
 		self.apibase = url
 		self.session = requests.Session()
@@ -64,7 +66,9 @@ class Wiki:
 			if httppass is None:
 				from getpass import getpass
 				httppass = getpass("HTTP Auth password for "+httpuser+": ")
-			self.auth = (httpuser, httppass)
+			self.auth = requests.auth.HTTPBasicAuth(httpuser, httppass)
+		elif authman:
+			self.auth=authman
 		else:
 			self.auth = None
 		self.maxlag = 5
