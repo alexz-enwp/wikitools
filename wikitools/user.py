@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wikitools.page
-import wikitools.api
+from . import page
+from . import api
 import ipaddress
 
 class User:
@@ -24,7 +24,7 @@ class User:
 	def __init__(self, site, name, check=True):
 		"""
 		wiki - A wiki object
-		name - The username, as a string
+		name - The username, as a string - do not include a "User:" prefix
 		check - Checks for existence, normalizes name
 		"""
 		self.site = site
@@ -34,15 +34,16 @@ class User:
 		self.editcount = 0
 		self.groups = []
 		self.id = 0
-		if check:
-			self.setUserInfo()
-		self.isIP = False
 		try:
 			ip = ipaddress.ip_address(self.name)
 			self.name = ip.compressed
+			self.exists = False
+			self.isIP = True
+			self.groups = ['*']
 		except ValueError:
 			self.isIP = False
-		self.page = wikitools.page.Page(self.site, title=self.name, namespace=2, check=check, followRedir=False)
+			if check:
+				self.setUserInfo()
 
 	def setUserInfo(self):
 		"""Sets basic user info"""
@@ -52,7 +53,7 @@ class User:
 			'ususers':self.name,
 			'usprop':'blockinfo|groups|editcount'
 		}
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query(False)
 		user = response['query']['users'][0]
 		self.name = user['name']
@@ -69,9 +70,13 @@ class User:
 			self.blocked = False
 		return self
 
+	def getUserPage(self, check=True, followRedir=False):
+		"""Convenience function to get an object for the user's user page"""
+		return page.Page(self.site, title=self.name, namespace=2, check=check, followRedir=False)
+
 	def getTalkPage(self, check=True, followRedir=False):
 		"""Convenience function to get an object for the user's talk page"""
-		return self.page.toggleTalk(check, followRedir)
+		return page.Page(self.site, title=self.name, namespace=3, check=check, followRedir=False)
 
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""
@@ -82,7 +87,7 @@ class User:
 			'bkusers':self.name,
 			'bkprop':'id'
 		}
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		res = req.query(False)
 		if len(res['query']['blocks']) > 0:
 			self.blocked = True
@@ -90,7 +95,7 @@ class User:
 			self.blocked = False
 		return self.blocked
 
-	def block(self, reason='', expiry=None, anononly=False, nocreate=False, autoblock=False, noemail=False, hidename=False, allowusertalk=False, reblock=False):
+	def block(self, reason='', expiry=None, anononly=True, nocreate=True, autoblock=True, noemail=False, hidename=False, allowusertalk=True, reblock=False, watchuser=False):
 		"""Block the user
 
 		Params are the same as the API
@@ -103,7 +108,7 @@ class User:
 		hidename - hide the username from the log (requires hideuser right)
 		allowusertalk - allow the user to edit their talk page
 		reblock - overwrite existing block
-
+		watchuser - Watch userpage
 		"""
 		token = self.site.getToken('csrf')
 		params = {'action':'block',
@@ -128,13 +133,15 @@ class User:
 			params['allowusertalk'] = ''
 		if reblock:
 			params['reblock'] = ''
-		req = wikitools.api.APIRequest(self.site, params, write=False)
+		if watchuser:
+			params['watchuser'] = ''
+		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'block' in res:
 			self.blocked = True
 		return res
 
-	def unblock(self, reason=False):
+	def unblock(self, reason=''):
 		"""Unblock the user
 
 		reason - reason for the log
@@ -148,7 +155,7 @@ class User:
 		}
 		if reason:
 			params['reason'] = reason
-		req = wikitools.api.APIRequest(self.site, params, write=False)
+		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'unblock' in res:
 			self.blocked = False
