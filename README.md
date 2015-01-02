@@ -20,22 +20,22 @@ Installation
 Available modules
 -----------------
 
-  * api.py - Contains the APIRequest class, for doing queries directly,
+  * api - Contains the APIRequest class, for doing queries directly,
     see API examples below
-  * wiki.py - Contains the Wiki class, used for logging in to the site,
+  * wiki - Contains the Wiki class, used for logging in to the site,
     storing cookies, and storing basic site information
-  * page.py -  Contains the Page class for dealing with individual pages
+  * page -  Contains the Page class for dealing with individual pages
     on the wiki. Can be used to get page info and text, as well as edit and
     other actions if enabled on the wiki
-  * category.py - Category is a subclass of Page with extra functions for
+  * category - Category is a subclass of Page with extra functions for
     working with categories
-  * wikifile.py - File is a subclass of Page with extra functions for
+  * wikifile - File is a subclass of Page with extra functions for
     working with files - note that there may be some issues with shared
     repositories, as the pages for files on shared repos technically don't
     exist on the local wiki.
-  * user.py - Contains the User class for getting information about and
+  * user - Contains the User class for getting information about and
     blocking/unblocking users
-  * pagelist.py - Contains several functions for getting a list of Page
+  * pagelist - Contains several functions for getting a list of Page
     objects from lists of titles, pageids, or API query results
 
 Further documentation
