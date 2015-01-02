@@ -15,47 +15,74 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import api
-import page
-import category
-import wikifile
-import math
+from . import api
+from . import page
+from . import category
+from . import wikifile
 
 def listFromQuery(site, queryresult):
-	"""Generate a list of pages from an API query result
+	"""Generate a list of Pages from an API query result
 
-	queryresult is the list of pages from a list or generator query
+	queryresult is the list (or dict) of pages from a list or generator query
 	e.g. - for a list=categorymembers query, use result['query']['categorymembers']
+	for prop=linkshere, use result['query']['pages'][pageid]['linkshere']
 	for a generator query, use result['query']['pages']
-
 	"""
 	ret = []
-	if isinstance(queryresult, list):
-		for item in queryresult:
-			pageid = False
-			if 'pageid' in item:
-				pageid = item['pageid']
-			if item['ns'] == 14:
-				item = category.Category(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			elif item['ns'] == 6:
-				item = wikifile.File(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			else:
-				item = page.Page(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
+	if isinstance(queryresult, dict):
+		queryresult = queryresult.values()
+	return [makePage(item, site, False) for item in queryresult]
+
+def listFromTextList(site, sequence, datatype, check=True, followRedir=False):
+	"""Create a list of Page objects from a list of titles, pageids, or (namespace, title) pairs
+	sequence must be something similar to a list
+	datatype must be one of 'titles', 'pageids', 'dbkeys'
+	check and followRedir have the same meaning as in page.Page
+	"""
+	if datatype not in ['titles', 'pageids', 'dbkeys']:
+		raise wiki.WikiError("listFromTextList datatype must be one of titles, pageids, dbkeys")
+	if datatype == 'dbkeys':
+		sequence = sequence.copy()
+		sequence = [site.namespaces[int(i[0])]['*']+':'+i[1] if int(i[0]) else i[1] for i in sequence]
+		datatype = 'titles'
+	if not check:
+		if datatype == 'pageids':
+			sequence = [int(i) for i in sequence]
+		opt = datatype[:-1]
+		return [page.Page(site, check=False, followRedir=False, **{opt:item}) for item in sequence]
+	start = 0
+	end = 0
+	ret = []
+	if datatype == 'pageids':
+		sequence = [str(i) for i in sequence]
+	while end < len(sequence):
+		lim = int(site.limit/10)
+		end = start+lim
+		tlist = '|'.join(sequence[start:end])
+		params = {'action':'query',
+			datatype:tlist,
+		}
+		if followRedir:
+			params['redirects'] = ''
+		req = api.APIRequest(site, params)
+		res = req.query(False)
+		for key in res['query']['pages']:
+			obj = res['query']['pages'][key]
+			item = makePage(obj, site, followRedir)
 			ret.append(item)
-	else:
-		for key in queryresult.keys():
-			item = queryresult[key]
-			pageid = False
-			if 'pageid' in item:
-				pageid = item['pageid']
-			if item['ns'] == 14:
-				item = category.Category(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			elif item['ns'] == 6:
-				item = wikifile.File(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			else:
-				item = page.Page(site, title=item['title'], check=False, followRedir=False, pageid=pageid)
-			ret.append(item)
+		start = end
 	return ret
+
+def listFromDbKeys(site, keys, check=True, followRedir=False):
+	"""Create a list of Page objects from a list of (ns, title) pairs
+	such as might be retrieved from a database query where the ns and title
+	are stored separately
+	Strictly speaking the sequences can contain more data than the ns and title,
+	the only requirement is that the ns and title are the first 2 items
+
+	check and followRedir have the same meaning as in page.Page
+	"""
+	listFromTextList(site, keys, 'dbkeys', check, followRedir)
 
 def listFromTitles(site, titles, check=True, followRedir=False):
 	"""Create a list of page objects from a list of titles
@@ -63,39 +90,7 @@ def listFromTitles(site, titles, check=True, followRedir=False):
 	check and followRedir have the same meaning as in page.Page
 
 	"""
-	ret = []
-	if not check:
-		for title in titles:
-			title = page.Page(site, title=title, check=False)
-			ret.append(title)
-	else:
-		querylist = []
-		limit = int(site.limit)
-		if len(titles) > limit/10:
-			iters = int(math.ceil(float(len(titles)) / (limit/10)))
-			for x in range(0,iters):
-				lower = x*limit/10
-				upper = (x+1)*limit/10
-				querylist.append(titles[lower:upper])
-		else:
-			querylist.append(titles)
-		response = False
-		for item in querylist:
-			tlist = '|'.join(item)
-			if not isinstance(tlist, unicode):
-				tlist = unicode(tlist, 'utf8')
-			params = {'action':'query',
-				'titles':tlist,
-			}
-			if followRedir:
-				params['redirects'] = ''
-			req = api.APIRequest(site, params)
-			res = req.query(False)
-			for key in res['query']['pages']:
-				obj = res['query']['pages'][key]
-				item = makePage(key, obj, site)
-				ret.append(item)
-	return ret
+	listFromTextList(site, titles, 'titles', check, followRedir)
 
 def listFromPageids(site, pageids, check=True, followRedir=False):
 	"""Create a list of page objects from a list of pageids
@@ -103,57 +98,30 @@ def listFromPageids(site, pageids, check=True, followRedir=False):
 	check and followRedir have the same meaning as in page.Page
 
 	"""
-	ret = []
-	if not check:
-		for id in pageids:
-			title = page.Page(site, pageid=id, check=False)
-			ret.append(title)
-	else:
-		querylist = []
-		limit = int(site.limit)
-		if len(pageids) > limit/10:
-			iters = int(math.ceil(float(len(pageids)) / (limit/10)))
-			for x in range(0,iters):
-				lower = x*limit/10
-				upper = (x+1)*limit/10
-				querylist.append(pageids[lower:upper])
-		else:
-			querylist.append(pageids)
-		response = False
-		for item in querylist:
-			ids = [str(id) for id in item]
-			idlist = '|'.join(ids)
-			params = {'action':'query',
-				'pageids':idlist,
-			}
-			if followRedir:
-				params['redirects'] = ''
-			req = api.APIRequest(site, params)
-			res = req.query()
-			if not response:
-				response = res
-			else:
-				response = api.resultCombine('', response, res)
-		for key in response['query']['pages'].keys():
-			res = response['query']['pages'][key]
-			item = makePage(key, res, site)
-			ret.append(item)
-	return ret
+	listFromTextList(site, pageids, 'pageids', check, followRedir)
 
-def makePage(key, result, site):
-	title=False
-	if 'title' in result:
-		title = result['title']
-	if 'ns' in result and result['ns'] == 14:
-		item = category.Category(site, title=title, check=False, followRedir=False, pageid=key)
-	elif 'ns' in result and result['ns'] == 6:
-		item = wikifile.File(site, title=title, check=False, followRedir=False, pageid=key)
+def makePage(result, site, followRedir):
+	"""Make a Page object from an API query result
+	result - dict from action=query that contains, at minimum, the page title
+	site - the Wiki object for the page
+	followRedit - the value for the followRedir option
+	"""
+	if 'invalid' in result:
+		return None
+	title = result['title']
+	ns = result['ns']
+	pageid = 0
+	if 'pageid' in result and result['pageid'] > 0:
+		pageid = result['pageid']
+	if ns == site.NS_CATEGORY:
+		item = category.Category(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+	elif ns == site.NS_FILE:
+		item = wikifile.File(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	else:
-		item = page.Page(site, title=title, check=False, followRedir=False, pageid=key)
+		item = page.Page(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	if 'missing' in result:
 		item.exists = False
-	if 'invalid' in result:
-		item = False
-	if 'ns' in result:
-		item.setNamespace(int(result['ns']))
+	elif pageid:
+		item.exists = True
 	return item
+
