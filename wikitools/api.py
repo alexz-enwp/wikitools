@@ -17,21 +17,15 @@
 
 # This module is documented at http://code.google.com/p/python-wikitools/wiki/api
 
+from . import exceptions
 import re
 import time
 import sys
-import wikitools.wiki
 import base64
 import warnings
 import copy
 import json
 from requests.auth import HTTPDigestAuth
-
-class APIError(Exception):
-	"""Base class for errors"""
-
-class APIDisabled(APIError):
-	"""API not enabled"""
 
 class APIRequest:
 	"""A request to the site's API"""
@@ -66,7 +60,7 @@ class APIRequest:
 		"""Change or add a parameter after making the request object
 		"""
 		if param == 'format':
-			raise APIError('You can not change the result format')
+			raise exceptions.APIError('You can not change the result format')
 		self.data[param] = value
 
 	def query(self, querycontinue=True):
@@ -89,8 +83,8 @@ for queries requring multiple requests""", FutureWarning)
 				break
 		if 'error' in data:
 			if self.iswrite and data['error']['code'] == 'blocked':
-				raise wikitools.wiki.UserBlocked(data['error']['info'])
-			raise APIError(data['error']['code'], data['error']['info'])
+				raise exceptions.UserBlocked(data['error']['info'])
+			raise exceptions.APIError(data['error']['code'], data['error']['info'])
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
 		return data
@@ -114,8 +108,8 @@ for queries requring multiple requests""", FutureWarning)
 					break
 			if 'error' in data:
 				if self.iswrite and data['error']['code'] == 'blocked':
-					raise wikitools.wiki.UserBlocked(data['error']['info'])
-				raise APIError(data['error']['code'], data['error']['info'])
+					raise exceptions.UserBlocked(data['error']['info'])
+				raise exceptions.APIError(data['error']['code'], data['error']['info'])
 			yield data
 			if 'continue' not in data:
 				break
@@ -229,7 +223,7 @@ for queries requring multiple requests""", FutureWarning)
 			except: # Something's wrong with the data...
 				data.seek(0)
 				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
-					raise APIDisabled("The API is not enabled on this site")
+					raise exceptions.APIDisabled("The API is not enabled on this site")
 				warnings.warn("Invalid JSON, trying request again", UserWarning)
 				return False
 		return content

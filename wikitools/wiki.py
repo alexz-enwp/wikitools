@@ -15,19 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
+from . import exceptions
+from . import api
 import requests
-import wikitools.api
 import re
 import time
 import os
 import warnings
 from urllib.parse import urlparse
-
-class WikiError(Exception):
-	"""Base class for errors"""
-
-class UserBlocked(WikiError):
-	"""Trying to edit while blocked"""
 
 class Namespace(int):
 	"""
@@ -82,7 +77,7 @@ class Wiki:
 		self.newtoken = False
 		try:
 			self.setSiteinfo()
-		except wikitools.api.APIError: # probably read-restricted
+		except api.APIError: # probably read-restricted
 			pass
 
 	def setSiteinfo(self):
@@ -98,7 +93,7 @@ class Wiki:
 		}
 		if self.maxlag < 120:
 			params['maxlag'] = 120
-		req = wikitools.api.APIRequest(self, params)
+		req = api.APIRequest(self, params)
 		info = req.query(False)
 		sidata = info['query']['general']
 		for item in sidata:
@@ -156,7 +151,7 @@ class Wiki:
 			data["lgdomain"] = domain
 		if self.maxlag < 120:
 			data['maxlag'] = 120
-		req = wikitools.api.APIRequest(self, data)
+		req = api.APIRequest(self, data)
 		info = req.query()
 		if info['login']['result'] == "Success":
 			self.username = username
@@ -180,7 +175,7 @@ class Wiki:
 		}
 		if self.maxlag < 120:
 			params['maxlag'] = 120
-		req = wikitools.api.APIRequest(self, params)
+		req = api.APIRequest(self, params)
 		info = req.query(False)
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
@@ -193,7 +188,7 @@ class Wiki:
 		params = { 'action': 'logout' }
 		if self.maxlag < 120:
 			params['maxlag'] = 120
-		req = wikitools.api.APIRequest(self, params, write=True)
+		req = api.APIRequest(self, params, write=True)
 		# action=logout returns absolutely nothing, which json.loads() treats as False
 		# causing APIRequest.query() to get stuck in a loop
 		req.wiki.session.post(req.wiki.apibase, params=req.data, headers=req.headers, auth=req.authman)
@@ -217,7 +212,7 @@ class Wiki:
 		}
 		if self.maxlag < 120:
 			data['maxlag'] = 120
-		req = wikitools.api.APIRequest(self, data)
+		req = api.APIRequest(self, data)
 		info = req.query(False)
 		if info['query']['userinfo']['id'] == 0:
 			return False
@@ -236,7 +231,7 @@ class Wiki:
 		try:
 			int(maxlag)
 		except:
-			raise WikiError("maxlag must be an integer")
+			raise exceptions.WikiError("maxlag must be an integer")
 		self.maxlag = int(maxlag)
 		return self.maxlag
 
@@ -258,7 +253,7 @@ class Wiki:
 		"""
 		valid = ['user', 'bot', 'true', 'false', 'exists', 'test', None]
 		if value not in valid:
-			raise WikiError("Invalid assertion")
+			raise exceptions.WikiError("Invalid assertion")
 		self.assertval = value
 		return self.assertval
 
@@ -277,19 +272,19 @@ class Wiki:
 				'meta':'tokens',
 				'type':tokentype,
 			}
-			req = wikitools.api.APIRequest(self, params)
+			req = api.APIRequest(self, params)
 			response = req.query(False)
 			token = response['query']['tokens'][tokentype+'token']
 		else:
 			if tokentype not in ['edit', 'delete', 'protect', 'move', 'block', 'unblock', 'email', 'csrf']:
-				raise WikiError('Token type unavailable')
+				raise exceptions.WikiError('Token type unavailable')
 			params = {
 				'action':'query',
 				'prop':'info',
 				'intoken':'edit',
 				'titles':'1'
 			}
-			req = wikitools.api.APIRequest(self, params)
+			req = api.APIRequest(self, params)
 			response = req.query(False)
 			pid = list(response['data']['query']['pages'].keys())[0]
 			token = response['query']['pages'][pid]['edittoken']

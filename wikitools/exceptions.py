@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
@@ -15,10 +14,36 @@
 
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
-__all__ = ["wiki", "api", "page", "category", "user", "pagelist", "wikifile", "exceptions"]
-#from wiki import *
-#from api import *
-#from page import *
-#from category import *
-#from user import *
-#from wikifile import *
+
+class APIError(Exception):
+	"""Base class for errors"""
+
+class APIDisabled(APIError):
+	"""API not enabled"""
+
+class WikiError(Exception):
+	"""Base class for errors"""
+
+class UserBlocked(WikiError):
+	"""Trying to edit while blocked"""
+
+class BadTitle(WikiError):
+	"""Invalid title"""
+
+class NoPage(WikiError):
+	"""Non-existent page"""
+
+class BadNamespace(WikiError):
+	"""Invalid namespace number"""
+
+class EditError(WikiError):
+	"""Problem with edit request"""
+
+class ProtectError(WikiError):
+	"""Problem with protection request"""
+
+class FileDimensionError(WikiError):
+	"""Invalid dimensions"""
+
+class UploadError(WikiError):
+	"""Error during uploading"""

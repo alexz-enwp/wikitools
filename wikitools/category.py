@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wikitools.page
-import wikitools.api
+from . import page
+from . import api
 
-class Category(wikitools.page.Page):
+class Category(page.Page):
 	"""A category on the wiki"""
 	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None):
 		"""
@@ -30,7 +30,7 @@ class Category(wikitools.page.Page):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		"""
-		wikitools.page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
+		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 		self.info = {}
 		if self.namespace != 14:
 			self.setNamespace(14, check)
@@ -49,7 +49,7 @@ class Category(wikitools.page.Page):
 			'prop':'categoryinfo',
 			'titles':self.title
 		}
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		res = req.query(False)
 		key = list(res['query']['pages'].keys())[0]
 		self.info = res['query']['pages'][key]['categoryinfo']
@@ -94,10 +94,10 @@ class Category(wikitools.page.Page):
 		}
 		if namespaces is not None:
 			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		for data in req.queryGen():
 			for item in data['query']['categorymembers']:
-				p = wikitools.page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
+				p = page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
 				p.exists = True # Non-existent pages can't be in categories
 				yield p
 

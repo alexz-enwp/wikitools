@@ -15,21 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wikitools.wiki
-import wikitools.page
-import wikitools.api
-import urllib.request
-import base64
+from . import page
+from . import api
+from . import exceptions
 import io
 import os.path
 
-class FileDimensionError(wikitools.wiki.WikiError):
-	"""Invalid dimensions"""
-
-class UploadError(wikitools.wiki.WikiError):
-	"""Error during uploading"""
-
-class File(wikitools.page.Page):
+class File(page.Page):
 	"""A file on the wiki"""
 	def __init__(self, site, title=None, check=True, followRedir=True, section=None, sectionnumber=None, pageid=None):
 		"""
@@ -41,7 +33,7 @@ class File(wikitools.page.Page):
 		sectionnumber - the section number
 		pageid - pageid, can be in place of title
 		"""
-		wikitools.page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
+		page.Page.__init__(self, site=site, title=title, check=check, followRedir=followRedir, section=section, sectionnumber=sectionnumber, pageid=pageid)
 		if self.namespace != 6:
 			self.setNamespace(6, check)
 
@@ -124,7 +116,7 @@ class File(wikitools.page.Page):
 		if iicontinue:
 			params['continue'] = iicontinue['continue']
 			params['iistart'] = iicontinue['iistart']
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		response = req.query(False)
 		key = list(response['query']['pages'].keys())[0]
 		revs = response['query']['pages'][key]['imageinfo']
@@ -173,10 +165,10 @@ class File(wikitools.page.Page):
 		if namespaces is not None:
 			params['iunamespace'] = '|'.join([str(ns) for ns in namespaces])
 
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		for data in req.queryGen():
 			for item in data['query']['imageusage']:
-				p = wikitools.page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
+				p = page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
 				p.exists = True # Non-existent pages can't have images
 				yield p
 
@@ -195,7 +187,7 @@ class File(wikitools.page.Page):
 			'iiprop':'url'
 		}
 		if width and height:
-			raise FileDimensionError("Can't specify both width and height")
+			raise exceptions.FileDimensionError("Can't specify both width and height")
 		if width:
 			params['iiurlwidth'] = width
 		if height:
@@ -210,7 +202,7 @@ class File(wikitools.page.Page):
 				params['titles'] = self.title
 			else:
 				params['pageids'] = self.pageid
-		req = wikitools.api.APIRequest(self.site, params)
+		req = api.APIRequest(self.site, params)
 		res = req.query(False)
 		key = list(res['query']['pages'].keys())[0]
 		url = res['query']['pages'][key]['imageinfo'][0]['url']
@@ -245,14 +237,14 @@ class File(wikitools.page.Page):
 
 		"""
 		if not fileobj and not url:
-			raise UploadError("Must give either a file object or a URL")
+			raise exceptions.UploadError("Must give either a file object or a URL")
 		if fileobj and url:
-			raise UploadError("Cannot give a file and a URL")
+			raise exceptions.UploadError("Cannot give a file and a URL")
 		if fileobj:
 			if not isinstance(fileobj, io.IOBase):
-				raise UploadError('If uploading from a file, a file object must be passed')
+				raise exceptions.UploadError('If uploading from a file, a file object must be passed')
 			if 'r' not in fileobj.mode:
-				raise UploadError('File must be readable')
+				raise exceptions.UploadError('File must be readable')
 			fileobj.seek(0)
 		params = {'action':'upload',
 			'comment':comment,
@@ -269,7 +261,7 @@ class File(wikitools.page.Page):
 			params['watchlist'] = watchlist
 		if text:
 			params['text'] = text
-		req = wikitools.api.APIRequest(self.site, params, write=True, file=fileobj)
+		req = api.APIRequest(self.site, params, write=True, file=fileobj)
 		res = req.query()
 		if 'upload' in res:
 			if res['upload']['result'] == 'Success':
