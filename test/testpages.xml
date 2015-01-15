@@ -1,0 +1,92 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">
+  <siteinfo>
+    <sitename>Testwiki</sitename>
+    <dbname>mediawiki</dbname>
+    <base>http://localhost/w/index.php/Main_Page</base>
+    <generator>MediaWiki 1.25alpha</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Testwiki</namespace>
+      <namespace key="5" case="first-letter">Testwiki talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Page</title>
+    <ns>0</ns>
+    <id>37</id>
+    <revision>
+      <id>88</id>
+      <timestamp>2015-01-14T02:32:34Z</timestamp>
+      <contributor>
+        <username>GoodUsername</username>
+        <id>2</id>
+      </contributor>
+      <comment>Created page with &quot;This is a test page.  [[It]] [[has]] [[some]] [[links]]  [[File:Test1.jpg]]  ==Section 1==  ===Section 2=== [[Category:Test pages]]&quot;</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text xml:space="preserve" bytes="131">This is a test page.
+
+[[It]] [[has]] [[some]] [[links]]
+
+[[File:Test1.jpg]]
+
+==Section 1==
+
+===Section 2===
+[[Category:Test pages]]</text>
+      <sha1>gvkltvazynz38yhi5486l1r93o26vlz</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Talk:Page</title>
+    <ns>1</ns>
+    <id>6</id>
+    <revision>
+      <id>7</id>
+      <timestamp>2015-01-05T03:20:11Z</timestamp>
+      <contributor>
+        <username>GoodUsername</username>
+        <id>2</id>
+      </contributor>
+      <comment>Created page with &quot;This is a talk page&quot;</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text xml:space="preserve" bytes="19">This is a talk page</text>
+      <sha1>g7bwe4gs273meyquliq6882l7k2hlsu</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Anotherpage</title>
+    <ns>0</ns>
+    <id>7</id>
+    <revision>
+      <id>9</id>
+      <timestamp>2015-01-05T17:45:13Z</timestamp>
+      <contributor>
+        <username>GoodUsername</username>
+        <id>2</id>
+      </contributor>
+      <comment>Created page with &quot;~~~~&quot;</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text xml:space="preserve" bytes="96">[[User:GoodUsername|GoodUsername]] ([[User talk:GoodUsername|talk]]) 12:45, 5 January 2015 (EST)</text>
+      <sha1>bgnsjoldikt3r68ohnkvh6fewlyp917</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -128,7 +128,7 @@ class Wiki:
 
 		username - the user account name on the wiki
 		password - the password for the account - leave empty to enter interactively
-		verify - Checks cookie validity with isLoggedIn()
+		verify - Unused, login success is always checked
 		domain - domain name, required for some auth systems like LDAP
 
 		"""
@@ -138,9 +138,8 @@ class Wiki:
 		def loginerror(info):
 			try:
 				warnings.warn(info['login']['result'], UserWarning)
-			except:
-				warnings.warn(info['error']['code'], UserWarning)
-				warnings.warn(info['error']['info'], UserWarning)
+			except exceptions.APIError:
+				warnings.warn(info['error']['code']+': '+info['error']['info'], UserWarning)
 			return False
 		data = {
 			"action" : "login",
@@ -159,13 +158,11 @@ class Wiki:
 			req.changeParam('lgtoken', info['login']['token'])
 			info = req.query()
 			if info['login']['result'] == "Success":
-				self.username = username
+				self.username = info['login']['lgusername']
 			else:
 				return loginerror(info)
 		else:
 			return loginerror(info)
-		if verify and not self.isLoggedIn(self.username):
-			return False
 		if not self.siteinfo:
 			self.setSiteinfo()
 		params = {
@@ -177,6 +174,10 @@ class Wiki:
 			params['maxlag'] = 120
 		req = api.APIRequest(self, params)
 		info = req.query(False)
+		if info['query']['userinfo']['id'] == 0:
+			return False
+		elif username and info['query']['userinfo']['name'] != self.username:
+			return False
 		user_rights = info['query']['userinfo']['rights']
 		if 'apihighlimits' in user_rights:
 			self.limit = 5000
@@ -191,7 +192,7 @@ class Wiki:
 		req = api.APIRequest(self, params, write=True)
 		# action=logout returns absolutely nothing, which json.loads() treats as False
 		# causing APIRequest.query() to get stuck in a loop
-		req.wiki.session.post(req.wiki.apibase, params=req.data, headers=req.headers, auth=req.authman)
+		self.session.post(self.apibase, data=req.data, headers=req.headers, auth=self.auth)
 		self.username = ''
 		self.maxlag = 5
 		self.useragent = "python-wikitools/%s" % VERSION
@@ -300,6 +301,7 @@ class Wiki:
 		if self.apibase == other.apibase:
 			return True
 		return False
+
 	def __ne__(self, other):
 		if not isinstance(other, Wiki):
 			return True

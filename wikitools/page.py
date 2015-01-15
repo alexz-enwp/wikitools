@@ -68,7 +68,7 @@ class Page(object):
 			self.pageid = 0
 		self.followRedir = followRedir
 		self.title = title
-		if '#' in self.title and section is None:
+		if self.title and '#' in self.title and section is None:
 			self.title, section = self.title.split('#', 1)
 		self.unprefixedtitle = '' # will be set later
 		self.urltitle = ''
@@ -79,6 +79,7 @@ class Page(object):
 		self.exists = None # None == not checked
 		self.protection = {}
 		self.namespace = namespace
+		self.lastedittime = ''
 		# Things that need to be done before anything else
 		if self.title:
 			self.title = self.title.replace('_', ' ')
@@ -92,16 +93,24 @@ class Page(object):
 		# pageid, exists, title, unprefixedtitle, namespace
 		if check:
 			self.setPageInfo()
-		else:
+		elif self.title is not None:
 			self.title = self.title.strip()
 			if self.namespace is None and self.title:
 				self.namespace = namespaceDetect(self.title, self.site)
 				if self.namespace is not 0:
 					nsname = self.site.namespaces[self.namespace]['*']
+					case = self.site.namespaces[self.namespace]['case']
 					self.unprefixedtitle = self.title.split(':', 1)[1]
+					if case == 'first-letter':
+						self.unprefixedtitle = self.unprefixedtitle[0].upper() + self.unprefixedtitle[1:]
 					self.title = ':'.join((nsname, self.unprefixedtitle))
 				else:
+					case = self.site.namespaces[0]['case']
+					if case == 'first-letter':
+						self.title = self.title[0].upper() + self.title[1:]
 					self.unprefixedtitle = self.title
+		else:
+			self.namespace = self.unprefixedtitle = self.urltitle = None
 		if section or sectionnumber is not None:
 			self.setSection(section, sectionnumber)
 		else:
@@ -550,7 +559,7 @@ class Page(object):
 				del kwargs[arg]
 		if not self.title:
 			self.setPageInfo()
-		if not 'section' in kwargs and self.section is not False:
+		if not 'section' in kwargs and self.section is not None:
 			kwargs['section'] = self.section
 		if not 'text' in kwargs and not 'prependtext' in kwargs and not 'appendtext' in kwargs:
 			raise exceptions.EditError("No text specified")
@@ -573,7 +582,7 @@ class Page(object):
 			'token':token,
 		}
 		if not skipmd5:
-			params['md5'] = md5(hashtext).hexdigest()
+			params['md5'] = md5(hashtext.encode('utf-8')).hexdigest()
 		params.update(kwargs)
 		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
@@ -582,6 +591,7 @@ class Page(object):
 			self.links = []
 			self.templates = []
 			self.exists = True
+			self.pageid = result['edit']['pageid']
 		return result
 
 	def move(self, mvto, reason='', movetalk=False, noredirect=False, movesubpages=True, watch=False, unwatch=False, watchlist='preferences'):
@@ -744,7 +754,7 @@ class Page(object):
 		if self.title:
 			title = self.title
 		else:
-			title = 'pageid: '+self.pageid
+			title = 'pageid: '+str(self.pageid)
 		return "<"+self.__module__+'.'+self.__class__.__name__+" "+repr(title)+" using "+repr(self.site.apibase)+">"
 
 	def __eq__(self, other):

@@ -20,6 +20,7 @@ from . import api
 from . import exceptions
 import io
 import os.path
+import warnings
 
 class File(page.Page):
 	"""A file on the wiki"""
@@ -83,7 +84,7 @@ class File(page.Page):
 		return history
 
 	def getFileHistoryGen(self, exif=True, limit='all'):
-		"""Generator function for filr history
+		"""Generator function for file history
 
 		The interface is the same as getFileHistory, but it will only retrieve 1 revision at a time.
 		This will be slower and have much higher network overhead, but does not require storing
@@ -175,7 +176,7 @@ class File(page.Page):
 	def download(self, width=False, height=False, location=False):
 		"""Download the image to a local file
 
-		width/height - set width OR height of the downloaded image
+		width/height - set width OR height of the downloaded image, in pixels
 		location - set the path and/or filename to save to. If not set, the page title
 		minus the namespace prefix will be used and saved to the current directory
 
@@ -216,7 +217,7 @@ class File(page.Page):
 
 		headers = { "User-agent": self.site.useragent }
 		with open(location, 'wb') as handle:
-			response = self.site.session.get(url, headers=headers, auth=self.site.authman, stream=True)
+			response = self.site.session.get(url, headers=headers, auth=self.site.auth, stream=True)
 			for block in response.iter_content(1024):
 				if not block:
 				            break
@@ -243,7 +244,7 @@ class File(page.Page):
 		if fileobj:
 			if not isinstance(fileobj, io.IOBase):
 				raise exceptions.UploadError('If uploading from a file, a file object must be passed')
-			if 'r' not in fileobj.mode:
+			if not hasattr(fileobj, 'mode') or 'r' not in fileobj.mode:
 				raise exceptions.UploadError('File must be readable')
 			fileobj.seek(0)
 		params = {'action':'upload',
@@ -272,11 +273,11 @@ class File(page.Page):
 			elif res['upload']['result'] == 'Warning':
 				for warning in list(res['upload']['warnings'].keys()):
 					if warning == 'duplicate':
-						print('File is a duplicate of ' + res['upload']['warnings']['duplicate'][0])
+						warnings.warn('File is a duplicate of ' + res['upload']['warnings']['duplicate'][0])
 					elif warning == 'page-exists' or warning == 'exists':
-						print('Page already exists: ' + res['upload']['warnings'][warning])
+						warnings.warn('Page already exists: ' + res['upload']['warnings'][warning])
 					else:
-						print('Warning: ' + warning + ' ' + res['upload']['warnings'][warning])
+						warnings.warn('Warning: ' + warning + ' ' + res['upload']['warnings'][warning])
 		return res
 
 			

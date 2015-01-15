@@ -18,8 +18,14 @@
 class APIError(Exception):
 	"""Base class for errors"""
 
+class APIQueryError(APIError):
+	"""Error message in API query"""
+
 class APIDisabled(APIError):
 	"""API not enabled"""
+
+class APIFailure(APIError):
+	"""API appears to be broken, or this isn't a MediaWiki API"""
 
 class WikiError(Exception):
 	"""Base class for errors"""

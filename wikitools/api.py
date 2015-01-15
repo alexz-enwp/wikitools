@@ -25,7 +25,15 @@ import base64
 import warnings
 import copy
 import json
+from collections import deque
 from requests.auth import HTTPDigestAuth
+
+logging = False
+querylog = deque()
+resultlog = deque()
+
+# Do this, otherwise it won't show maxlag/HTTP error warnings more than once
+warnings.filterwarnings("always", category=UserWarning, module='wikitools.api')
 
 class APIRequest:
 	"""A request to the site's API"""
@@ -71,7 +79,7 @@ class APIRequest:
 		reliable and efficient alternative)
 
 		"""
-		if querycontinue and self.data['action'] == 'query':
+		if querycontinue and 'action' in self.data and self.data['action'] == 'query':
 			warnings.warn("""The querycontinue option is deprecated and will be removed
 in a future release, use the new queryGen function instead
 for queries requring multiple requests""", FutureWarning)
@@ -84,9 +92,11 @@ for queries requring multiple requests""", FutureWarning)
 		if 'error' in data:
 			if self.iswrite and data['error']['code'] == 'blocked':
 				raise exceptions.UserBlocked(data['error']['info'])
-			raise exceptions.APIError(data['error']['code'], data['error']['info'])
+			raise exceptions.APIQueryError(data['error']['code'], data['error']['info'])
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
+		if logging:
+			resultlog.appendleft(data)
 		return data
 
 	def queryGen(self):
@@ -109,7 +119,9 @@ for queries requring multiple requests""", FutureWarning)
 			if 'error' in data:
 				if self.iswrite and data['error']['code'] == 'blocked':
 					raise exceptions.UserBlocked(data['error']['info'])
-				raise exceptions.APIError(data['error']['code'], data['error']['info'])
+				raise exceptions.APIQueryError(data['error']['code'], data['error']['info'])
+			if logging:
+				resultlog.appendleft(data)
 			yield data
 			if 'continue' not in data:
 				break
@@ -119,7 +131,9 @@ for queries requring multiple requests""", FutureWarning)
 					self.changeParam(param, data['continue'][param])
 
 	def __longQuery(self, initialdata):
-		"""For queries that require multiple requests"""
+		"""For queries that require multiple requests
+		(DEPRECATED)
+		"""
 		self._continues = set()
 		self._generator = ''
 		total = initialdata
@@ -180,16 +194,20 @@ for queries requring multiple requests""", FutureWarning)
 		data = False
 		while not data:
 			try:
+				catcherror = True
 				if self.sleep >= self.site.maxwaittime or self.iswrite:
-					catcherror = None
-				else:
-					catcherror = Exception
+					catcherror = False
+				if logging:
+					querylog.appendleft(self.data.copy())
 				data = self.response = self.site.session.post(self.site.apibase, data=self.data,
 					headers=self.headers, auth=self.site.auth, files=self.file)
-			except catcherror as exc:
+				self.response.raise_for_status()
+			except Exception as exc:
+				if not catcherror:
+					raise exc
 				errname = sys.exc_info()[0].__name__
-				errinfo = exc
-				warnings.warn("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep), UserWarning)
+				warnstring = "%s: %s trying request again in %d seconds" % (errname, exc, self.sleep)
+				warnings.warn(warnstring, UserWarning)
 				time.sleep(self.sleep+0.5)
 				self.sleep+=5
 		return data
@@ -197,35 +215,38 @@ for queries requring multiple requests""", FutureWarning)
 
 	def __parseJSON(self, data):
 		maxlag = True
-		while maxlag:
-			try:
-				maxlag = False
-				parsed = json.loads(data)
-				content = None
-				if isinstance(parsed, dict):
-					content = APIResult(parsed)
-					content.response = list(self.response.headers.items())
-				elif isinstance(parsed, list):
-					content = APIListResult(parsed)
-					content.response = list(self.response.headers.items())
-				else:
-					content = parsed
-				if 'error' in content:
-					error = content['error']['code']
-					if error == "maxlag":
-						lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
-						if lagtime > self.site.maxwaittime:
-							lagtime = self.site.maxwaittime
-						print(("Server lag, sleeping for "+str(lagtime)+" seconds"))
-						maxlag = True
-						time.sleep(int(lagtime)+0.5)
-						return False
-			except: # Something's wrong with the data...
-				data.seek(0)
-				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
-					raise exceptions.APIDisabled("The API is not enabled on this site")
-				warnings.warn("Invalid JSON, trying request again", UserWarning)
-				return False
+		try:
+			parsed = json.loads(data)
+			content = None
+			if isinstance(parsed, dict):
+				content = APIResult(parsed)
+				content.response = list(self.response.headers.items())
+			elif isinstance(parsed, list):
+				content = APIListResult(parsed)
+				content.response = list(self.response.headers.items())
+			else:
+				content = parsed
+			if 'error' in content:
+				error = content['error']['code']
+				if error == "maxlag":
+					lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
+					if lagtime > self.site.maxwaittime:
+						lagtime = self.site.maxwaittime
+					warnstring = "Server lag, sleeping for "+str(lagtime)+" seconds"
+					warnings.warn(warnstring, UserWarning)
+					time.sleep(int(lagtime)+0.5)
+					return False
+		except: # Something's wrong with the data...
+			if "MediaWiki API is not enabled for this site." in data:
+				raise exceptions.APIDisabled("The API is not enabled on this site")
+			if self.sleep >= self.site.maxwaittime or self.iswrite:
+				raise exceptions.APIFailure("Invalid JSON received. API is broken, or this isn't a MediaWiki API")
+			warnstring = "Invalid JSON, trying request again in %d seconds" % (self.sleep)
+			warnings.warn(warnstring, UserWarning)
+			time.sleep(self.sleep+0.5)
+			self.sleep+=5
+			return False
+		self.sleep = 5
 		return content
 
 class APIResult(dict):
@@ -239,8 +260,10 @@ def resultCombine(type, old, new):
 
 	If the result isn't something from action=query,
 	this will just explode, but that shouldn't happen hopefully?
-
+	(DEPRECATED)
 	"""
+	warnings.warn("resultCombine is deprecated, will not be mantained, and may be removed in the future",
+		DeprecationWarning)
 	ret = old
 	if type in new['query']: # Basic list, easy
 		ret['query'][type].extend(new['query'][type])

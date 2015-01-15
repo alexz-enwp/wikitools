@@ -1,0 +1,9 @@
+This directory includes a test script for wikitools. While it uses the Python unittest framework, they aren't true unit tests as they don't fully replace dependencies. Since almost every function involves working with some response from the MediaWiki API, making tests in total isolation from that would be rather difficult and of questionable value. 
+
+To run the tests, you will need to have MediaWiki installed and accessible through localhost. (It probably shouldn't be publicly accessible).
+* Create a user account "GoodUsername" with the password "goodpassword" and give it all user groups
+* Create another user account "Vandal1" and block it indefinitely. Then create a "Vandal2" account.
+* Upload the Test1.jpg file TWICE to File:Test1.jpg (if you only do it once, test_getFileHistoryGen will fail on the first run)
+* Import the testpages.xml file
+
+You will also need an internet connection, as some of the tests use other wikis (English Wikipedia) and sites (httpbin.org)

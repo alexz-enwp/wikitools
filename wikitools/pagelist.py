@@ -49,7 +49,7 @@ def listFromTextList(site, sequence, datatype, check=True, followRedir=False):
 		if datatype == 'pageids':
 			sequence = [int(i) for i in sequence]
 		opt = datatype[:-1]
-		return [page.Page(site, check=False, followRedir=False, **{opt:item}) for item in sequence]
+		return [page.Page(site, check=False, followRedir=followRedir, **{opt:item}) for item in sequence]
 	start = 0
 	end = 0
 	ret = []
@@ -108,8 +108,11 @@ def makePage(result, site, followRedir):
 	"""
 	if 'invalid' in result:
 		return None
-	title = result['title']
-	ns = result['ns']
+	title = None
+	ns = None
+	if 'title' in result:
+		title = result['title']
+		ns = result['ns']
 	pageid = 0
 	if 'pageid' in result and result['pageid'] > 0:
 		pageid = result['pageid']
