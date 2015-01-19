@@ -328,6 +328,8 @@ class Page(object):
 		force - load the list even if we already loaded it before
 
 		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		if self.links and not force:
 			return self.links
 		if self.exists is None:
@@ -385,6 +387,8 @@ class Page(object):
 		force - load the list even if we already loaded it before
 
 		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		if self.templates and not force:
 			return self.templates
 		if self.exists is None:
@@ -409,6 +413,8 @@ class Page(object):
 		force - load the list even if we already loaded it before
 
 		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		if self.categories and not force:
 			return self.categories
 		if self.exists is None:
@@ -458,6 +464,11 @@ class Page(object):
 			maximum = float("inf")
 		if limit == 'all' or limit > self.site.limit:
 			limit = self.site.limit
+		if content and limit > self.site.limit/10:
+			limit = int(self.site.limit/10)
+		if 'continue' not in self.site.features:
+			w = "Warning: only %d revisions will be returned" % (limit)
+			warnings.warn(w)
 		history = []
 		rvc = None
 		while True:
@@ -476,6 +487,8 @@ class Page(object):
 		This will be slower and have much higher network overhead, but does not require storing
 		the entire page history in memory
 		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		maximum = limit
 		count = 0
 		rvc = None

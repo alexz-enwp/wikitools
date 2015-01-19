@@ -100,7 +100,7 @@ class TestWiki(unittest.TestCase):
 	def test_constructor(self):
 		self.assertIsInstance(self.site.NS_MAIN, wiki.Namespace)
 		self.assertEqual(self.site.NS_TALK, 1)
-		self.assertTrue(self.site.newtoken)
+		self.assertIn('newtoken', self.site.features)
 
 	def test_login_bad_name(self):
 		with self.assertWarns(UserWarning):

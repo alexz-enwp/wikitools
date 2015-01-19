@@ -33,6 +33,9 @@ class WikiError(Exception):
 class UserBlocked(WikiError):
 	"""Trying to edit while blocked"""
 
+class UnsupportedError(WikiError):
+	"""Feature not available on this wiki"""
+
 class BadTitle(WikiError):
 	"""Invalid title"""
 

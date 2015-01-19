@@ -74,7 +74,7 @@ class Wiki:
 		self.namespaces = {}
 		self.NSaliases = {}
 		self.assertval = None
-		self.newtoken = False
+		self.features = set()
 		try:
 			self.setSiteinfo()
 		except api.APIError: # probably read-restricted
@@ -89,7 +89,7 @@ class Wiki:
 		"""
 		params = {'action':'query',
 			'meta':'siteinfo|tokens',
-			'siprop':'general|namespaces|namespacealiases',
+			'siprop':'general|namespaces|namespacealiases|extensions',
 		}
 		if self.maxlag < 120:
 			params['maxlag'] = 120
@@ -117,10 +117,17 @@ class Wiki:
 		if not 'writeapi' in sidata:
 			warnings.warn("WARNING: Write-API not enabled, you will not be able to edit", UserWarning)
 		version = re.search("\d\.(\d\d)", self.siteinfo['generator'])
-		if not int(version.group(1)) >= 13: # Will this even work on 13?
-			warnings.warn("WARNING: Some features may not work on older versions of MediaWiki", UserWarning)
+		vnum = int(version.group(1))
+		if vnum < 21: 
+			warnings.warn("WARNING: Some features are unavailable on older versions of MediaWiki. 1.21 or newer is recommended", UserWarning)
+		else:	
+			self.features.add('continue')
+		if vnum >= 23:
+			self.features.add('AssertEdit')
 		if 'tokens' in list(info['query'].keys()):
-			self.newtoken = True
+			self.features.add('newtoken')
+		for ext in info['query']['extensions']:
+			self.features.add(ext['name'])
 		return self
 
 	def login(self, username, password=False, verify=True, domain=None):
@@ -249,9 +256,11 @@ class Wiki:
 		This is only checked on edits, so only applied to write queries
 
 		Set to None (the default) to not use anything
-		http://www.mediawiki.org/wiki/Extension:Assert_Edit
+		https://www.mediawiki.org/wiki/API:Assert
 
 		"""
+		if 'AssertEdit' not in self.features:
+			raise exceptions.UnsupportedError("AssertEdit is not available on this wiki")
 		valid = ['user', 'bot', 'true', 'false', 'exists', 'test', None]
 		if value not in valid:
 			raise exceptions.WikiError("Invalid assertion")
@@ -267,7 +276,7 @@ class Wiki:
 		For older wiki versions, only csrf (edit, move, etc.) tokens are supported
 
 		"""
-		if self.newtoken:
+		if 'newtoken' in self.features:
 			params = {
 				'action':'query',
 				'meta':'tokens',

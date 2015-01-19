@@ -72,6 +72,9 @@ class File(page.Page):
 			maximum = float("inf")
 		if limit == 'all' or limit > self.site.limit:
 			limit = self.site.limit
+		if 'continue' not in self.site.features:
+			w = "Warning: only %d versions will be returned" % (limit)
+			warnings.warn(w)
 		history = []
 		rvc = None
 		while True:
@@ -90,6 +93,8 @@ class File(page.Page):
 		This will be slower and have much higher network overhead, but does not require storing
 		the entire history in memory
 		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		maximum = limit
 		count = 0
 		rvc = None
@@ -158,6 +163,8 @@ class File(page.Page):
 				yield title
 
 	def __getUsageInternal(self, namespaces, limit):
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		params = {'action':'query',
 			'list':'imageusage',
 			'iutitle':self.title,

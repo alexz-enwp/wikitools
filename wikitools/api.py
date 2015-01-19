@@ -107,6 +107,8 @@ for queries requring multiple requests""", FutureWarning)
 		Loosely based on the recommended implementation on mediawiki.org
 
 		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		reqcopy = self.data.copy()
 		self.changeParam('continue', '')
 		while True:

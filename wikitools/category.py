@@ -87,6 +87,8 @@ class Category(page.Page):
 				yield member
 
 	def __getMembersInternal(self, namespaces, limit):
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
 		params = {'action':'query',
 			'list':'categorymembers',
 			'cmtitle':self.title,
