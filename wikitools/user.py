@@ -30,7 +30,7 @@ class User:
 		self.site = site
 		self.name = name.strip()
 		self.exists = None
-		self.blocked = None
+		self._blocked = None
 		self.editcount = 0
 		self.groups = []
 		self.id = 0
@@ -65,9 +65,9 @@ class User:
 		if 'groups' in user:
 			self.groups = user['groups']
 		if 'blockedby' in user:
-			self.blocked = True
+			self._blocked = True
 		else:
-			self.blocked = False
+			self._blocked = False
 		return self
 
 	def getUserPage(self, check=True, followRedir=False):
@@ -80,8 +80,8 @@ class User:
 
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""
-		if self.blocked is not None and not force:
-			return self.blocked
+		if self._blocked is not None and not force:
+			return self._blocked
 		params = {'action':'query',
 			'list':'blocks',
 			'bkusers':self.name,
@@ -90,10 +90,10 @@ class User:
 		req = api.APIRequest(self.site, params)
 		res = req.query(False)
 		if len(res['query']['blocks']) > 0:
-			self.blocked = True
+			self._blocked = True
 		else:
-			self.blocked = False
-		return self.blocked
+			self._blocked = False
+		return self._blocked
 
 	def block(self, reason='', expiry=None, anononly=True, nocreate=True, autoblock=True, noemail=False, hidename=False, allowusertalk=True, reblock=False, watchuser=False):
 		"""Block the user
@@ -138,7 +138,7 @@ class User:
 		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'block' in res:
-			self.blocked = True
+			self._blocked = True
 		return res
 
 	def unblock(self, reason=''):
@@ -158,8 +158,21 @@ class User:
 		req = api.APIRequest(self.site, params, write=False)
 		res = req.query()
 		if 'unblock' in res:
-			self.blocked = False
+			self._blocked = False
 		return res
+
+	def __getattr__(self, name):
+		"""Computed attributes:
+		page, talk, blocked
+		"""
+		if name not in {'page', 'talk', 'blocked'}:
+			raise AttributeError
+		if name == 'page':
+			return self.getUserPage()
+		elif name == 'talk':
+			return self.getTalkPage()
+		elif name == 'blocked':
+			return self.isBlocked()
 
 	def __hash__(self):
 		return hash(self.name) ^ hash(self.site.apibase)
