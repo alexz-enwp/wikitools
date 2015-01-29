@@ -15,10 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import api
-import wikitools.page
-import wikitools.category
-import wikitools.wikifile
+import wikitools
 
 def listFromQuery(site, queryresult):
 	"""Generate a list of Pages from an API query result
@@ -64,7 +61,7 @@ def listFromTextList(site, sequence, datatype, check=True, followRedir=False):
 		}
 		if followRedir:
 			params['redirects'] = ''
-		req = api.APIRequest(site, params)
+		req = wikitools.api.APIRequest(site, params)
 		res = req.query(False)
 		for key in res['query']['pages']:
 			obj = res['query']['pages'][key]

@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import page
 from . import api
 from . import exceptions
+from . import page
+from wikitools.pagelist import makePage
 import io
 import os.path
 import warnings
-from wikitools.pagelist import makePage
 
 class File(page.Page):
 	"""A file on the wiki"""

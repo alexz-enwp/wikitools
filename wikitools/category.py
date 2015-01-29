@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import page
-from . import api
 from wikitools.pagelist import makePage
+from . import api
+from . import page
 
 class Category(page.Page):
 	"""A category on the wiki"""
