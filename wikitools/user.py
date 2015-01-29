@@ -46,6 +46,8 @@ class User:
 				self.isIP = True
 			else:
 				self.IPcheck()
+				if not self.isIP and check:
+					self.setUserInfo()
 		except ValueError:
 			self.isIP = False
 			if check:
