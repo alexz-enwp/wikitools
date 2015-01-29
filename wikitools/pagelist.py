@@ -16,9 +16,9 @@
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import api
-from . import page
-from . import category
-from . import wikifile
+import wikitools.page
+import wikitools.category
+import wikitools.wikifile
 
 def listFromQuery(site, queryresult):
 	"""Generate a list of Pages from an API query result
@@ -49,7 +49,7 @@ def listFromTextList(site, sequence, datatype, check=True, followRedir=False):
 		if datatype == 'pageids':
 			sequence = [int(i) for i in sequence]
 		opt = datatype[:-1]
-		return [page.Page(site, check=False, followRedir=followRedir, **{opt:item}) for item in sequence]
+		return [wikitools.page.Page(site, check=False, followRedir=followRedir, **{opt:item}) for item in sequence]
 	start = 0
 	end = 0
 	ret = []
@@ -117,11 +117,11 @@ def makePage(result, site, followRedir):
 	if 'pageid' in result and result['pageid'] > 0:
 		pageid = result['pageid']
 	if ns == site.NS_CATEGORY:
-		item = category.Category(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+		item = wikitools.category.Category(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	elif ns == site.NS_FILE:
-		item = wikifile.File(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+		item = wikitools.wikifile.File(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	else:
-		item = page.Page(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+		item = wikitools.page.Page(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	if 'missing' in result:
 		item.exists = False
 	elif pageid:

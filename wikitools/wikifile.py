@@ -21,6 +21,7 @@ from . import exceptions
 import io
 import os.path
 import warnings
+from wikitools.pagelist import makePage
 
 class File(page.Page):
 	"""A file on the wiki"""
@@ -176,9 +177,7 @@ class File(page.Page):
 		req = api.APIRequest(self.site, params)
 		for data in req.queryGen():
 			for item in data['query']['imageusage']:
-				p = page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
-				p.exists = True # Non-existent pages can't have images
-				yield p
+				yield makePage(item, self.site, False)
 
 	def download(self, width=False, height=False, location=False):
 		"""Download the image to a local file

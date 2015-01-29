@@ -17,6 +17,7 @@
 
 from . import page
 from . import api
+from wikitools.pagelist import makePage
 
 class Category(page.Page):
 	"""A category on the wiki"""
@@ -99,7 +100,5 @@ class Category(page.Page):
 		req = api.APIRequest(self.site, params)
 		for data in req.queryGen():
 			for item in data['query']['categorymembers']:
-				p = page.Page(self.site, title=item['title'], pageid=item['pageid'], check=False, followRedir=False)
-				p.exists = True # Non-existent pages can't be in categories
-				yield p
+				yield makePage(item, self.site, False)
 
