@@ -433,7 +433,7 @@ class Page(object):
 			self.categories.extend(self.__extractToList(data, 'categories'))
 		return self.categories
 
-	def getHistory(self, direction='older', content=True, limit='all'):
+	def getHistory(self, direction='older', content=True, limit='all', user=None):
 		"""Get the history of a page
 
 		direction - 2 options: 'older' (default) - start with the current revision and get older ones
@@ -441,6 +441,7 @@ class Page(object):
 		content - If False, get only metadata (timestamp, edit summary, user, etc)
 			If True (default), also get the revision text
 		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned
+		user - Only get edits by a specific user. Can be a string or User object
 
 		The data is returned in essentially the same format as the API, a list of dicts that look like:
 		{'*': 'Page content', # Only returned when content=True
@@ -472,7 +473,7 @@ class Page(object):
 		history = []
 		rvc = None
 		while True:
-			revs, rvc = self.__getHistoryInternal(direction, content, limit, rvc)
+			revs, rvc = self.__getHistoryInternal(direction, content, limit, rvc, user)
 			history = history+revs
 			if len(history) == maximum or rvc is None:
 				break
@@ -480,7 +481,7 @@ class Page(object):
 				limit = maximum - len(history)
 		return history
 
-	def getHistoryGen(self, direction='older', content=True, limit='all'):
+	def getHistoryGen(self, direction='older', content=True, limit='all', user=None):
 		"""Generator function for page history
 
 		The interface is the same as getHistory, but it will only retrieve 1 revision at a time.
@@ -493,14 +494,13 @@ class Page(object):
 		count = 0
 		rvc = None
 		while True:
-			revs, rvc = self.__getHistoryInternal(direction, content, 1, rvc)
+			revs, rvc = self.__getHistoryInternal(direction, content, 1, rvc, user)
 			yield revs[0]
 			count += 1
 			if count == maximum or rvc is None:
 				break
 
-	def __getHistoryInternal(self, direction, content, limit, rvcontinue):
-
+	def __getHistoryInternal(self, direction, content, limit, rvcontinue, user):
 		if self.exists is None:
 			self.setPageInfo()
 		if self.exists is False:
@@ -516,6 +516,10 @@ class Page(object):
 			'rvlimit':limit,
 			'pageids':self.pageid
 		}
+		if user is not None and isinstance(user, str):
+			params['rvuser'] = user
+		elif user is not None:
+			params['rvuser'] = user.name
 		if content:
 			params['rvprop']+='|content'
 		if rvcontinue:
