@@ -119,6 +119,7 @@ class User:
 		if 'missing' in user or 'invalid' in user:
 			self.exists = False
 			return
+		self.exists = True
 		self.id = int(user['userid'])
 		self.editcount = int(user['editcount'])
 		if 'groups' in user:
