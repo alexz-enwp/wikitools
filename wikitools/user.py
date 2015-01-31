@@ -138,6 +138,24 @@ class User:
 		"""Convenience function to get an object for the user's talk page"""
 		return page.Page(self.site, title=self.name, namespace=3, check=check, followRedir=False)
 
+	def getLogs(self, logtype=None, direction='older', limit='all', user=None):
+		"""Get logs done ON a user (or their userpage)
+		This is just a wrapper around Page.getLogs(), see full documentation there
+
+		Note that if not limited to a "user" log type ('block', 'rights', etc)
+		it will also return log entries (delete, protect) for the user's userpage
+		"""
+		return self.getUserPage(check=False).getLogs(logtype=logtype, direction=direction, limit=limit, user=user)
+
+	def getLogsGen(self, logtype=None, direction='older', limit='all', user=None):
+		"""Generator function to get logs done ON a user (or their userpage)
+		This is just a wrapper around Page.getLogsGen(), see full documentation there
+
+		Note that if not limited to a "user" log type ('block', 'rights', etc)
+		it will also return log entries (delete, protect) for the user's userpage
+		"""
+		return self.getUserPage(check=False).getLogsGen(logtype=logtype, direction=direction, limit=limit, user=user)
+
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""
 		if self._blocked is not None and not force:

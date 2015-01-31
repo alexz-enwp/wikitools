@@ -291,6 +291,24 @@ class TestPage(unittest.TestCase):
 		log = api.querylog.pop()
 		self.assertIn('content', log['rvprop'])
 
+	def test_getLogs(self):
+		p1 = page.Page(self.site, "File:Test1.jpg")
+		api.logging = True
+		hist = p1.getLogs(logtype = 'upload', limit=10)
+		self.assertIs(len(api.querylog), 1)
+		log = api.querylog.pop()
+		self.assertEqual(log['letype'], 'upload')
+		self.assertNotIn('leuser', log)
+
+	def test_getLogsGen(self):
+		p1 = page.Page(self.site, "File:Test1.jpg")
+		api.logging = True
+		for log in p1.getLogsGen(logtype='upload', limit=5):
+			pass
+		self.assertGreater(len(api.querylog), 1)
+		log = api.querylog.pop()
+		self.assertNotIn('leuser', log)
+
 	def test_edit(self):
 		self.site.login('GoodUsername', 'goodpassword')
 		p1 = page.Page(self.site, "Anotherpage")

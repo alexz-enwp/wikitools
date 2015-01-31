@@ -458,7 +458,7 @@ class Page(object):
 		}
 
 		Note that unlike other get* functions, the data is not cached
-		Any changes to getHistory functions should also be made to getFileHistory in wikifile
+		Any changes to getHistory functions should also be made to getLogs and getFileHistory in wikifile
 		"""
 		maximum = limit
 		if limit == 'all':
@@ -499,6 +499,104 @@ class Page(object):
 			count += 1
 			if count == maximum or rvc is None:
 				break
+
+	def getLogs(self, logtype=None, direction='older', limit='all', user=None):
+		"""Get the logs for a page
+
+		direction - 2 options: 'older' (default) - start with most recent log entry and get older ones
+			'newer' - start with the oldest entry and get newer ones
+		logtype - Only get specific logs: 'delete' for deletion log, 'protect' for protection log, etc. 
+			The function doesn't check this value as extensions can add their own log types. See the
+			MW API's documentation for list=logevents for valid options on a given wiki
+		limit - Only retrieve a certain number of entries. If 'all' (default), all revisions are returned
+		user - Only get logs done BY a specific user. Can be a string or User object
+
+		The data is returned in essentially the same format as the API, a list of dicts that look like:
+                { "logid": 62110732,   # The id in the logging DB table, not really used anywhere
+                  "pageid": 45262920,  # The current page ID, will be 0 for a deletion log
+                  "logpage": 37927495, # The page ID at the time the log entry was made
+                  "move": {            # Some log types have additional data like this, the format will vary depending on type
+                      "new_ns": 0,
+                      "new_title": "New page title"
+                  },
+                  "type": "move",
+                  "action": "move",
+                  "user": "Username",
+                  "userid": 1137359,
+                  "timestamp": "2015-01-31T02:34:48Z",
+                  "comment": "Log summary",
+                  "tags": []
+                },
+
+		Note that unlike other get* functions, the data is not cached
+		Any changes to getLogs functions should also be made to getHistory and getFileHistory in wikifile
+		"""
+		maximum = limit
+		if limit == 'all':
+			maximum = float("inf")
+		if limit == 'all' or limit > self.site.limit:
+			limit = self.site.limit
+		if 'continue' not in self.site.features:
+			w = "Warning: only %d log entries will be returned" % (limit)
+			warnings.warn(w)
+		logentries = []
+		lec = None
+		while True:
+			logs, lec = self.__getLogsInternal(direction, logtype, limit, lec, user)
+			logentries = logentries+logs
+			if len(logentries) == maximum or lec is None:
+				break
+			if maximum - len(logentries) < self.site.limit:
+				limit = maximum - len(logentries)
+		return logentries
+
+	def getLogsGen(self, logtype=None, direction='older', limit='all', user=None):
+		"""Generator function for page logs
+
+		The interface is the same as getLogs, but it will only retrieve 1 entry at a time.
+		"""
+		if 'continue' not in self.site.features:
+			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
+		maximum = limit
+		count = 0
+		lec = None
+		while True:
+			logs, lec = self.__getLogsInternal(direction, logtype, 1, lec, user)
+			yield logs[0]
+			count += 1
+			if count == maximum or lec is None:
+				break
+
+	def __getLogsInternal(self, direction, logtype, limit, lecontinue, user):
+		if self.title is None:
+			self.setPageInfo()
+		if direction != 'newer' and direction != 'older':
+			raise exceptions.WikiError("direction must be 'newer' or 'older'")
+		params = {
+			'action':'query',
+			'list':'logevents',
+			'ledir':direction,
+			'letitle':self.title,
+			'leprop':'ids|type|user|userid|timestamp|comment|tags|details',
+			'lelimit':limit,	
+			'continue':'',
+		}
+		if logtype:
+			params['letype'] = logtype
+		if user is not None and isinstance(user, str):
+			params['leuser'] = user
+		elif user is not None:
+			params['leuser'] = user.name
+		if lecontinue:
+			params['continue'] = lecontinue['continue']
+			params['lecontinue'] = lecontinue['lecontinue']
+		req = api.APIRequest(self.site, params)
+		response = req.query(False)
+		logs = response['query']['logevents']
+		lec = None
+		if 'continue' in response:
+			lec = response['continue']
+		return (logs, lec)
 
 	def __getHistoryInternal(self, direction, content, limit, rvcontinue, user):
 		if self.exists is None:
