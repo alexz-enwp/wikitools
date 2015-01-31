@@ -65,7 +65,7 @@ class User:
 				self.exists = False
 				return
 		except:
-			pass
+			self.isIP = False
 		try:
 			s = socket.inet_pton(socket.AF_INET6, self.name.replace(' ', '_'))
 			if self.IPnorm(socket.inet_ntop(socket.AF_INET6, s)) == self.IPnorm(self.name):
