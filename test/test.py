@@ -282,6 +282,14 @@ class TestPage(unittest.TestCase):
 		log = api.querylog.pop()
 		self.assertNotIn('content', log['rvprop'])
 
+	def test_getHistory_no_revs(self):
+		p1 = page.Page(self.site, "Page")
+		api.logging = True
+		hist = p1.getHistory(content = False, user='NotAUser')
+		self.assertIs(len(api.querylog), 1)
+		self.assertIs(hist[0], None)
+		self.assertIs(len(hist), 1)
+
 	def test_getHistoryGen(self):
 		p1 = page.Page(self.site, "Page")
 		api.logging = True

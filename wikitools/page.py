@@ -626,6 +626,8 @@ class Page(object):
 		req = api.APIRequest(self.site, params)
 		response = req.query(False)
 		key = list(response['query']['pages'].keys())[0]
+		if 'revisions' not in response['query']['pages'][key]:
+			return ([None], None)
 		revs = response['query']['pages'][key]['revisions']
 		rvc = None
 		if 'continue' in response:
