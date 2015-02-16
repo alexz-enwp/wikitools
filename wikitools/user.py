@@ -244,7 +244,8 @@ class User:
 		page, talk, blocked
 		"""
 		if name not in {'page', 'talk', 'blocked'}:
-			raise AttributeError
+			msg = "{0} object has no attribute {1}".format(repr(type(self).__name__), repr(name))
+			raise AttributeError(msg)
 		if name == 'page':
 			return self.getUserPage()
 		elif name == 'talk':

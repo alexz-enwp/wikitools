@@ -71,13 +71,7 @@ class Page(object):
 		if self.title and '#' in self.title and section is None:
 			self.title, section = self.title.split('#', 1)
 		self.unprefixedtitle = '' # will be set later
-		self.urltitle = ''
-		self.wikitext = ''
-		self.templates = []
-		self.links = []
-		self.categories = []
 		self.exists = None # None == not checked
-		self.protection = {}
 		self.namespace = namespace
 		self.lastedittime = ''
 		# Things that need to be done before anything else
@@ -190,9 +184,6 @@ class Page(object):
 			self.setPageInfo()
 		else:
 			self.pageid = 0
-		self.wikitext = ''
-		self.templates = []
-		self.links = []
 		return self.namespace
 
 	def setSection(self, section=None, number=None):
@@ -211,7 +202,6 @@ class Page(object):
 				raise exceptions.WikiError("Section number must be an int")
 		else:
 			self.section = self.__getSection(section)
-		self.wikitext = ''
 		return self.section
 
 	def __getSection(self, section):
@@ -295,12 +285,9 @@ class Page(object):
 		"""Gets the Wikitext of the page
 
 		expandtemplates - expand the templates to wikitext instead of transclusions
-		force - load the text even if we already loaded it before
+		force - Deprecated, unused
 
 		"""
-
-		if self.wikitext and not force:
-			return self.wikitext
 		if self.exists is None:
 			self.setPageInfo()
 		if self.exists is False:
@@ -318,20 +305,18 @@ class Page(object):
 			params['rvsection'] = self.section
 		req = api.APIRequest(self.site, params)
 		response = req.query(False)
-		self.wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*']
+		wikitext = response['query']['pages'][str(self.pageid)]['revisions'][0]['*']
 		self.lastedittime = response['query']['pages'][str(self.pageid)]['revisions'][0]['timestamp']
-		return self.wikitext
+		return wikitext
 
 	def getLinks(self, force=False):
 		"""Gets a list of all the internal links *on* the page
 
-		force - load the list even if we already loaded it before
+		force - Deprecated, unused
 
 		"""
 		if 'continue' not in self.site.features:
 			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
-		if self.links and not force:
-			return self.links
 		if self.exists is None:
 			self.setPageInfo()
 		if self.exists is False:
@@ -343,15 +328,17 @@ class Page(object):
 			'pageids': self.pageid
 		}
 		req = api.APIRequest(self.site, params)
-		self.links = []
+		links = []
 		for data in req.queryGen():
-			self.links.extend(self.__extractToList(data, 'links'))
-		return self.links
+			links.extend(self.__extractToList(data, 'links'))
+		return links
 
 	def getProtection(self, force=False):
-		"""Returns the current protection status of the page"""
-		if self.protection and not force:
-			return self.protection
+		"""Returns the current protection status of the page
+
+		force - Deprecated, unused
+
+		"""
 		if self.exists is None:
 			self.setPageInfo()
 		params = {
@@ -374,23 +361,21 @@ class Page(object):
 				else:
 					expiry = datetime.datetime.strptime(pr['expiry'],'%Y-%m-%dT%H:%M:%SZ')
 				cascade = True if 'cascade' in pr else False
-				self.protection[pr['type']] = {
+				protection[pr['type']] = {
 					'expiry': expiry,
 					'level': pr['level'],
 					'cascading': cascade
 					}
-		return self.protection
+		return protection
 
 	def getTemplates(self, force=False):
 		"""Gets all list of all the templates on the page
 
-		force - load the list even if we already loaded it before
+		force - Deprecated, unused
 
 		"""
 		if 'continue' not in self.site.features:
 			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
-		if self.templates and not force:
-			return self.templates
 		if self.exists is None:
 			self.setPageInfo()
 		if self.exists is False:
@@ -402,21 +387,19 @@ class Page(object):
 			'pageids': self.pageid
 		}
 		req = api.APIRequest(self.site, params)
-		self.templates = []
+		templates = []
 		for data in req.queryGen():
-			self.templates.extend(self.__extractToList(data, 'templates'))
-		return self.templates
+			templates.extend(self.__extractToList(data, 'templates'))
+		return templates
 
 	def getCategories(self, force=False):
 		"""Gets all list of all the categories on the page
 
-		force - load the list even if we already loaded it before
+		force - Deprecated, unused
 
 		"""
 		if 'continue' not in self.site.features:
 			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
-		if self.categories and not force:
-			return self.categories
 		if self.exists is None:
 			self.setPageInfo()
 		if self.exists is False:
@@ -428,10 +411,10 @@ class Page(object):
 			'pageids': self.pageid
 		}
 		req = api.APIRequest(self.site, params)
-		self.categories = []
+		categories = []
 		for data in req.queryGen():
-			self.categories.extend(self.__extractToList(data, 'categories'))
-		return self.categories
+			categories.extend(self.__extractToList(data, 'categories'))
+		return categories
 
 	def getHistory(self, direction='older', content=True, limit='all', user=None):
 		"""Get the history of a page
@@ -704,9 +687,6 @@ class Page(object):
 		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
 		if 'edit' in result and result['edit']['result'] == 'Success':
-			self.wikitext = ''
-			self.links = []
-			self.templates = []
 			self.exists = True
 			self.pageid = result['edit']['pageid']
 		return result
@@ -813,8 +793,6 @@ class Page(object):
 			params['watchlist'] = watchlist
 		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()
-		if 'protect' in result:
-			self.protection = {}
 		return result
 
 	def delete(self, reason='', watch=False, unwatch=False, watchlist='preferences'):
@@ -849,13 +827,26 @@ class Page(object):
 		if 'delete' in result:
 			self.pageid = 0
 			self.exists = False
-			self.wikitext = ''
-			self.templates = ''
-			self.links = ''
-			self.protection = {}
 			self.section = None
 		return result
 
+	def __getattr__(self, name):
+		"""Computed attributes:
+		templates, links, categories, wikitext, protection
+		"""
+		if name not in {'templates', 'links', 'categories', 'wikitext', 'protection'}:
+			msg = "{0} object has no attribute {1}".format(repr(type(self).__name__), repr(name))
+			raise AttributeError(msg)
+		if name == 'templates':
+			return self.getTemplates()
+		elif name == 'links':
+			return self.getLinks()
+		elif name == 'categories':
+			return self.getCategories()
+		elif name == 'wikitext':
+			return self.getWikiText()
+		elif name == 'protection':
+			return self.getProtection()
 
 	def __hash__(self):
 		return hash(self.title) ^ hash(self.site.apibase)

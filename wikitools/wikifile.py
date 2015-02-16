@@ -132,9 +132,10 @@ class File(page.Page):
 			rvc = response['continue']
 		return (revs, rvc)
 
-	def getUsage(self, titleonly=False, namespaces=None):
+	def getUsage(self, titleonly=False, force=False, namespaces=None):
 		"""Gets a list of pages that use the file
 
+		force - Deprecated, unused
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
 		namespaces - List of namespaces to restrict to
@@ -149,9 +150,10 @@ class File(page.Page):
 				usage.append(title)
 		return usage
 
-	def getUsageGen(self, titleonly=False, namespaces=None):
+	def getUsageGen(self, titleonly=False, force=False, namespaces=None):
 		"""Generator function for pages that use the file
 
+		force - Deprecated, unused
 		titleonly - set to True to return strings,
 		else it will return Page objects
 		namespaces - List of namespaces to restrict to
@@ -286,4 +288,11 @@ class File(page.Page):
 						warnings.warn('Warning: ' + warning + ' ' + res['upload']['warnings'][warning])
 		return res
 
+	def __getattr__(self, name):
+		"""Computed attributes:
+		usage
+		"""
+		if name != 'usage':
+			return super().__getattr__(name)
+		return self.getUsage()
 			

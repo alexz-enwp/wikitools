@@ -56,11 +56,12 @@ class Category(page.Page):
 		self.info = res['query']['pages'][key]['categoryinfo']
 		return self.info
 
-	def getAllMembers(self, titleonly=False, namespaces=None):
+	def getAllMembers(self, titleonly=False, reload=False, namespaces=None):
 		"""Gets a list of pages in the category
 
 		titleonly - set to True to only create a list of strings,
 		else it will be a list of Page objects
+		reload - Deprecated, unused
 		namespaces - List of namespaces to restrict to
 
 		Any changes to getAllMembers functions should also be made to getUsage in category
@@ -73,11 +74,12 @@ class Category(page.Page):
 				members.append(member)
 		return members
 
-	def getAllMembersGen(self, titleonly=False, namespaces=None):
+	def getAllMembersGen(self, titleonly=False, reload=False, namespaces=None):
 		"""Generator function for pages in the category
 
 		titleonly - set to True to yield strings,
 		else it will yield Page objects
+		reload - Deprecated, unused
 		namespaces - List of namespaces to restrict to
 
 		"""
@@ -101,4 +103,12 @@ class Category(page.Page):
 		for data in req.queryGen():
 			for item in data['query']['categorymembers']:
 				yield makePage(item, self.site, False)
+
+	def __getattr__(self, name):
+		"""Computed attributes:
+		members
+		"""
+		if name != 'members':
+			return super().__getattr__(name)
+		return self.getAllMembers()
 
