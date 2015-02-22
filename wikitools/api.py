@@ -55,11 +55,8 @@ class APIRequest:
 		for param in self.data:
 			if isinstance(self.data[param], io.IOBase):
 				self.file[param] = self.data[param]
-		if not self.file:
-			self.file = None
-		else:
-			for param in self.file:
-				del self.data[param]
+		for param in self.file:
+			del self.data[param]
 		self.data['format'] = "json"
 		self.iswrite = write
 		if site.assertval is not None and self.iswrite:
@@ -76,11 +73,26 @@ class APIRequest:
 		pass
 
 	def changeParam(self, param, value):
-		"""Change or add a parameter after making the request object
+		"""
+		Change or add a parameter after making the request object
+		If value is None, deletes the parameter
 		"""
 		if param == 'format':
 			raise exceptions.APIError('You can not change the result format')
-		self.data[param] = value
+		if value is None:
+			if param in self.data:
+				del self.data[param]
+			if param in self.file:
+				del self.file[param]
+			return
+		if isinstance(value, io.IOBase):
+			self.file[param] = value
+			if param in self.data:
+				del self.data[param]
+		else:
+			self.data[param] = value
+			if param in self.file:
+				del self.file[param]
 
 	def query(self, querycontinue=True):
 		"""Actually do the query here and return usable stuff
