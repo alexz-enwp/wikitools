@@ -25,6 +25,7 @@ import base64
 import warnings
 import copy
 import json
+import io
 from collections import deque
 from requests.auth import HTTPDigestAuth
 
@@ -37,12 +38,12 @@ warnings.filterwarnings("always", category=UserWarning, module='wikitools.api')
 
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, site, data, write=False, file=None):
+	def __init__(self, site, data, write=False, multipart=False):
 		"""
 		site - A Wiki object
 		data - API parameters in the form of a dict
 		write - set to True if doing a write query, so it won't try again on error
-		file - A file object for uploads
+		multipart - Deprecated, unused
 
 		maxlag is set by default to 5 but can be changed via the setMaxlag method
 		of the Wiki class
@@ -50,9 +51,15 @@ class APIRequest:
 		"""
 		self.sleep = 5
 		self.data = data.copy()
-		self.file = None
-		if file is not None:
-			self.file = {'file':file}
+		self.file = {}
+		for param in self.data:
+			if isinstance(self.data[param], io.IOBase):
+				self.file[param] = self.data[param]
+		if not self.file:
+			self.file = None
+		else:
+			for param in self.file:
+				del self.data[param]
 		self.data['format'] = "json"
 		self.iswrite = write
 		if site.assertval is not None and self.iswrite:
@@ -63,6 +70,10 @@ class APIRequest:
 		self.headers["User-agent"] = site.useragent
 		self.site = site
 		self.response = None
+
+	def setMultipart(self, multipart=True):
+		"""Unused, for backward-compatibility only"""
+		pass
 
 	def changeParam(self, param, value):
 		"""Change or add a parameter after making the request object

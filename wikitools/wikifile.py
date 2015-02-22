@@ -260,6 +260,8 @@ class File(page.Page):
 			'filename':self.unprefixedtitle,
 			'token':self.site.getToken('csrf')
 		}
+		if fileobj:
+			params['file'] = fileobj
 		if url:
 			params['url'] = url
 		if ignorewarnings:
@@ -270,7 +272,7 @@ class File(page.Page):
 			params['watchlist'] = watchlist
 		if text:
 			params['text'] = text
-		req = api.APIRequest(self.site, params, write=True, file=fileobj)
+		req = api.APIRequest(self.site, params, write=True)
 		res = req.query()
 		if 'upload' in res:
 			if res['upload']['result'] == 'Success':
