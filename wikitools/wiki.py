@@ -321,8 +321,12 @@ class Wiki:
 			}
 			req = api.APIRequest(self, params)
 			response = req.query(False)
-			pid = response['data']['query']['pages'].keys()[0]
-			token = response['query']['pages'][pid]['edittoken']
+			if response.get('data', False):
+				pid = response['data']['query']['pages'].keys()[0]
+				token = response['query']['pages'][pid]['edittoken']
+			else:
+				pages = response['query']['pages']
+				token = pages.itervalues().next()['edittoken']
 		return token
 
 
