@@ -77,7 +77,7 @@ class Wiki:
 		self.features = set()
 		try:
 			self.setSiteinfo()
-		except api.APIError: # probably read-restricted
+		except exceptions.APIError: # probably read-restricted
 			pass
 
 	def setSiteinfo(self):
