@@ -60,7 +60,7 @@ def namespaceDetect(title, site):
 class Page(object):
 	""" A page on the wiki"""
 
-	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=False, pageid=False, namespace=False):
+	def __init__(self, site, title=False, check=True, followRedir=True, section=False, sectionnumber=None, pageid=False, namespace=False):
 		"""	
 		wiki - A wiki object
 		title - The page title, as a string or unicode object
@@ -117,7 +117,7 @@ class Page(object):
 				else:
 					self.unprefixedtitle = self.title
 					
-		if section or sectionnumber is not False:
+		if section or sectionnumber is not None:
 			self.setSection(section, sectionnumber)
 		else:
 			self.section = False
