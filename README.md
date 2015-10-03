@@ -18,6 +18,8 @@ Installation
   * An exe installer for Windows is also available (should be run as an 
     administrator to avoid errors)
   * An RPM for Linux is also available.
+  * Arch Linux users may use AUR package for their convenience:
+    <https://aur.archlinux.org/packages/python2-wikitools/>
 
 Available modules
 -----------------
