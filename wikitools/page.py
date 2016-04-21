@@ -373,6 +373,35 @@ class Page(object):
 			self.links.extend(self.__extractToList(data, 'links'))
 		return self.links
 		
+	def getLinksHere(self, namespace=0, lhshow='redirect', force=False):
+		"""Gets a list of all the internal links elsewhere on Wikipedia pointing *to* the page
+		
+		force - load the list even if we already loaded it before
+		
+		"""
+		if self.links and not force:
+			return self.links
+		if self.pageid == 0 and not self.title:
+			self.setPageInfo()
+		if not self.exists:
+			raise NoPage
+		params = {
+			'action': 'query',
+			'prop': 'linkshere',
+			'lhlimit': self.site.limit,
+			'lhnamespace':namespace,
+			'lhshow':lhshow,
+		}
+		if self.pageid > 0:
+			params['pageids'] = self.pageid
+		else:
+			params['titles'] = self.title	
+		req = api.APIRequest(self.site, params)
+		self.links = []
+		for data in req.queryGen():
+			self.links.extend(self.__extractToList(data, 'linkshere'))
+		return self.links
+		
 	def getProtection(self, force=False):
 		"""Returns the current protection status of the page"""
 		if self.protection and not force:
