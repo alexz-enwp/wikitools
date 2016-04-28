@@ -20,6 +20,8 @@ import page
 import api
 import socket
 import re
+from datetime import datetime
+import dateutil.parser
 
 class NoUser(wiki.WikiError):
 	"""Non-existent user"""
@@ -90,6 +92,13 @@ class User:
 		# Remove leading zereos from each bloc as needed
 		ip = re.sub('/(^|:)0+(([0-9A-Fa-f]{1,4}))/', '\1\2', ip)
 		return ip;
+		
+	def timestampCheck(self, ts):
+		"""Checks to make sure timestamps are formatted as ISO 8601 strings: yyyy-mm-ddTHH:MM:SSZ"""
+		if type(ts) == str:
+			return dateutil.parser.parse(ts).isoformat()
+		else:
+			return ts.isoformat()
 
 	def setUserInfo(self):
 		"""Sets basic user info"""		
@@ -201,7 +210,7 @@ class User:
 			self.blocked = False
 		return res
 	
-	def getContributions(self, direction='older', limit='all'):
+	def getContributions(self, direction='older', limit='all', start=None, end=None, ucnamespace='all'):
 		"""Get the history of a user
 		
 		direction - 2 options: 'older' (default) - start with the current revision and get older ones
@@ -209,57 +218,32 @@ class User:
 		content - If False, get only metadata (timestamp, edit summary, user, etc)
 			If True (default), also get the revision text
 		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned 
-		
-		The data is returned in essentially the same format as the API, a list of dicts that look like:
-		{u'*': u"Page content", # Only returned when content=True
-		 u'comment': u'Edit summary',
-		 u'contentformat': u'text/x-wiki', # Only returned when content=True
-		 u'contentmodel': u'wikitext', # Only returned when content=True
-		 u'parentid': 139946, # id of previous revision
-		 u'revid': 139871, # revision id
-		 u'sha1': u'0a5cec3ca3e084e767f00c9a5645c17ac27b2757', # sha1 hash of page content
-		 u'size': 129, # size of page in bytes
-		 u'timestamp': u'2002-08-05T14:11:27Z', # timestamp of edit
-		 u'user': u'Username',
-		 u'userid': 48 # user id
-		}		
-		
-		Note that unlike other get* functions, the data is not cached
+		start - UTC 8601 string or datetime object
+		end - UTC 8601 string or datetime object
+		ucnamespace - either 'all' or string of pipe-separated numeric values (e.g., "0|1")
 		"""
 		max = limit
 		if limit == 'all':
 			max = float("inf")
 		if limit == 'all' or limit > self.site.limit:
 			limit = self.site.limit
+		if ucstart is not None:
+			ucstart = self.timestampCheck(start)
+		if ucend is not None:
+			ucend = self.timestampCheck(end)
+		
 		history = []
 		ucc = None
 		while True:
-			revs, ucc = self.__getContributionsInternal(direction, limit, ucc)
+			revs, ucc = self.__getContributionsInternal(ucdir, limit, ucstart, ucend, ucnamespace, ucc)
 			history = history+revs
 			if len(history) == max or ucc is None:
 				break
 			if max - len(history) < self.site.limit:
 				limit = max - len(history)
 		return history
-		
-	def getContributionsGen(self, direction='older', limit='all'):
-		"""Generator function for user contributions
-		
-		The interface is the same as getHistory, but it will only retrieve 1 revision at a time.
-		This will be slower and have much higher network overhead, but does not require storing
-		the entire page history in memory	
-		"""
-		max = limit
-		count = 0
-		ucc = None
-		while True:
-			revs, ucc = self.__getContributionsInternal(direction, 1, ucc)
-			yield revs[0]
-			count += 1
-			if count == max or ucc is None:
-				break
 	
-	def __getContributionsInternal(self, direction, limit, uccontinue):
+	def __getContributionsInternal(self, direction, limit, ucstart, ucend, ucnamespace, uccontinue):
 	
 		if self.id == 0 and not self.name:
 			self.setUserInfo()
@@ -270,7 +254,7 @@ class User:
 		params = {
 			'action':'query',
 			'list':'usercontribs',
-			'rvdir':direction,
+			'ucdir':direction,
 			'ucprop':'ids|title|timestamp|comment|size|sizediff|tags',
 			'continue':'',
 			'rvlimit':limit
@@ -279,29 +263,26 @@ class User:
 			params['ucuser'] = self.name
 		else:
 			raise NoUser
-
+		
+		if ucstart is not None:
+			params['ucstart'] = ucstart
+		if ucend is not None:
+			params['ucend'] = ucend
+			
+		if ucnamespace is not None:
+			params['ucnamespace'] = ucnamespace
+		
 		if uccontinue:
 			params['continue'] = uccontinue['continue']
 			params['uccontinue'] = uccontinue['uccontinue']
+		
 		req = api.APIRequest(self.site, params)
 		response = req.query(False)
-		#id = response['query']['pages'].keys()[0]
-		#if not self.pageid:
-		#	self.pageid = int(id)
-		revs = response['query']['usercontribs']#[id]['revisions']
+		revs = response['query']['usercontribs']
 		ucc = None
 		if 'continue' in response:
 			ucc = response['continue']
 		return (revs, ucc)
-	
-	#def __extractToList(self, json, stuff):
-	#	list = []
-	#	if self.pageid == 0:
-	#		self.pageid = json['query']['usercontribs'].keys()[0]
-	#	if stuff in json['query']['usercontribs'][str(self.pageid)]:
-	#		for item in json['query']['usercontribs'][str(self.pageid)][stuff]:
-	#			list.append(item['title'])
-	#	return list
 	
 	def __hash__(self):
 		return int(self.name) ^ hash(self.site.apibase)
