@@ -373,9 +373,11 @@ class Page(object):
 			self.links.extend(self.__extractToList(data, 'links'))
 		return self.links
 		
-	def getLinksHere(self, namespace=0, lhshow='redirect', force=False):
+	def getLinksHere(self, namespace='all', lhshow='all', force=False):
 		"""Gets a list of all the internal links elsewhere on Wikipedia pointing *to* the page
 		
+		namespace - pipe-separated list of namespaces to collect, default is "all"
+		lhshow - include redirects with 'redirect', exclude with '!redirect', default is "all"
 		force - load the list even if we already loaded it before
 		
 		"""
@@ -389,9 +391,11 @@ class Page(object):
 			'action': 'query',
 			'prop': 'linkshere',
 			'lhlimit': self.site.limit,
-			'lhnamespace':namespace,
-			'lhshow':lhshow,
 		}
+		if namespace != 'all':
+			params['lhnamespace'] = namespace
+		if namespace != 'all':
+			params['lhshow'] = lhshow
 		if self.pageid > 0:
 			params['pageids'] = self.pageid
 		else:
