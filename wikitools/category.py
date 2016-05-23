@@ -58,15 +58,16 @@ class Category(page.Page):
 		else:
 			ret = []
 			members = []
-			for member in self.__getMembersInternal(namespaces):
-				members.append(member)
-				if titleonly:
-					ret.append(member.title)
-			if titleonly:
-				return ret
-			if namespaces is False:
-				self.members = members
-			return members
+			return self.__getMembersInternal(namespaces)
+			#for member in self.__getMembersInternal(namespaces):
+			#	members.append(member)
+			#	if titleonly:
+			#		ret.append(member.title)
+			#if titleonly:
+			#	return ret
+			#if namespaces is False:
+			#	self.members = members
+			#return members
 	
 	def getAllMembersGen(self, titleonly=False, reload=False, namespaces=False):
 		"""Generator function for pages in the category
@@ -106,10 +107,14 @@ class Category(page.Page):
 			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
 		while True:
 			req = api.APIRequest(self.site, params)
-			data = req.query(False)
-			for item in data['query']['categorymembers']:
-				yield page.Page(self.site, item['title'], check=False, followRedir=False)
-			try:
-				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
-			except:
-				break 
+			self.categories = []
+			for data in req.queryGen():
+				self.categories.extend(self.__extractCategoryMembersToList(data))
+			return self.categories 
+		
+	def __extractCategoryMembersToList(self, json):
+		list = []
+		if 'categorymembers' in json['query'].keys():
+			for item in json['query']['categorymembers']:
+				list.append(item['title'])
+		return list
