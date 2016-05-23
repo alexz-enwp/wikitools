@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
@@ -58,16 +58,15 @@ class Category(page.Page):
 		else:
 			ret = []
 			members = []
-			return self.__getMembersInternal(namespaces)
-			#for member in self.__getMembersInternal(namespaces):
-			#	members.append(member)
-			#	if titleonly:
-			#		ret.append(member.title)
-			#if titleonly:
-			#	return ret
-			#if namespaces is False:
-			#	self.members = members
-			#return members
+			for member in self.__getMembersInternal(namespaces):
+				members.append(member)
+				if titleonly:
+					ret.append(member['title'])
+			if titleonly:
+				return ret
+			if namespaces is False:
+				self.members = members
+			return members
 	
 	def getAllMembersGen(self, titleonly=False, reload=False, namespaces=False):
 		"""Generator function for pages in the category
@@ -92,7 +91,7 @@ class Category(page.Page):
 				if namespaces is False:
 					self.members.append(member)
 				if titleonly:
-					yield member.title
+					yield member['title']
 				else:
 					yield member
 				
@@ -109,12 +108,5 @@ class Category(page.Page):
 			req = api.APIRequest(self.site, params)
 			self.categories = []
 			for data in req.queryGen():
-				self.categories.extend(self.__extractCategoryMembersToList(data))
-			return self.categories 
-		
-	def __extractCategoryMembersToList(self, json):
-		list = []
-		if 'categorymembers' in json['query'].keys():
-			for item in json['query']['categorymembers']:
-				list.append(item['title'])
-		return list
+				self.categories.extend(data['query']['categorymembers'])
+			return self.categories
