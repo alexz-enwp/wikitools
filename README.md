@@ -90,6 +90,14 @@ The result will look something like:
 }
 ```
 
+If the API module you need requires a token, you first do something like:
+```python
+params = { 'action':'query', 'meta':'tokens' }
+token = api.APIRequest(site, params).query()['query']['tokens']['csrftoken']
+# define the params for the query
+params = { 'action':'thank', 'rev':diff, 'token':token }
+```
+
 For most normal usage, you may not have to do API queries yourself and can just
 use the various classes. For example, to add a template to the top of all the 
 pages in namespace 0 in a category:
