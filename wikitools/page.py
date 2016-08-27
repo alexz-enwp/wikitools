@@ -21,6 +21,8 @@ import api
 import urllib
 import re
 from hashlib import md5
+import unicodedata
+
 
 class BadTitle(wiki.WikiError):
 	"""Invalid title"""
