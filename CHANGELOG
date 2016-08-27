@@ -12,6 +12,7 @@ Changes since 1.2:
 * Prints upload errors
 * Supports more auth methods
 * Uses new token retrieval method in MediaWiki 1.24+
+* Fix issue with unicode normalization causing some md5 checks to fail when editing
 
 Changes since 1.1.1:
 * Added getHistory and getHistoryGen functions to Page to get revision history/content

@@ -617,6 +617,9 @@ class Page(object):
 			'token':token,
 		}
 		if not skipmd5:
+			if not isinstance(hashtext, unicode):
+				hashtext = hashtext.decode('utf8')
+			hashtext = unicodedata.normalize('NFC', hashtext).encode('utf8')
 			params['md5'] = md5(hashtext).hexdigest()
 		params.update(kwargs)
 		req = api.APIRequest(self.site, params, write=True)
