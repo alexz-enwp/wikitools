@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com),  bjweeks
+# Copyright 2008-2016 Alex Zaddach (mrzmanwiki@gmail.com), bjweeks
 
 # This file is part of wikitools.
 # wikitools is free software: you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 
 from . import exceptions
 from . import api
+from . import internalfunctions
 import datetime
 import urllib.parse
 import re
 from hashlib import md5
+import unicodedata
 
 def namespaceDetect(title, site):
 	""" Detect the namespace of a given title
@@ -441,28 +443,22 @@ class Page(object):
 		}
 
 		Note that unlike other get* functions, the data is not cached
-		Any changes to getHistory functions should also be made to getLogs and getFileHistory in wikifile
 		"""
-		maximum = limit
-		if limit == 'all':
-			maximum = float("inf")
-		if limit == 'all' or limit > self.site.limit:
-			limit = self.site.limit
-		if content and limit > self.site.limit/10:
-			limit = int(self.site.limit/10)
-		if 'continue' not in self.site.features:
-			w = "Warning: only %d revisions will be returned" % (limit)
-			warnings.warn(w)
-		history = []
-		rvc = None
-		while True:
-			revs, rvc = self.__getHistoryInternal(direction, content, limit, rvc, user)
-			history = history+revs
-			if len(history) == maximum or rvc is None:
-				break
-			if maximum - len(history) < self.site.limit:
-				limit = maximum - len(history)
-		return history
+		if self.exists is None:
+			self.setPageInfo()
+		if self.exists is False:
+			raise exceptions.NoPage
+		rvuser = None
+		if user is not None and isinstance(user, str):
+			rvuser = user
+		elif user is not None:
+			rvuser = user.name
+		rvprop='ids|flags|timestamp|user|userid|size|sha1|comment'
+		if content:
+			rvprop += '|content'
+		return internalfunctions.getList(self, 'prop', 'revisions', 'rv', direction, limit, lowlimit=content, 
+		pageids=self.pageid, rvprop=rvprop, rvuser=rvuser)
+
 
 	def getHistoryGen(self, direction='older', content=True, limit='all', user=None):
 		"""Generator function for page history
@@ -471,17 +467,20 @@ class Page(object):
 		This will be slower and have much higher network overhead, but does not require storing
 		the entire page history in memory
 		"""
-		if 'continue' not in self.site.features:
-			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
-		maximum = limit
-		count = 0
-		rvc = None
-		while True:
-			revs, rvc = self.__getHistoryInternal(direction, content, 1, rvc, user)
-			yield revs[0]
-			count += 1
-			if count == maximum or rvc is None:
-				break
+		if self.exists is None:
+			self.setPageInfo()
+		if self.exists is False:
+			raise exceptions.NoPage
+		rvuser = None
+		if user is not None and isinstance(user, str):
+			rvuser = user
+		elif user is not None:
+			rvuser = user.name
+		rvprop='ids|flags|timestamp|user|userid|size|sha1|comment'
+		if content:
+			rvprop += '|content'
+		return internalfunctions.getListGen(self, 'prop', 'revisions', 'rv', direction, limit, 
+		pageids=self.pageid, rvprop=rvprop, rvuser=rvuser)
 
 	def getLogs(self, logtype=None, direction='older', limit='all', user=None):
 		"""Get the logs for a page
@@ -512,110 +511,32 @@ class Page(object):
                 },
 
 		Note that unlike other get* functions, the data is not cached
-		Any changes to getLogs functions should also be made to getHistory and getFileHistory in wikifile
 		"""
-		maximum = limit
-		if limit == 'all':
-			maximum = float("inf")
-		if limit == 'all' or limit > self.site.limit:
-			limit = self.site.limit
-		if 'continue' not in self.site.features:
-			w = "Warning: only %d log entries will be returned" % (limit)
-			warnings.warn(w)
-		logentries = []
-		lec = None
-		while True:
-			logs, lec = self.__getLogsInternal(direction, logtype, limit, lec, user)
-			logentries = logentries+logs
-			if len(logentries) == maximum or lec is None:
-				break
-			if maximum - len(logentries) < self.site.limit:
-				limit = maximum - len(logentries)
-		return logentries
+		if self.title is None:
+			self.setPageInfo()
+		leuser = None
+		if user is not None and isinstance(user, str):
+			leuser = user
+		elif user is not None:
+			leuser = user.name
+		return internalfunctions.getList(self, 'list', 'logevents', 'le', direction, limit, letitle=self.title,
+		leprop='ids|type|user|userid|timestamp|comment|tags|details', leuser=leuser, letype=logtype)
+
 
 	def getLogsGen(self, logtype=None, direction='older', limit='all', user=None):
 		"""Generator function for page logs
 
 		The interface is the same as getLogs, but it will only retrieve 1 entry at a time.
 		"""
-		if 'continue' not in self.site.features:
-			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
-		maximum = limit
-		count = 0
-		lec = None
-		while True:
-			logs, lec = self.__getLogsInternal(direction, logtype, 1, lec, user)
-			yield logs[0]
-			count += 1
-			if count == maximum or lec is None:
-				break
-
-	def __getLogsInternal(self, direction, logtype, limit, lecontinue, user):
 		if self.title is None:
 			self.setPageInfo()
-		if direction != 'newer' and direction != 'older':
-			raise exceptions.WikiError("direction must be 'newer' or 'older'")
-		params = {
-			'action':'query',
-			'list':'logevents',
-			'ledir':direction,
-			'letitle':self.title,
-			'leprop':'ids|type|user|userid|timestamp|comment|tags|details',
-			'lelimit':limit,	
-			'continue':'',
-		}
-		if logtype:
-			params['letype'] = logtype
+		leuser = None
 		if user is not None and isinstance(user, str):
-			params['leuser'] = user
+			leuser = user
 		elif user is not None:
-			params['leuser'] = user.name
-		if lecontinue:
-			params['continue'] = lecontinue['continue']
-			params['lecontinue'] = lecontinue['lecontinue']
-		req = api.APIRequest(self.site, params)
-		response = req.query(False)
-		logs = response['query']['logevents']
-		lec = None
-		if 'continue' in response:
-			lec = response['continue']
-		return (logs, lec)
-
-	def __getHistoryInternal(self, direction, content, limit, rvcontinue, user):
-		if self.exists is None:
-			self.setPageInfo()
-		if self.exists is False:
-			raise exceptions.NoPage
-		if direction != 'newer' and direction != 'older':
-			raise exceptions.WikiError("direction must be 'newer' or 'older'")
-		params = {
-			'action':'query',
-			'prop':'revisions',
-			'rvdir':direction,
-			'rvprop':'ids|flags|timestamp|user|userid|size|sha1|comment',
-			'continue':'',
-			'rvlimit':limit,
-			'pageids':self.pageid
-		}
-		if user is not None and isinstance(user, str):
-			params['rvuser'] = user
-		elif user is not None:
-			params['rvuser'] = user.name
-		if content:
-			params['rvprop']+='|content'
-		if rvcontinue:
-			params['continue'] = rvcontinue['continue']
-			params['rvcontinue'] = rvcontinue['rvcontinue']
-		req = api.APIRequest(self.site, params)
-		response = req.query(False)
-		key = list(response['query']['pages'].keys())[0]
-		if 'revisions' not in response['query']['pages'][key]:
-			return ([None], None)
-		revs = response['query']['pages'][key]['revisions']
-		rvc = None
-		if 'continue' in response:
-			rvc = response['continue']
-		return (revs, rvc)
+			leuser = user.name
+		return internalfunctions.getListGen(self, 'list', 'logevents', 'le', direction, limit, letitle=self.title,
+		leprop='ids|type|user|userid|timestamp|comment|tags|details', leuser=leuser, letype=logtype)
 
 	def __extractToList(self, json, stuff):
 		datalist = []
@@ -682,7 +603,8 @@ class Page(object):
 			'token':token,
 		}
 		if not skipmd5:
-			params['md5'] = md5(hashtext.encode('utf-8')).hexdigest()
+			hashtext = unicodedata.normalize('NFC', hashtext).encode('utf-8')
+			params['md5'] = md5(hashtext).hexdigest()
 		params.update(kwargs)
 		req = api.APIRequest(self.site, params, write=True)
 		result = req.query()

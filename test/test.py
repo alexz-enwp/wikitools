@@ -136,7 +136,7 @@ class TestWiki(unittest.TestCase):
 		
 	def test_equality(self):
 		newsite = wiki.Wiki('http://localhost/w/api.php')
-		othersite = wiki.Wiki('http://en.wikipedia.org/w/api.php')
+		othersite = wiki.Wiki('https://en.wikipedia.org/w/api.php')
 		self.assertEqual(newsite, self.site)
 		self.assertNotEqual(othersite, self.site)
 
@@ -302,9 +302,10 @@ class TestPage(unittest.TestCase):
 	def test_getLogs(self):
 		p1 = page.Page(self.site, "File:Test1.jpg")
 		api.logging = True
-		hist = p1.getLogs(logtype = 'upload', limit=10)
+		log = p1.getLogs(logtype = 'upload', limit=10)
 		self.assertIs(len(api.querylog), 1)
 		log = api.querylog.pop()
+		self.assertEqual(log['letitle'], "File:Test1.jpg")
 		self.assertEqual(log['letype'], 'upload')
 		self.assertNotIn('leuser', log)
 
@@ -566,6 +567,21 @@ class TestUser(unittest.TestCase):
 		res = u1.unblock()
 		self.assertIn('unblock', res)
 		self.assertEqual(len(api.querylog), 2)
+
+	def test_getContributions(self):
+		u1 = user.User(self.site, "GoodUsername")
+		api.logging = True
+		contribs = u1.getContributions(limit=10)
+		self.assertIs(len(api.querylog), 1)
+		c1 = api.querylog.pop()
+		self.assertEqual(c1['ucdir'], 'older')
+
+	def test_getContributionsGen(self):
+		u1 = user.User(self.site, "GoodUsername")
+		api.logging = True
+		for log in u1.getContributionsGen(limit=5):
+			pass
+		self.assertGreater(len(api.querylog), 1)
 
 	def test_hash(self):
 		u1 = user.User(self.site, 'GoodUsername', check=True)

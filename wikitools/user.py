@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com), bjweeks
+# Copyright 2008-2016 Alex Zaddach (mrzmanwiki@gmail.com), bjweeks
 
 # This file is part of wikitools.
 # wikitools is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
 
 from . import page
 from . import api
+from . import internalfunctions
 try:
 	import ipaddress
 except ImportError:
@@ -155,6 +156,40 @@ class User:
 		it will also return log entries (delete, protect) for the user's userpage
 		"""
 		return self.getUserPage(check=False).getLogsGen(logtype=logtype, direction=direction, limit=limit, user=user)
+
+	def getContributions(self, direction='older', limit='all'):
+		"""Get a list of the user's contributions
+
+		direction - 2 options: 'older' (default) - start with most recent edit and get older ones
+			'newer' - start with the oldest edit and get newer ones
+		limit - Only retrieve a certain number of entries. If 'all' (default), all revisions are returned
+
+		The data is returned in essentially the same format as the API, a list of dicts that look like:
+			{'comment': 'test_edit',
+			 'minor': '',
+			 'ns': 0,
+			 'pageid': 5,
+			 'parentid': 40,
+			 'revid': 46,
+			 'size': 96,
+			 'sizediff': 0,
+			 'tags': [],
+			 'timestamp': '2016-08-13T23:45:58Z',
+			 'title': 'Anotherpage',
+			 'user': 'GoodUsername',
+			 'userid': 2},
+		"""
+		return internalfunctions.getList(self, 'list', 'usercontribs', 'uc', direction, limit, ucuser=self.name,
+		ucprop='ids|title|timestamp|comment|size|sizediff|flags|tags')
+
+
+	def getContributionsGen(self, direction='older', limit='all'):
+		"""Generator function for user contribs
+
+		The interface is the same as getContributions, but it will only retrieve 1 entry at a time.
+		"""
+		return internalfunctions.getListGen(self, 'list', 'usercontribs', 'uc', direction, limit, ucuser=self.name,
+		ucprop='ids|title|timestamp|comment|size|sizediff|flags|tags')
 
 	def isBlocked(self, force=False):
 		"""Determine if a user is blocked"""

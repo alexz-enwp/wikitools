@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
+# Copyright 2008-2016 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
 # wikitools is free software: you can redistribute it and/or modify

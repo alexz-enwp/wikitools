@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2013 Alex Zaddach (mrzmanwiki@gmail.com)
+# Copyright 2009-2016 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
 # wikitools is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 from . import api
 from . import exceptions
 from . import page
+from . import internalfunctions
 from wikitools.pagelist import makePage
 import io
 import os.path
@@ -65,27 +66,17 @@ class File(page.Page):
 		  'user': 'Username',
 		  'userid': '141409',
 		  'width': 555}
-
-		Any changes to getFileHistory functions should also be made to getHistory in page
 		"""
-		maximum = limit
-		if limit == 'all':
-			maximum = float("inf")
-		if limit == 'all' or limit > self.site.limit:
-			limit = self.site.limit
-		if 'continue' not in self.site.features:
-			w = "Warning: only %d versions will be returned" % (limit)
-			warnings.warn(w)
-		history = []
-		rvc = None
-		while True:
-			revs, rvc = self.__getFileHistoryInternal(exif, limit, rvc)
-			history = history+revs
-			if len(history) == maximum or rvc is None:
-				break
-			if maximum - len(history) < self.site.limit:
-				limit = maximum - len(history)
-		return history
+		if not self.title:
+			self.setPageInfo()
+		iiprop = 'timestamp|user|userid|comment|url|size|dimensions|sha1|mime|mediatype|bitdepth'
+		iimetadataversion = None
+		if exif:
+			iiprop+='|metadata'
+			iimetadataversion = 'latest'
+		return internalfunctions.getList(self, 'prop', 'imageinfo', 'ii', limit=limit, 
+		titles=self.title, iiprop=iiprop, iimetadataversion=iimetadataversion)
+
 
 	def getFileHistoryGen(self, exif=True, limit='all'):
 		"""Generator function for file history
@@ -94,43 +85,15 @@ class File(page.Page):
 		This will be slower and have much higher network overhead, but does not require storing
 		the entire history in memory
 		"""
-		if 'continue' not in self.site.features:
-			raise exceptions.UnsupportedError("MediaWiki 1.21+ is required for this function")
-		maximum = limit
-		count = 0
-		rvc = None
-		while True:
-			revs, rvc = self.__getFileHistoryInternal(exif, 1, rvc)
-			yield revs[0]
-			count += 1
-			if count == maximum or rvc is None:
-				break
-
-	def __getFileHistoryInternal(self, exif, limit, iicontinue):
 		if not self.title:
 			self.setPageInfo()
-		params = {
-			'action':'query',
-			'prop':'imageinfo',
-			'iiprop':'timestamp|user|userid|comment|url|size|dimensions|sha1|mime|mediatype|bitdepth',
-			'continue':'',
-			'iilimit':limit,
-			'titles':self.title
-		}
+		iiprop = 'timestamp|user|userid|comment|url|size|dimensions|sha1|mime|mediatype|bitdepth'
+		iimetadataversion = None
 		if exif:
-			params['iiprop']+='|metadata'
-			params['iimetadataversion'] = 'latest'
-		if iicontinue:
-			params['continue'] = iicontinue['continue']
-			params['iistart'] = iicontinue['iistart']
-		req = api.APIRequest(self.site, params)
-		response = req.query(False)
-		key = list(response['query']['pages'].keys())[0]
-		revs = response['query']['pages'][key]['imageinfo']
-		rvc = None
-		if 'continue' in response:
-			rvc = response['continue']
-		return (revs, rvc)
+			iiprop+='|metadata'
+			iimetadataversion = 'latest'
+		return internalfunctions.getListGen(self, 'prop', 'imageinfo', 'ii', limit=limit, 
+		titles=self.title, iiprop=iiprop, iimetadataversion=iimetadataversion)
 
 	def getUsage(self, titleonly=False, force=False, namespaces=None):
 		"""Gets a list of pages that use the file
