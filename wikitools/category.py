@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
@@ -61,7 +61,7 @@ class Category(page.Page):
 			for member in self.__getMembersInternal(namespaces):
 				members.append(member)
 				if titleonly:
-					ret.append(member.title)
+					ret.append(member['title'])
 			if titleonly:
 				return ret
 			if namespaces is False:
@@ -91,7 +91,7 @@ class Category(page.Page):
 				if namespaces is False:
 					self.members.append(member)
 				if titleonly:
-					yield member.title
+					yield member['title']
 				else:
 					yield member
 				
@@ -106,10 +106,7 @@ class Category(page.Page):
 			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
 		while True:
 			req = api.APIRequest(self.site, params)
-			data = req.query(False)
-			for item in data['query']['categorymembers']:
-				yield page.Page(self.site, item['title'], check=False, followRedir=False)
-			try:
-				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
-			except:
-				break 
+			self.categories = []
+			for data in req.queryGen():
+				self.categories.extend(data['query']['categorymembers'])
+			return self.categories
