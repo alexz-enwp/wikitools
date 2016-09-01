@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com), bjweeks
 
 # This file is part of wikitools.
@@ -20,6 +20,11 @@ import page
 import api
 import socket
 import re
+from datetime import datetime
+import dateutil.parser
+
+class NoUser(wiki.WikiError):
+	"""Non-existent user"""
 
 class User:
 	"""A user on the wiki"""
@@ -87,6 +92,13 @@ class User:
 		# Remove leading zereos from each bloc as needed
 		ip = re.sub('/(^|:)0+(([0-9A-Fa-f]{1,4}))/', '\1\2', ip)
 		return ip;
+		
+	def timestampCheck(self, ts):
+		"""Checks to make sure timestamps are formatted as ISO 8601 strings: yyyy-mm-ddTHH:MM:SSZ"""
+		if type(ts) == str:
+			return dateutil.parser.parse(ts).isoformat()
+		else:
+			return ts.isoformat()
 
 	def setUserInfo(self):
 		"""Sets basic user info"""		
@@ -197,6 +209,80 @@ class User:
 		if 'unblock' in res:
 			self.blocked = False
 		return res
+	
+	def getContributions(self, direction='older', limit='all', start=None, end=None, ucnamespace='all'):
+		"""Get the history of a user
+		
+		direction - 2 options: 'older' (default) - start with the current revision and get older ones
+			'newer' - start with the oldest revision and get newer ones
+		content - If False, get only metadata (timestamp, edit summary, user, etc)
+			If True (default), also get the revision text
+		limit - Only retrieve a certain number of revisions. If 'all' (default), all revisions are returned 
+		start - UTC 8601 string or datetime object
+		end - UTC 8601 string or datetime object
+		ucnamespace - either 'all' or string of pipe-separated numeric values (e.g., "0|1")
+		"""
+		max = limit
+		if limit == 'all':
+			max = float("inf")
+		if limit == 'all' or limit > self.site.limit:
+			limit = self.site.limit
+		if ucstart is not None:
+			ucstart = self.timestampCheck(start)
+		if ucend is not None:
+			ucend = self.timestampCheck(end)
+		
+		history = []
+		ucc = None
+		while True:
+			revs, ucc = self.__getContributionsInternal(ucdir, limit, ucstart, ucend, ucnamespace, ucc)
+			history = history+revs
+			if len(history) == max or ucc is None:
+				break
+			if max - len(history) < self.site.limit:
+				limit = max - len(history)
+		return history
+	
+	def __getContributionsInternal(self, direction, limit, ucstart, ucend, ucnamespace, uccontinue):
+	
+		if self.id == 0 and not self.name:
+			self.setUserInfo()
+		if not self.exists:
+			raise NoUser
+		if direction != 'newer' and direction != 'older':
+			raise wiki.WikiError("direction must be 'newer' or 'older'")
+		params = {
+			'action':'query',
+			'list':'usercontribs',
+			'ucdir':direction,
+			'ucprop':'ids|title|timestamp|comment|size|sizediff|tags',
+			'continue':'',
+			'rvlimit':limit
+		}
+		if self.name:
+			params['ucuser'] = self.name
+		else:
+			raise NoUser
+		
+		if ucstart is not None:
+			params['ucstart'] = ucstart
+		if ucend is not None:
+			params['ucend'] = ucend
+			
+		if ucnamespace is not None:
+			params['ucnamespace'] = ucnamespace
+		
+		if uccontinue:
+			params['continue'] = uccontinue['continue']
+			params['uccontinue'] = uccontinue['uccontinue']
+		
+		req = api.APIRequest(self.site, params)
+		response = req.query(False)
+		revs = response['query']['usercontribs']
+		ucc = None
+		if 'continue' in response:
+			ucc = response['continue']
+		return (revs, ucc)
 	
 	def __hash__(self):
 		return int(self.name) ^ hash(self.site.apibase)
