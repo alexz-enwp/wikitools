@@ -553,6 +553,30 @@ class Page(object):
 			rvc = response['continue']
 		return (revs, rvc)
 	
+	def getEntities(self,sites='enwiki',ids=False,languages='en',props='all'):
+		"""Get the entities on a wikidata page
+		https://www.wikidata.org/w/api.php?action=help&modules=wbgetentities
+		"""
+		params = {
+			'action':'wbgetentities',
+			'languages':languages
+		}
+		if self.title:
+			params['titles'] = self.title
+		if ids:
+			params['ids'] = ids
+		if sites:
+			params['sites'] = sites
+		if props == 'all':
+			params['props'] = 'info|sitelinks|aliases|labels|descriptions|claims|datatype'
+		else:
+			params['props'] = props
+		
+		req = api.APIRequest(self.site, params)
+		response = req.query(False)
+		
+		return response
+	
 	def __extractToList(self, json, stuff):
 		list = []
 		if self.pageid == 0:
