@@ -58,7 +58,7 @@ class APIMaxlagError(APIError):
 	"""
 
 	def __init__(self, retry_after):
-		message = 'Server lag, try again after %d seconds' % retry_after
+		message = 'Server lag, try again after %.2f seconds' % retry_after
 		super(APIMaxlagError, self).__init__(self, message)
 		self.retry_after = retry_after
 
@@ -182,7 +182,7 @@ for queries requring multiple requests""", FutureWarning)
 				if attempt == attempts:
 					raise
 				if isinstance(e, APIMaxlagError):
-					print 'Server lag, sleeping for %d seconds' % e.retry_after
+					print 'Server lag, sleeping for %.2f seconds' % e.retry_after
 					time.sleep(e.retry_after)
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
@@ -317,7 +317,8 @@ for queries requring multiple requests""", FutureWarning)
 			raise APIError(data)
 		error = content['error']['code']
 		if error == "maxlag":
-			lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
+			lagtime = 0.5 + float(re.search("([0-9.-]+) seconds",
+				content['error']['info']).group(1))
 			if lagtime > self.wiki.maxwaittime:
 				lagtime = self.wiki.maxwaittime
 			raise APIMaxlagError(lagtime)
