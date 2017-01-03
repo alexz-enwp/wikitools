@@ -182,8 +182,9 @@ for queries requring multiple requests""", FutureWarning)
 				if attempt == attempts:
 					raise
 				if isinstance(e, APIMaxlagError):
-					print 'Server lag, sleeping for %.2f seconds' % e.retry_after
-					time.sleep(e.retry_after)
+					waittime = min(e.retry_after, self.wiki.maxwaittime)
+					print 'Server lag, sleeping for %.2f seconds' % waittime
+					time.sleep(waittime)
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
 		return data
@@ -310,8 +311,6 @@ for queries requring multiple requests""", FutureWarning)
 		if error == "maxlag":
 			lagtime = 0.5 + float(re.search("([0-9.-]+) seconds",
 				content['error']['info']).group(1))
-			if lagtime > self.wiki.maxwaittime:
-				lagtime = self.wiki.maxwaittime
 			raise APIMaxlagError(lagtime)
 		if self.iswrite and content['error']['code'] == 'blocked':
 			raise wiki.UserBlocked(content['error']['info'])
