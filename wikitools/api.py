@@ -272,23 +272,14 @@ for queries requring multiple requests""", FutureWarning)
 	def __getRaw(self):
 		data = False
 		while not data:
-			try:
-				if self.sleep >= self.wiki.maxwaittime or self.iswrite:
-					catcherror = None
-				else:
-					catcherror = Exception
-				data = self.opener.open(self.request)
-				self.response = data.info()
-				if gzip:
-					encoding = self.response.get('Content-encoding')
-					if encoding in ('gzip', 'x-gzip'):
-						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
-			except catcherror, exc:
-				errname = sys.exc_info()[0].__name__
-				errinfo = exc
-				print("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep))
-				time.sleep(self.sleep+0.5)
-				self.sleep+=5
+			data = self.opener.open(self.request)
+			self.response = data.info()
+			if 'Retry-After' in self.response:
+				raise APIMaxlagError(float(self.response.get('Retry-After')))
+			if gzip:
+				encoding = self.response.get('Content-encoding')
+				if encoding in ('gzip', 'x-gzip'):
+					data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
 		return data
 
 	def __parseJSON(self, data):
