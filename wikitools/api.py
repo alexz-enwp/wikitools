@@ -47,7 +47,21 @@ class APIError(Exception):
 
 class APIDisabled(APIError):
 	"""API not enabled"""
-	
+
+class APIMaxlagError(APIError):
+	"""API maxlag reached.
+
+	This typically means you should retry after a while; see
+	https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
+
+	The retry_after attribute of this exception suggests how long to wait.
+	"""
+
+	def __init__(self, retry_after):
+		message = 'Server lag, try again after %.2f seconds' % retry_after
+		super(APIMaxlagError, self).__init__(self, message)
+		self.retry_after = retry_after
+
 class APIRequest:
 	"""A request to the site's API"""
 	def __init__(self, wiki, data, write=False, multipart=False):
@@ -141,53 +155,55 @@ class APIRequest:
 			self.headers['Content-Type'] = "application/x-www-form-urlencoded"
 		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
 	
-	def query(self, querycontinue=True):
+	def query(self, querycontinue=True, retries=1):
 		"""Actually do the query here and return usable stuff
 		
 		querycontinue - look for query-continue in the results and continue querying
 		until there is no more data to retrieve (DEPRECATED: use queryGen as a more
 		reliable and efficient alternative)
-		
+
+		retries - How many retries to allow for in case of errors (set to 0 for no
+		retries). If the number of attempts is exceeded, an exception is raised:
+		either wiki.UserBlocked, or a (subclass of) APIError.
 		"""
 		if querycontinue and self.data['action'] == 'query':
 			warnings.warn("""The querycontinue option is deprecated and will be removed
 in a future release, use the new queryGen function instead
 for queries requring multiple requests""", FutureWarning)
-		data = False
-		while not data:
-			rawdata = self.__getRaw()
-			data = self.__parseJSON(rawdata)
-			if not data and type(data) is APIListResult:
-				break
-		if 'error' in data:
-			if self.iswrite and data['error']['code'] == 'blocked':
-				raise wiki.UserBlocked(data['error']['info'])
-			raise APIError(data['error']['code'], data['error']['info'])
+		attempts = 1 + retries
+		for attempt in range(1, attempts + 1):
+			try:
+				rawdata = self.__getRaw()
+				data = self.__parseJSON(rawdata)
+				if data or isinstance(data, APIListResult):
+					break
+			except Exception, e:
+				print 'Attempt %d (of %d) raised exception %r' % (attempt, attempts, e)
+				if attempt == attempts:
+					raise
+				if isinstance(e, APIMaxlagError):
+					waittime = min(e.retry_after, self.wiki.maxwaittime)
+					print 'Server lag, sleeping for %.2f seconds' % waittime
+					time.sleep(waittime)
 		if 'query-continue' in data and querycontinue:
 			data = self.__longQuery(data)
 		return data
 	
-	def queryGen(self):
+	def queryGen(self, retries_per_request=1):
 		"""Unlike the old query-continue method that tried to stitch results
 		together, which could work poorly for complex result sets and could
 		use a lot of memory, this yield each set returned by the API and lets
 		the user process the data. 
 		Loosely based on the recommended implementation on mediawiki.org
 		
+		retries_per_request - How many retries to allow, per API
+		request. See the retries parameter in query() for the exact
+		behavior.
 		"""
 		reqcopy = copy.deepcopy(self.request)
 		self.changeParam('continue', '')
 		while True:
-			data = False
-			while not data:
-				rawdata = self.__getRaw()
-				data = self.__parseJSON(rawdata)
-				if not data and type(data) is APIListResult:
-					break
-			if 'error' in data:
-				if self.iswrite and data['error']['code'] == 'blocked':
-					raise wiki.UserBlocked(data['error']['info'])
-				raise APIError(data['error']['code'], data['error']['info'])
+			data = self.query(querycontinue=False, retries=retries_per_request)
 			yield data
 			if 'continue' not in data: 
 				break
@@ -257,59 +273,49 @@ for queries requring multiple requests""", FutureWarning)
 	def __getRaw(self):
 		data = False
 		while not data:
-			try:
-				if self.sleep >= self.wiki.maxwaittime or self.iswrite:
-					catcherror = None
-				else:
-					catcherror = Exception
-				data = self.opener.open(self.request)
-				self.response = data.info()
-				if gzip:
-					encoding = self.response.get('Content-encoding')
-					if encoding in ('gzip', 'x-gzip'):
-						data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
-			except catcherror, exc:
-				errname = sys.exc_info()[0].__name__
-				errinfo = exc
-				print("%s: %s trying request again in %d seconds" % (errname, errinfo, self.sleep))
-				time.sleep(self.sleep+0.5)
-				self.sleep+=5
+			data = self.opener.open(self.request)
+			self.response = data.info()
+			if 'Retry-After' in self.response:
+				raise APIMaxlagError(float(self.response.get('Retry-After')))
+			if gzip:
+				encoding = self.response.get('Content-encoding')
+				if encoding in ('gzip', 'x-gzip'):
+					data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data.read()))
 		return data
 
 	def __parseJSON(self, data):
-		maxlag = True
-		while maxlag:
-			try:
-				maxlag = False
-				parsed = json.loads(data.read())
-				content = None
-				if isinstance(parsed, dict):
-					content = APIResult(parsed)
-					content.response = self.response.items()
-				elif isinstance(parsed, list):
-					content = APIListResult(parsed)
-					content.response = self.response.items()
-				else:
-					content = parsed
-				if 'error' in content:
-					error = content['error']['code']
-					if error == "maxlag":
-						lagtime = int(re.search("(\d+) seconds", content['error']['info']).group(1))
-						if lagtime > self.wiki.maxwaittime:
-							lagtime = self.wiki.maxwaittime
-						print("Server lag, sleeping for "+str(lagtime)+" seconds")
-						maxlag = True
-						time.sleep(int(lagtime)+0.5)
-						return False
-			except: # Something's wrong with the data...
-				data.seek(0)
-				if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data.read():
-					raise APIDisabled("The API is not enabled on this site")
-				print "Invalid JSON, trying request again"
-				# FIXME: Would be nice if this didn't just go forever if its never going to work
-				return False
+		try:
+			content = None
+			data = data.read()
+			parsed = json.loads(data)
+			if isinstance(parsed, dict):
+				content = APIResult(parsed)
+				content.response = self.response.items()
+			elif isinstance(parsed, list):
+				content = APIListResult(parsed)
+				content.response = self.response.items()
+			else:
+				content = parsed
+		except: # Something's wrong with the data...
+			self.__exceptionFromAPIError(data, content)
+		if 'error' in content:
+			self.__exceptionFromAPIError(data, content)
 		return content
-		
+
+	def __exceptionFromAPIError(self, data, content):
+		if "MediaWiki API is not enabled for this site. Add the following line to your LocalSettings.php<pre><b>$wgEnableAPI=true;</b></pre>" in data:
+			raise APIDisabled("The API is not enabled on this site")
+		if content is None:
+			raise APIError(data)
+		error = content['error']['code']
+		if error == "maxlag":
+			lagtime = 0.5 + float(re.search("([0-9.-]+) seconds",
+				content['error']['info']).group(1))
+			raise APIMaxlagError(lagtime)
+		if self.iswrite and content['error']['code'] == 'blocked':
+			raise wiki.UserBlocked(content['error']['info'])
+		raise APIError(content['error']['code'], content['error']['info'])
+
 class APIResult(dict):
 	response = []
 	
