@@ -163,7 +163,7 @@ class APIRequest:
 		reliable and efficient alternative)
 
 		retries - How many retries to allow for in case of errors (set to 0 for no
-		retries). If the number of attempts is exceeeded, an exception is raised:
+		retries). If the number of attempts is exceeded, an exception is raised:
 		either wiki.UserBlocked, or a (subclass of) APIError.
 		"""
 		if querycontinue and self.data['action'] == 'query':
