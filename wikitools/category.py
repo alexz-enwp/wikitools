@@ -106,10 +106,11 @@ class Category(page.Page):
 			params['cmnamespace'] = '|'.join([str(ns) for ns in namespaces])
 		while True:
 			req = api.APIRequest(self.site, params)
-			data = req.query(False)
+			#data = req.query(True)
+			data = list(req.queryGen())[0]
 			for item in data['query']['categorymembers']:
 				yield page.Page(self.site, item['title'], check=False, followRedir=False)
 			try:
-				params['cmcontinue'] = data['query-continue']['categorymembers']['cmcontinue']
+				params['cmcontinue'] = data['continue']['cmcontinue']
 			except:
-				break 
+				break  
