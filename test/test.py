@@ -1,12 +1,12 @@
 import unittest
-from wikitools import api
-from wikitools import wiki
-from wikitools import page
-from wikitools import category
-from wikitools import wikifile
-from wikitools import user
-from wikitools import pagelist
-import wikitools.exceptions
+from wikitools_py3 import api
+from wikitools_py3 import wiki
+from wikitools_py3 import page
+from wikitools_py3 import category
+from wikitools_py3 import wikifile
+from wikitools_py3 import user
+from wikitools_py3 import pagelist
+import wikitools_py3.exceptions
 import warnings
 import requests.exceptions
 import os
@@ -132,8 +132,8 @@ class TestWiki(unittest.TestCase):
 	def test_hash(self):
 		newsite = wiki.Wiki('http://localhost/w/api.php')
 		d = {self.site : 'Foo' }
-		self.assertTrue(newsite in d.keys())	
-		
+		self.assertTrue(newsite in d.keys())
+
 	def test_equality(self):
 		newsite = wiki.Wiki('http://localhost/w/api.php')
 		othersite = wiki.Wiki('https://en.wikipedia.org/w/api.php')
@@ -244,12 +244,12 @@ class TestPage(unittest.TestCase):
 	def test_setSection_valid_name(self):
 		p1 = page.Page(self.site, "Page")
 		p1.setSection("Section 1")
-		self.assertEqual(p1.section, 1)		
+		self.assertEqual(p1.section, 1)
 
 	def test_setSection_invalid_name(self):
 		p1 = page.Page(self.site, "Page")
 		p1.setSection("Section Q")
-		self.assertIs(p1.section, None)	
+		self.assertIs(p1.section, None)
 
 	def test_toggleTalk(self):
 		p1 = page.Page(self.site, "Page")
@@ -534,13 +534,13 @@ class TestUser(unittest.TestCase):
 		api.logging = True
 		u1 = user.User(self.site, "Doesn't exist")
 		self.assertEqual(len(api.querylog), 1)
-		self.assertFalse(u1.exists)		
+		self.assertFalse(u1.exists)
 
 	def test_constructor_blocked(self):
 		api.logging = True
 		u1 = user.User(self.site, "Vandal1")
 		self.assertEqual(len(api.querylog), 1)
-		self.assertTrue(u1.blocked)	
+		self.assertTrue(u1.blocked)
 
 	def test_isblocked(self):
 		api.logging = True
