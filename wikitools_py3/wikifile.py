@@ -19,7 +19,7 @@ from . import api
 from . import exceptions
 from . import page
 from . import internalfunctions
-from wikitools.pagelist import makePage
+from wikitools_py3.pagelist import makePage
 import io
 import os.path
 import warnings
@@ -74,7 +74,7 @@ class File(page.Page):
 		if exif:
 			iiprop+='|metadata'
 			iimetadataversion = 'latest'
-		return internalfunctions.getList(self, 'prop', 'imageinfo', 'ii', limit=limit, 
+		return internalfunctions.getList(self, 'prop', 'imageinfo', 'ii', limit=limit,
 		titles=self.title, iiprop=iiprop, iimetadataversion=iimetadataversion)
 
 
@@ -92,7 +92,7 @@ class File(page.Page):
 		if exif:
 			iiprop+='|metadata'
 			iimetadataversion = 'latest'
-		return internalfunctions.getListGen(self, 'prop', 'imageinfo', 'ii', limit=limit, 
+		return internalfunctions.getListGen(self, 'prop', 'imageinfo', 'ii', limit=limit,
 		titles=self.title, iiprop=iiprop, iimetadataversion=iimetadataversion)
 
 	def getUsage(self, titleonly=False, force=False, namespaces=None):
@@ -260,4 +260,3 @@ class File(page.Page):
 		if name != 'usage':
 			return super().__getattr__(name)
 		return self.getUsage()
-			

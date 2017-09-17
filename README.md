@@ -1,4 +1,4 @@
-wikitools -- Package for working with MediaWiki wikis
+wikitools_py3 -- Package for working with MediaWiki wikis
 
 Requirements
 ------------
@@ -11,7 +11,7 @@ Requirements
 Installation
 ------------
 
-  * Run "python setup.py install" or copy the wikitools directory
+  * Run "python setup.py install" or copy the wikitools_py3 directory
     to an appropriate Python module directory.
   * An exe installer for Windows is also available (should be run as an
     administrator to avoid errors)
@@ -59,8 +59,8 @@ To make a simple query:
 ```python
 #!/usr/bin/python
 
-from wikitools import wiki
-from wikitools import api
+from wikitools_py3 import wiki
+from wikitools_py3 import api
 
 # create a Wiki object
 site = wiki.Wiki("http://my.wikisite.org/w/api.php")
@@ -93,8 +93,8 @@ pages in namespace 0 in a category:
 ```python
 #!/usr/bin/python
 
-from wikitools import wiki
-from wikitools import category
+from wikitools_py3 import wiki
+from wikitools_py3 import category
 
 site = wiki.Wiki("http://my.wikisite.org/w/api.php")
 site.login("username", "password")

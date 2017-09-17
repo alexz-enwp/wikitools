@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-import wikitools
+import wikitools_py3
 
 def listFromQuery(site, queryresult):
 	"""Generate a list of Pages from an API query result
@@ -46,7 +46,7 @@ def listFromTextList(site, sequence, datatype, check=True, followRedir=False):
 		if datatype == 'pageids':
 			sequence = [int(i) for i in sequence]
 		opt = datatype[:-1]
-		return [wikitools.page.Page(site, check=False, followRedir=followRedir, **{opt:item}) for item in sequence]
+		return [wikitools_py3.page.Page(site, check=False, followRedir=followRedir, **{opt:item}) for item in sequence]
 	start = 0
 	end = 0
 	ret = []
@@ -61,7 +61,7 @@ def listFromTextList(site, sequence, datatype, check=True, followRedir=False):
 		}
 		if followRedir:
 			params['redirects'] = ''
-		req = wikitools.api.APIRequest(site, params)
+		req = wikitools_py3.api.APIRequest(site, params)
 		res = req.query(False)
 		for key in res['query']['pages']:
 			obj = res['query']['pages'][key]
@@ -114,14 +114,13 @@ def makePage(result, site, followRedir):
 	if 'pageid' in result and result['pageid'] > 0:
 		pageid = result['pageid']
 	if ns == site.NS_CATEGORY:
-		item = wikitools.category.Category(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+		item = wikitools_py3.category.Category(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	elif ns == site.NS_FILE:
-		item = wikitools.wikifile.File(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+		item = wikitools_py3.wikifile.File(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	else:
-		item = wikitools.page.Page(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
+		item = wikitools_py3.page.Page(site, title=title, check=False, followRedir=followRedir, pageid=pageid)
 	if 'missing' in result:
 		item.exists = False
 	elif pageid:
 		item.exists = True
 	return item
-
