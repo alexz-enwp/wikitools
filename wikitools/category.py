@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with wikitools.  If not, see <http://www.gnu.org/licenses/>.
 
-from wikitools.pagelist import makePage
+from wikitools_py3.pagelist import makePage
 from . import api
 from . import page
 
@@ -111,4 +111,3 @@ class Category(page.Page):
 		if name != 'members':
 			return super().__getattr__(name)
 		return self.getAllMembers()
-
