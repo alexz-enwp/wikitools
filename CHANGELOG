@@ -1,3 +1,6 @@
+Changes since 3.0:
+* WikiTools now uses Python 3 syntax, and Python 2 is no longer supported.
+
 Changes since 1.2:
 * Implements the new query-continue procedure in the MW API - The current querycontinue 
   option in APIRequest.query() is deprecated and will be removed in a future release. 
