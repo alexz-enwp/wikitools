@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "wikitools3"
+version = "3.0.0"
+description = "Python package for interacting with a MediaWiki wiki. It is used by WikiTeam for archiving MediaWiki wikis."
+authors = ["Alex Zaddach <mrzmanwiki@gmail.com>", "Elsie Hupp <github at elsiehupp dot com>"]
+maintainers = ["Elsie Hupp <wikitools3@elsiehupp.com>"]
+readme = "README.md"
+repository = "https://github.com/elsiehupp/wikitools3"
+keywords = ["wikipedia", "mediawiki", "archive", "scrape", "archiveteam"]
+license = "GPL-3.0-or-later"
+include = ["CHANGELOG.md"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Wiki",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[tool.poetry.dependencies]
+python = "^3"
+poster3 = "^0.8.1"
+
+[tool.poetry.dev-dependencies]
+twine = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -227,7 +227,7 @@ class File(page.Page):
     def upload(
         self, fileobj=None, comment="", url=None, ignorewarnings=False, watch=False
     ):
-        """Upload a file, requires the "poster" module
+        """Upload a file, requires the "poster3" module
 
         fileobj - A file object opened for reading
         comment - The log comment, used as the inital page content if the file
@@ -238,7 +238,7 @@ class File(page.Page):
 
         """
         if not api.canupload and fileobj:
-            raise UploadError("The poster module is required for file uploading")
+            raise UploadError("The poster3 module is required for file uploading")
         if not fileobj and not url:
             raise UploadError("Must give either a file object or a URL")
         if fileobj and url:

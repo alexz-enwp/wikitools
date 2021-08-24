@@ -28,7 +28,7 @@ import warnings
 from urllib.parse import quote_plus
 
 import wikitools3.wiki as wiki
-from poster.encode import multipart_encode
+from poster3.encode import multipart_encode
 
 canupload = True
 
@@ -58,13 +58,13 @@ class APIRequest:
         data - API parameters in the form of a dict
         write - set to True if doing a write query, so it won't try again on error
         multipart - use multipart data transfer, required for file uploads,
-        requires the poster package
+        requires the poster3 package
 
         maxlag is set by default to 5 but can be changed
         format is always set to json
         """
         if not canupload and multipart:
-            raise APIError("The poster module is required for multipart support")
+            raise APIError("The poster3 module is required for multipart support")
         self.sleep = 5
         self.data = data.copy()
         self.data["format"] = "json"
@@ -106,7 +106,7 @@ class APIRequest:
     def setMultipart(self, multipart=True):
         """Enable multipart data transfer, required for file uploads."""
         if not canupload and multipart:
-            raise APIError("The poster package is required for multipart support")
+            raise APIError("The poster3 package is required for multipart support")
         self.multipart = multipart
         if multipart:
             (datagen, headers) = multipart_encode(self.data)

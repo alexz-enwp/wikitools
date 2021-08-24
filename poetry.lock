@@ -1,0 +1,20 @@
+[[package]]
+name = "poster3"
+version = "0.8.1"
+description = "Streaming HTTP uploads and multipart/form-data encoding"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+poster3 = ["buildutils", "sphinx"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3"
+content-hash = "740bcec113e5c93070143646202dd102ef7ddf8f6c61d026719754044d544e60"
+
+[metadata.files]
+poster3 = [
+    {file = "poster3-0.8.1-py3-none-any.whl", hash = "sha256:1b27d7d63e3191e5d7238631fc828e4493590e94dcea034e386c079d853cce14"},
+]
